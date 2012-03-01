@@ -2,7 +2,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
 
 	<PropertyGroup>
-    <PostSharpToolkitsDirectory Condition="'$(PostSharpToolkitsDirectory)'==''">..</PostSharpToolkitsDirectory>
+    <PostSharpToolkitsDirectory Condition="'$(PostSharpToolkitsDirectory)'==''">$(MSBuildThisFileDirectory)..</PostSharpToolkitsDirectory>
     <MSBuildCommunityTasksPath>.</MSBuildCommunityTasksPath>
     <MajorVersion>2.1</MajorVersion>
 		<MinorVersion>1</MinorVersion>
@@ -85,6 +85,7 @@
   </UsingTask>
 
   <Target Name="GetSourceStatus">
+    <Message Text="Toolkit directory: $(PostSharpToolkitsDirectory)" />
     <Exec Command="git status -s &gt; $(MSBuildProjectDirectory)\$(IntermediateDir)source-status" WorkingDirectory="$(PostSharpToolkitsDirectory)" />
 
     <ReadLinesFromFile File="$(IntermediateDir)\source-status">

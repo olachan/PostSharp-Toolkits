@@ -1,20 +1,21 @@
 ﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
 
-  <Import Project="..\Dependencies\MSBuildCommunityTasks\MSBuild.Community.Tasks.Targets"/>
-  <Import Project="Versioning.targets"/>
+  <Import Project="..\..\Dependencies\MSBuildCommunityTasks\MSBuild.Community.Tasks.Targets"/>
+  <Import Project="..\Versioning.targets"/>
 
   <PropertyGroup>
     <BuildDirectory>..\..</BuildDirectory>
+    <NuGet>..\..\Dependencies\NuGet\NuGet.exe</NuGet>
     <ImageDir>$(BuildDirectory)\Build\bin</ImageDir>
     <IntermediateNuGetDir>$(ImageDir)\NuGet</IntermediateNuGetDir>
     
-    <PostSharpDiagnosticsSpecDir>$(MSBuildProjectDirectory)\NuGet\Logging</PostSharpDiagnosticsSpecDir>
-    <PostSharpDiagnosticsNLogSpecDir>$(MSBuildProjectDirectory)\NuGet\Logging.NLog</PostSharpDiagnosticsNLogSpecDir>
-    <PostSharpDiagnosticsLog4NetSpecDir>$(MSBuildProjectDirectory)\NuGet\Logging.Log4Net</PostSharpDiagnosticsLog4NetSpecDir>
+    <PostSharpDiagnosticsSpecDir>$(MSBuildProjectDirectory)\Logging</PostSharpDiagnosticsSpecDir>
+    <PostSharpDiagnosticsNLogSpecDir>$(MSBuildProjectDirectory)\Logging.NLog</PostSharpDiagnosticsNLogSpecDir>
+    <PostSharpDiagnosticsLog4NetSpecDir>$(MSBuildProjectDirectory)\Logging.Log4Net</PostSharpDiagnosticsLog4NetSpecDir>
   </PropertyGroup>
   
   <ItemGroup>
-    <NuGetSourceFiles Include="NuGet\**\*.nuspec" />
+    <NuGetSourceFiles Include="**\*.nuspec" />
   </ItemGroup>
   
   <Target Name="CreateSpecFiles" DependsOnTargets="GetRevisionNumber">
@@ -29,8 +30,8 @@
   </Target>
 
   <Target Name="Build" DependsOnTargets="CreateSpecFiles">
-    <Exec Command="$(BuildDirectory)\.nuget\NuGet.exe pack $(IntermediateNuGetDir)\PostSharpDiagnosticsToolkit.nuspec /BasePath $(ImageDir) /Verbose /OutputDirectory $(IntermediateNugetDir)" /> 
-    <Exec Command="$(BuildDirectory)\.nuget\NuGet.exe pack $(IntermediateNuGetDir)\PostSharpDiagnosticsToolkitForNLog.nuspec /BasePath $(ImageDir) /Verbose /OutputDirectory $(IntermediateNugetDir)" /> 
-    <Exec Command="$(BuildDirectory)\.nuget\NuGet.exe pack $(IntermediateNuGetDir)\PostSharpDiagnosticsToolkitForLog4Net.nuspec /BasePath $(ImageDir) /Verbose /OutputDirectory $(IntermediateNugetDir)" /> 
+    <Exec Command="$(NuGet) pack $(IntermediateNuGetDir)\PostSharpDiagnosticsToolkit.nuspec /BasePath $(ImageDir) /Verbose /OutputDirectory $(IntermediateNugetDir)" /> 
+    <Exec Command="$(NuGet) pack $(IntermediateNuGetDir)\PostSharpDiagnosticsToolkitForNLog.nuspec /BasePath $(ImageDir) /Verbose /OutputDirectory $(IntermediateNugetDir)" /> 
+    <Exec Command="$(NuGet) pack $(IntermediateNuGetDir)\PostSharpDiagnosticsToolkitForLog4Net.nuspec /BasePath $(ImageDir) /Verbose /OutputDirectory $(IntermediateNugetDir)" /> 
   </Target>
 </Project>
