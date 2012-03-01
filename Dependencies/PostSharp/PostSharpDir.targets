@@ -6,6 +6,7 @@
   <Import Project="PostSharpDir.Custom.targets" Condition="Exists('PostSharpDir.Custom.targets')"/>
   
   <PropertyGroup>
+    <DontImportPostSharp>True</DontImportPostSharp>
     <PostSharpDir Condition="'$(PostSharpDir)'==''">$(registry:HKEY_LOCAL_MACHINE\Software\SharpCrafters\PostSharp 2.1@Location)</PostSharpDir>
     <PostSharpDir Condition="'$(PostSharpDir)'==''">$(registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\SharpCrafters\PostSharp 2.1@Location)</PostSharpDir>
     <PostSharpBuild Condition="'$(PostSharpBuild)'==''">Release</PostSharpBuild>
