@@ -95,8 +95,9 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
             {
             }
 
-            public void EmitWrite(InstructionWriter writer, InstructionBlock block, string messageFormattingString,
-                                  int argumentsCount, LogSeverity logSeverity, Action<InstructionWriter> getExceptionAction,
+            public void EmitWrite(InstructionWriter writer, string messageFormattingString,
+                                  int argumentsCount, LogSeverity logSeverity, 
+                                  Action<InstructionWriter> getExceptionAction,
                                   Action<int, InstructionWriter> loadArgumentAction)
             {
                 bool useStringFormat = false;

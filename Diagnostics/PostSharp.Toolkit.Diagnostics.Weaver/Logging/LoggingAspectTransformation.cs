@@ -79,7 +79,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                                        (this.onEntryOptions & LogOptions.NotLogged) == 0);
 
                     bool hasOnSuccess = (this.onSuccessOptions != LogOptions.None &&
-                                         (this.onSuccessOptions & LogOptions.NotLogged) != 0);
+                                         (this.onSuccessOptions & LogOptions.NotLogged) == 0);
 
                     bool hasOnException = (this.onExceptionOptions != LogOptions.None &&
                                            (this.onExceptionOptions & LogOptions.NotLogged) == 0);
@@ -113,7 +113,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                         writer.EmitBranchingInstruction(OpCodeNumber.Brfalse_S, branchSequence);
                     }
 
-                    builder.EmitWrite(writer, block, "An exception occurred:\n{0}", 1, logSeverity,
+                    builder.EmitWrite(writer, "An exception occurred:\n{0}", 1, logSeverity,
                                       w => w.EmitInstructionLocalVariable(OpCodeNumber.Stloc, exceptionLocal),
                                       (i, w) => w.EmitInstructionLocalVariable(OpCodeNumber.Ldloc, exceptionLocal));
 
@@ -169,14 +169,12 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
                     int parameterCount = Context.MethodMapping.MethodSignature.ParameterCount;
                     bool hasThis = Context.MethodMapping.MethodSignature.CallingConvention == CallingConvention.HasThis;
-
-                    builder.EmitWrite(writer, block, messageFormatString, parameterCount, LogSeverity.Trace, null,
-                                      (i, instructionWriter) =>
-                                      {
-                                          instructionWriter.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)(hasThis ? i + 1 : i));
-                                          instructionWriter.EmitConvertToObject(
-                                              this.Context.MethodMapping.MethodSignature.GetParameterType(i));
-                                      });
+                    
+                    builder.EmitWrite(writer, messageFormatString, parameterCount, LogSeverity.Trace, null, (i, instructionWriter) =>
+                    {
+                        instructionWriter.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)(hasThis ? i + 1 : i));
+                        instructionWriter.EmitConvertToObject(this.Context.MethodMapping.MethodSignature.GetParameterType(i));
+                    });
                     
                     writer.DetachInstructionSequence();
                 }

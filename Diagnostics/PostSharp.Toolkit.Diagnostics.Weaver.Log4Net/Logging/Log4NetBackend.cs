@@ -67,20 +67,18 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Log4Net.Logging
 
             public ILoggingCategoryBuilder GetCategoryBuilder(string categoryName)
             {
-                return new Log4NetCategoryBuilder(this.parent, this.module, categoryName);
+                return new Log4NetCategoryBuilder(this.parent, categoryName);
             }
         }
 
         private class Log4NetCategoryBuilder : ILoggingCategoryBuilder
         {
             private readonly Log4NetBackend parent;
-            private readonly ModuleDeclaration module;
             private readonly FieldDefDeclaration loggerField;
 
-            public Log4NetCategoryBuilder(Log4NetBackend parent, ModuleDeclaration module, string categoryName)
+            public Log4NetCategoryBuilder(Log4NetBackend parent, string categoryName)
             {
                 this.parent = parent;
-                this.module = module;
 
                 this.loggerField = this.parent.loggingImplementation.GetCategoryField(categoryName, this.parent.loggerType, writer =>
                 {
@@ -120,7 +118,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Log4Net.Logging
                 }
             }
 
-            public void EmitWrite(InstructionWriter writer, InstructionBlock block, string messageFormattingString,
+            public void EmitWrite(InstructionWriter writer, string messageFormattingString,
                                   int argumentsCount, LogSeverity logSeverity, Action<InstructionWriter> getExceptionAction,
                                   Action<int, InstructionWriter> loadArgumentAction)
             {
@@ -152,7 +150,8 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Log4Net.Logging
                 }
 
                 writer.EmitInstructionField(OpCodeNumber.Ldsfld, this.loggerField);
-
+                method = this.parent.loggingImplementation.GetWriteWrapperMethod(method, this.parent.loggerType);
+                
                 if (argumentsCount > 0)
                 {
                     this.parent.formatWriter.EmitFormatArguments(writer, messageFormattingString, argumentsCount, loadArgumentAction);
@@ -162,7 +161,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Log4Net.Logging
                     writer.EmitInstructionString(OpCodeNumber.Ldstr, messageFormattingString);
                 }
 
-                writer.EmitInstructionMethod(OpCodeNumber.Callvirt, method);
+                writer.EmitInstructionMethod(OpCodeNumber.Call, method);
             }
         }
     }

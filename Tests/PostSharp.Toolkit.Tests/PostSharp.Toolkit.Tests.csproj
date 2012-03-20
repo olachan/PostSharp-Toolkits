@@ -46,7 +46,9 @@
   <ItemGroup>
     <Compile Include="ConsoleTestsFixture.cs" />
     <Compile Include="LoggingToolkitTests.cs" />
+    <Compile Include="Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ParameterValuesLoggingTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
