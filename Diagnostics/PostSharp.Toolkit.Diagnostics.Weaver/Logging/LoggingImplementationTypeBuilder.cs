@@ -13,7 +13,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
     public sealed class LoggingImplementationTypeBuilder
     {
         private readonly Dictionary<string, FieldDefDeclaration> categoryFields;
-        private readonly Dictionary<IMethodSignature, MethodDefDeclaration> wrapperMethods;
+        private readonly Dictionary<IMethod, MethodDefDeclaration> wrapperMethods;
         private readonly InstructionWriter writer = new InstructionWriter();
         private readonly TypeDefDeclaration containingType;
         private readonly FieldDefDeclaration isLoggingField;
@@ -27,7 +27,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
         public LoggingImplementationTypeBuilder(ModuleDeclaration module)
         {
             this.categoryFields = new Dictionary<string, FieldDefDeclaration>();
-            this.wrapperMethods = new Dictionary<IMethodSignature, MethodDefDeclaration>(new MethodSignatureComparer(BindingOptions.BindingEqualityOptions));
+            this.wrapperMethods = new Dictionary<IMethod, MethodDefDeclaration>();
 
 
             this.module = module;
@@ -48,7 +48,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             return categoryField;
         }
 
-        public MethodDefDeclaration GetWriteWrapperMethod(IMethodSignature loggerMethod, ITypeSignature loggerType)
+        public MethodDefDeclaration GetWriteWrapperMethod(IMethod loggerMethod, ITypeSignature loggerType)
         {
             MethodDefDeclaration wrapperMethod;
             if (!this.wrapperMethods.TryGetValue(loggerMethod, out wrapperMethod))
@@ -60,7 +60,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             return wrapperMethod;
         }
 
-        public MethodDefDeclaration CreateWrapperMethod(IMethodSignature loggerMethod, ITypeSignature loggerFieldType)
+        private MethodDefDeclaration CreateWrapperMethod(IMethod loggerMethod, ITypeSignature loggerFieldType)
         {
             MethodDefDeclaration wrapperMethod = new MethodDefDeclaration
             {
@@ -75,58 +75,22 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 ParameterType = this.module.Cache.GetIntrinsic(IntrinsicType.Void)
             };
 
+            MethodDefDeclaration loggerMethodDefinition = loggerMethod.GetMethodDefinition();
+            
             wrapperMethod.Parameters.Add(new ParameterDeclaration(0, "logger", loggerFieldType));
-
-            for (int i = 0; i < loggerMethod.ParameterCount; i++)
+            
+            for (int i = 0; i < loggerMethodDefinition.Parameters.Count; i++)
             {
-                wrapperMethod.Parameters.Add(new ParameterDeclaration(i + 1, "arg" + i, loggerMethod.GetParameterType(i).TranslateType(this.module)));
+                ParameterDeclaration parameter = loggerMethodDefinition.Parameters[i];
+                wrapperMethod.Parameters.Add(new ParameterDeclaration(parameter.Ordinal + 1, parameter.Name, parameter.ParameterType.TranslateType(this.module)));
             }
 
-            this.EmitWrapperCallBody(wrapperMethod);
+            this.EmitWrapperCallBody(wrapperMethod, loggerMethod);
 
             return wrapperMethod;
         }
 
-        public void f()
-        {
-            //InstructionBlock rootBlock = wrapperMethod.MethodBody.CreateInstructionBlock();
-            //wrapperMethod.MethodBody.RootInstructionBlock = rootBlock;
-
-            //InstructionBlock leaveBlock = rootBlock.AddChildBlock(null, NodePosition.After, null);
-            //InstructionBlock tryBlock = rootBlock.AddChildBlock(null, NodePosition.After, null);
-            //InstructionBlock finallyBlock = rootBlock.AddChildBlock(null, NodePosition.After, tryBlock);
-
-            //InstructionSequence sequence = rootBlock.AddInstructionSequence(null, NodePosition.Before, null);
-            //this.writer.AttachInstructionSequence(sequence);
-
-            //this.writer.EmitInstruction(OpCodeNumber.Ldc_I4_1);
-            //this.writer.EmitInstructionField(OpCodeNumber.Stsfld, this.isLoggingField);
-
-            //this.writer.DetachInstructionSequence();
-
-            //InstructionSequence leaveSequence = leaveBlock.AddInstructionSequence(null, NodePosition.After, null);
-            //this.writer.AttachInstructionSequence(leaveSequence);
-            //this.writer.EmitInstruction(OpCodeNumber.Ret);
-            //this.writer.DetachInstructionSequence();
-
-            //InstructionSequence trySequence = tryBlock.AddInstructionSequence(null, NodePosition.After, leaveSequence);
-
-            //this.writer.AttachInstructionSequence(trySequence);
-            //this.writer.EmitBranchingInstruction(OpCodeNumber.Leave, trySequence);
-
-            //this.writer.DetachInstructionSequence();
-
-            //InstructionSequence finallySequence = finallyBlock.AddInstructionSequence(null, NodePosition.After, null);
-            //this.writer.AttachInstructionSequence(finallySequence);
-
-            //this.writer.EmitInstruction(OpCodeNumber.Ldc_I4_0);
-            //this.writer.EmitInstructionField(OpCodeNumber.Stsfld, this.isLoggingField);
-
-            //this.writer.DetachInstructionSequence();
-
-        }
-
-        private void EmitWrapperCallBody(MethodDefDeclaration wrapperMethod)
+        private void EmitWrapperCallBody(MethodDefDeclaration wrapperMethod, IMethod loggerMethod)
         {
             InstructionBlock rootBlock = wrapperMethod.MethodBody.CreateInstructionBlock();
             wrapperMethod.MethodBody.RootInstructionBlock = rootBlock;
@@ -136,37 +100,40 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             InstructionBlock leaveTryBlock = rootBlock.AddChildBlock(null, NodePosition.After, null);
             
             InstructionSequence sequence = parentBlock.AddInstructionSequence(null, NodePosition.After, null);
-            InstructionSequence branchSequence = parentBlock.AddInstructionSequence(null, NodePosition.Before, null);
+            // set isLogging to true
+            this.writer.AttachInstructionSequence(sequence);
+            this.writer.EmitInstruction(OpCodeNumber.Ldc_I4_1);
+            this.writer.EmitInstructionField(OpCodeNumber.Stsfld, this.isLoggingField);
+            this.writer.DetachInstructionSequence();
 
             // if isLogging is true, return
+            InstructionSequence branchSequence = parentBlock.AddInstructionSequence(null, NodePosition.Before, null);
             this.writer.AttachInstructionSequence(branchSequence);
             this.writer.EmitInstructionField(OpCodeNumber.Ldsfld, this.isLoggingField);
             this.writer.EmitBranchingInstruction(OpCodeNumber.Brfalse_S, sequence);
             this.writer.EmitInstruction(OpCodeNumber.Ret);
             this.writer.DetachInstructionSequence();
 
-            InstructionSequence leaveTrySequence = leaveTryBlock.AddInstructionSequence(null, NodePosition.After, null);
-            this.writer.AttachInstructionSequence(leaveTrySequence);
+            InstructionSequence retSequence = leaveTryBlock.AddInstructionSequence(null, NodePosition.After, null);
+            this.writer.AttachInstructionSequence(retSequence);
             this.writer.EmitInstruction(OpCodeNumber.Ret);
+            this.writer.DetachInstructionSequence();
+
+            InstructionSequence trySequence = tryBlock.AddInstructionSequence(null, NodePosition.After, null);
+            this.writer.AttachInstructionSequence(trySequence);
+            this.writer.EmitInstruction(OpCodeNumber.Ldarg_0);
+            this.writer.EmitInstruction(OpCodeNumber.Ldarg_1);
+            this.writer.EmitInstructionMethod(OpCodeNumber.Callvirt, loggerMethod);
             this.writer.DetachInstructionSequence();
 
             InstructionSequence leaveSequence = tryBlock.AddInstructionSequence(null, NodePosition.After, null);
             this.writer.AttachInstructionSequence(leaveSequence);
-            this.writer.EmitBranchingInstruction(OpCodeNumber.Leave, leaveTrySequence);
-            this.writer.DetachInstructionSequence();
-
-            this.writer.AttachInstructionSequence(sequence);
-
-            // set isLogging to true
-            this.writer.EmitInstruction(OpCodeNumber.Ldc_I4_1);
-            this.writer.EmitInstructionField(OpCodeNumber.Stsfld, this.isLoggingField);
-
+            this.writer.EmitBranchingInstruction(OpCodeNumber.Leave, retSequence);
             this.writer.DetachInstructionSequence();
 
             InstructionBlock protectedBlock;
             InstructionBlock[] catchBlocks;
             InstructionBlock finallyBlock;
-
             this.weavingHelper.AddExceptionHandlers(this.writer, tryBlock, leaveSequence, null, true, out protectedBlock, out catchBlocks, out finallyBlock);
 
             InstructionSequence finallySequence = finallyBlock.AddInstructionSequence(null, NodePosition.After, null);

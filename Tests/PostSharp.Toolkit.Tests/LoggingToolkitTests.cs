@@ -65,10 +65,10 @@ namespace PostSharp.Toolkit.Tests
         public void LoggingToolkit_MethodArguments_LogsMethodArgumentNames()
         {
             SimpleClass s = new SimpleClass();
-            s.MethodWithArguments(stringArg: "TEST", intArg: 12345);
+            s.MethodWith2Arguments(stringArg: "TEST", intArg: 12345);
 
             string output = OutputString.ToString();
-            StringAssert.Contains("MethodWithArguments(string stringArg = \"TEST\", int32 intArg = 12345)", output);
+            StringAssert.Contains("MethodWith2Arguments(string stringArg = \"TEST\", int32 intArg = 12345)", output);
         }
     }
 }
