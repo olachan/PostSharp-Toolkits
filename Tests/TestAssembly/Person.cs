@@ -1,4 +1,4 @@
-﻿namespace PostSharp.Toolkit.Tests
+namespace TestAssembly
 {
     public class Person
     {
@@ -18,6 +18,6 @@
         public override string ToString()
         {
             return string.Format("{0} {1}", GetFirstName(this), this.LastName);
-        } 
+        }
     }
 }

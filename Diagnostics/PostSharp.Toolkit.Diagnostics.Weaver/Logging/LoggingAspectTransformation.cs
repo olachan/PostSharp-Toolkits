@@ -113,9 +113,12 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                         writer.EmitBranchingInstruction(OpCodeNumber.Brfalse_S, branchSequence);
                     }
 
+                    //TODO set depending on parameters:
+                    bool useWrapper = true;
+
                     builder.EmitWrite(writer, "An exception occurred:\n{0}", 1, logSeverity,
                                       w => w.EmitInstructionLocalVariable(OpCodeNumber.Stloc, exceptionLocal),
-                                      (i, w) => w.EmitInstructionLocalVariable(OpCodeNumber.Ldloc, exceptionLocal));
+                                      (i, w) => w.EmitInstructionLocalVariable(OpCodeNumber.Ldloc, exceptionLocal), useWrapper);
 
                     writer.EmitInstruction(OpCodeNumber.Rethrow);
                     writer.DetachInstructionSequence();
@@ -170,11 +173,14 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     int parameterCount = Context.MethodMapping.MethodSignature.ParameterCount;
                     bool hasThis = Context.MethodMapping.MethodSignature.CallingConvention == CallingConvention.HasThis;
                     
+                    //TODO set depending on parameters:
+                    bool useWrapper = true;
+
                     builder.EmitWrite(writer, messageFormatString, parameterCount, LogSeverity.Trace, null, (i, instructionWriter) =>
                     {
                         instructionWriter.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)(hasThis ? i + 1 : i));
                         instructionWriter.EmitConvertToObject(this.Context.MethodMapping.MethodSignature.GetParameterType(i));
-                    });
+                    }, useWrapper);
                     
                     writer.DetachInstructionSequence();
                 }

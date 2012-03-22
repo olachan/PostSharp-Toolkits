@@ -7,8 +7,8 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
 {
     internal sealed class TraceBackend : ILoggingBackend
     {
-        private StringFormatWriter formatWriter;
         private ModuleDeclaration module;
+        private LoggingImplementationTypeBuilder loggingImplementation;
 
         private IMethod writeLineString;
         private IMethod traceInfoString;
@@ -21,7 +21,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
         public void Initialize(ModuleDeclaration module)
         {
             this.module = module;
-            this.formatWriter = new StringFormatWriter(module);
+            this.loggingImplementation = new LoggingImplementationTypeBuilder(module);
 
             ITypeSignature traceTypeSignature = module.Cache.GetType(typeof(System.Diagnostics.Trace));
 
@@ -95,13 +95,11 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
             {
             }
 
-            public void EmitWrite(InstructionWriter writer, string messageFormattingString,
-                                  int argumentsCount, LogSeverity logSeverity, 
-                                  Action<InstructionWriter> getExceptionAction,
-                                  Action<int, InstructionWriter> loadArgumentAction)
+            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogSeverity logSeverity, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
             {
-                bool useStringFormat = false;
-                bool createArgsArray = argumentsCount > 0;
+                bool isStringFormat = argumentsCount > 0;
+                bool createArgsArray = isStringFormat;
+                bool useFormattingWrapper = false;
 
                 IMethod method;
 
@@ -109,17 +107,17 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
                 {
                     case LogSeverity.Trace:
                         method = this.parent.writeLineString;
-                        useStringFormat = createArgsArray;
+                        useFormattingWrapper = isStringFormat;
                         break;
                     case LogSeverity.Info:
-                        method = createArgsArray ? this.parent.traceInfoFormat : this.parent.traceInfoString;
+                        method = isStringFormat ? this.parent.traceInfoFormat : this.parent.traceInfoString;
                         break;
                     case LogSeverity.Warning:
-                        method = createArgsArray ? this.parent.traceWarningFormat : this.parent.traceWarningString;
+                        method = isStringFormat ? this.parent.traceWarningFormat : this.parent.traceWarningString;
                         break;
                     case LogSeverity.Error:
                     case LogSeverity.Fatal:
-                        method = createArgsArray ? this.parent.traceErrorFormat : this.parent.traceErrorString;
+                        method = isStringFormat ? this.parent.traceErrorFormat : this.parent.traceErrorString;
                         break;
                     default:
                         throw new ArgumentOutOfRangeException("logSeverity");
@@ -129,40 +127,48 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
                 {
                     getExceptionAction(writer);
                 }
+                writer.EmitInstructionString(OpCodeNumber.Ldstr, messageFormattingString);
 
-                if (useStringFormat)
+                if (createArgsArray)
                 {
-                    this.parent.formatWriter.EmitFormatArguments(writer, messageFormattingString, argumentsCount, loadArgumentAction);
+                    writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, argumentsCount);
+                    writer.EmitInstructionType(OpCodeNumber.Newarr,
+                                               this.parent.module.Cache.GetIntrinsicBoxedType(IntrinsicType.Object));
                 }
-                else
+
+                for (int i = 0; i < argumentsCount; i++)
                 {
-                    writer.EmitInstructionString(OpCodeNumber.Ldstr, messageFormattingString);
+                    if (createArgsArray)
+                    {
+                        writer.EmitInstruction(OpCodeNumber.Dup);
+                        writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, i);
+                    }
+
+                    if (loadArgumentAction != null)
+                    {
+                        loadArgumentAction(i, writer);
+                    }
 
                     if (createArgsArray)
                     {
-                        writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, argumentsCount);
-                        writer.EmitInstructionType(OpCodeNumber.Newarr,
-                                                   this.parent.module.Cache.GetIntrinsicBoxedType(IntrinsicType.Object));
+                        writer.EmitInstruction(OpCodeNumber.Stelem_Ref);
                     }
+    
+                }
 
-                    for (int i = 0; i < argumentsCount; i++)
+                if (useWrapper)
+                {
+                    if (useFormattingWrapper)
                     {
-                        if (createArgsArray)
-                        {
-                            writer.EmitInstruction(OpCodeNumber.Dup);
-                            writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, i);
-                        }
-
-                        if (loadArgumentAction != null)
-                        {
-                            loadArgumentAction(i, writer);
-                        }
-
-                        if (createArgsArray)
-                        {
-                            writer.EmitInstruction(OpCodeNumber.Stelem_Ref);
-                        }
+                        IMethod stringFormatMethod = this.parent.loggingImplementation.GetStringFormatWrapper("Trace", method);
+                        method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, stringFormatMethod);
                     }
+                    else
+                    {
+                        method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, method);
+                    }
+
+
                 }
 
                 writer.EmitInstructionMethod(OpCodeNumber.Call, method);

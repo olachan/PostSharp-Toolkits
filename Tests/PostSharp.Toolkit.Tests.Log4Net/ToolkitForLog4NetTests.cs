@@ -97,5 +97,20 @@ namespace PostSharp.Toolkit.Tests.Log4Net
             string output = OutputString.ToString();
             StringAssert.Contains("An exception occurred:\nSystem.Exception", output);
         }
+
+        [Test]
+        public void Log4net_UserDefinedType_DoesNotLogMethodCallsRecursively()
+        {
+            Person person = new Person
+            {
+                FirstName = "John",
+                LastName = "Smith"
+            };
+
+            string s = person.ToString();
+            string output = OutputString.ToString();
+            StringAssert.Contains("Entering: PostSharp.Toolkit.Tests.Log4Net.Person.GetFirstName(PostSharp.Toolkit.Tests.Log4Net.Person person = John Smith)", output);
+        }
+
     }
 }

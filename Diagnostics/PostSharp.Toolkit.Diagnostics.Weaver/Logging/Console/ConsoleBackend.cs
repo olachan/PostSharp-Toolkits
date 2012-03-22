@@ -7,32 +7,38 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Console
 {
     internal sealed class ConsoleBackend : ILoggingBackend
     {
+        private LoggingImplementationTypeBuilder loggingImplementation;
+
         public void Initialize(ModuleDeclaration module)
         {
+            this.loggingImplementation = new LoggingImplementationTypeBuilder(module);
         }
 
         public ILoggingBackendInstance CreateInstance(AspectWeaverInstance aspectWeaverInstance)
         {
-            return new ConsoleBackendInstance(aspectWeaverInstance.AspectType.Module);
+            return new ConsoleBackendInstance(this, aspectWeaverInstance.AspectType.Module);
         }
 
         private class ConsoleBackendInstance : ILoggingBackendInstance
         {
+            private readonly ConsoleBackend parent;
             private readonly ModuleDeclaration module;
 
-            public ConsoleBackendInstance(ModuleDeclaration module)
+            public ConsoleBackendInstance(ConsoleBackend parent, ModuleDeclaration module)
             {
+                this.parent = parent;
                 this.module = module;
             }
 
             public ILoggingCategoryBuilder GetCategoryBuilder(string categoryName)
             {
-                return new ConsoleCategoryBuilder(this.module);
+                return new ConsoleCategoryBuilder(this.parent, this.module);
             }
         }
 
         private class ConsoleCategoryBuilder : ILoggingCategoryBuilder
         {
+            private readonly ConsoleBackend parent;
             private readonly ModuleDeclaration module;
 
             private readonly IMethod writeLineMessage;
@@ -42,8 +48,9 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Console
             private readonly IMethod writeLineFormat4;
             private readonly IMethod writeLineFormatArray;
 
-            public ConsoleCategoryBuilder(ModuleDeclaration module)
+            public ConsoleCategoryBuilder(ConsoleBackend parent, ModuleDeclaration module)
             {
+                this.parent = parent;
                 this.module = module;
 
                 this.writeLineMessage = module.FindMethod(
@@ -83,7 +90,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Console
 
                 this.writeLineFormatArray = module.FindMethod(
                     module.Cache.GetType(typeof(System.Console)), "WriteLine",
-                    method => method.Parameters.Count >= 2 &&
+                    method => method.Parameters.Count == 2 &&
                               IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String) &&
                               method.Parameters[1].ParameterType.BelongsToClassification(TypeClassifications.Array));
             }
@@ -97,9 +104,8 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Console
             {
             }
 
-            public void EmitWrite(InstructionWriter writer, string messageFormattingString,
-                                  int argumentsCount, LogSeverity logSeverity, Action<InstructionWriter> getExceptionAction,
-                                  Action<int, InstructionWriter> loadArgumentAction)
+            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogSeverity logSeverity, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction,
+                bool useWrapper)
             {
                 IMethod method;
                 bool createArgsArray = false;
@@ -158,6 +164,11 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Console
                     {
                         writer.EmitInstruction(OpCodeNumber.Stelem_Ref);
                     }
+                }
+
+                if (useWrapper)
+                {
+                    method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, method);
                 }
 
                 writer.EmitInstructionMethod(OpCodeNumber.Call, method);

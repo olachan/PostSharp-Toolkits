@@ -69,5 +69,18 @@ namespace PostSharp.Toolkit.Tests.Trace
             StringAssert.Contains("System.Exception: This is an exception", output);
         }
 
+        [Test]
+        public void Trace_UserDefinedType_DoesNotLogMethodCallsRecursively()
+        {
+            Person person = new Person
+            {
+                FirstName = "John",
+                LastName = "Smith"
+            };
+
+            string s = person.ToString();
+            string output = OutputString.ToString();
+            StringAssert.Contains("PostSharp.Toolkit.Tests.Trace.Person.GetFirstName(PostSharp.Toolkit.Tests.Trace.Person person = John Smith)", output);
+        }
     }
 }

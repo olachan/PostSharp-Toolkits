@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using PostSharp.Reflection;
 using PostSharp.Sdk.CodeModel;
-using PostSharp.Sdk.CodeModel.Binding;
+using PostSharp.Sdk.CodeModel.TypeSignatures;
 using PostSharp.Sdk.CodeWeaver;
 using PostSharp.Sdk.Collections;
 using PostSharp.Sdk.Utilities;
@@ -19,18 +18,24 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
         private readonly FieldDefDeclaration isLoggingField;
         private readonly ModuleDeclaration module;
         private readonly WeavingHelper weavingHelper;
+        private readonly IMethod stringFormatArrayMethod;
 
         private InstructionSequence returnSequence;
         private InstructionBlock constructorBlock;
+
         private IGenericMethodDefinition threadStaticAttributeConstructor;
 
         public LoggingImplementationTypeBuilder(ModuleDeclaration module)
         {
+            this.module = module;
             this.categoryFields = new Dictionary<string, FieldDefDeclaration>();
             this.wrapperMethods = new Dictionary<IMethod, MethodDefDeclaration>();
 
+            this.stringFormatArrayMethod = module.FindMethod(module.Cache.GetIntrinsic(IntrinsicType.String), "Format",
+                method => method.Parameters.Count == 2 &&
+                          IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String) &&
+                          method.Parameters[1].ParameterType.BelongsToClassification(TypeClassifications.Array));
 
-            this.module = module;
             this.weavingHelper = new WeavingHelper(module);
             this.containingType = this.CreateContainingType();
             this.isLoggingField = this.CreateIsLoggingField();
@@ -48,23 +53,64 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             return categoryField;
         }
 
-        public MethodDefDeclaration GetWriteWrapperMethod(IMethod loggerMethod, ITypeSignature loggerType)
+        public MethodDefDeclaration GetStringFormatWrapper(string prefix, IMethod loggerMethod)
+        {
+            string wrapperName = string.Format("{0}{1}Format", prefix, loggerMethod.Name);
+            MethodDefDeclaration wrapperMethod = this.containingType.Methods.GetOneByName(wrapperName) ??
+                                                 this.CreateStringFormatWrapper(wrapperName, loggerMethod);
+
+            return wrapperMethod;
+        }
+
+        private MethodDefDeclaration CreateStringFormatWrapper(string name, IMethod loggerMethod)
+        {
+            MethodDefDeclaration formatWrapperMethod = new MethodDefDeclaration
+            {
+                Name = name,
+                Attributes = MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
+            };
+            this.containingType.Methods.Add(formatWrapperMethod);
+
+            formatWrapperMethod.Parameters.Add(new ParameterDeclaration(0, "format", this.module.Cache.GetIntrinsic(IntrinsicType.String)));
+            formatWrapperMethod.Parameters.Add(new ParameterDeclaration(1, "args", this.module.Cache.GetType(typeof(object[]))));
+
+            InstructionBlock block = formatWrapperMethod.MethodBody.CreateInstructionBlock();
+            formatWrapperMethod.MethodBody.RootInstructionBlock = block;
+            InstructionSequence sequence = block.AddInstructionSequence(null, NodePosition.After, null);
+            this.writer.AttachInstructionSequence(sequence);
+            
+            for (int i = 0; i < formatWrapperMethod.Parameters.Count; i++)
+            {
+                this.writer.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)i);
+            }
+            
+            this.writer.EmitInstructionMethod(OpCodeNumber.Call, this.stringFormatArrayMethod);
+            this.writer.EmitInstructionMethod(loggerMethod.IsVirtual ? OpCodeNumber.Callvirt : OpCodeNumber.Call, loggerMethod);
+            this.writer.EmitInstruction(OpCodeNumber.Ret);
+            this.writer.DetachInstructionSequence();
+
+            return formatWrapperMethod;
+        }
+
+        public MethodDefDeclaration GetWriteWrapperMethod(string name, IMethod loggerMethod)
         {
             MethodDefDeclaration wrapperMethod;
             if (!this.wrapperMethods.TryGetValue(loggerMethod, out wrapperMethod))
             {
-                wrapperMethod = this.CreateWrapperMethod(loggerMethod, loggerType);
+                IMethod targetMethod = loggerMethod;
+                
+                wrapperMethod = this.CreateWrapperMethod(name, targetMethod);
                 this.wrapperMethods[loggerMethod] = wrapperMethod;
             }
 
             return wrapperMethod;
         }
 
-        private MethodDefDeclaration CreateWrapperMethod(IMethod loggerMethod, ITypeSignature loggerFieldType)
+        private MethodDefDeclaration CreateWrapperMethod(string methodName, IMethod loggerMethod)
         {
             MethodDefDeclaration wrapperMethod = new MethodDefDeclaration
             {
-                Name = "Write",
+                Name = methodName,
                 Attributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
             };
             this.containingType.Methods.Add(wrapperMethod);
@@ -75,14 +121,17 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 ParameterType = this.module.Cache.GetIntrinsic(IntrinsicType.Void)
             };
 
+            ITypeSignature loggerFieldType = loggerMethod.DeclaringType.GetNakedType();
             MethodDefDeclaration loggerMethodDefinition = loggerMethod.GetMethodDefinition();
-            
-            wrapperMethod.Parameters.Add(new ParameterDeclaration(0, "logger", loggerFieldType));
-            
+            if (!loggerMethodDefinition.IsStatic)
+            {
+                wrapperMethod.Parameters.Add(new ParameterDeclaration(0, "logger", loggerFieldType));
+            }
+
             for (int i = 0; i < loggerMethodDefinition.Parameters.Count; i++)
             {
                 ParameterDeclaration parameter = loggerMethodDefinition.Parameters[i];
-                wrapperMethod.Parameters.Add(new ParameterDeclaration(parameter.Ordinal + 1, parameter.Name, parameter.ParameterType.TranslateType(this.module)));
+                wrapperMethod.Parameters.Add(new ParameterDeclaration(wrapperMethod.Parameters.Count, parameter.Name, parameter.ParameterType.TranslateType(this.module)));
             }
 
             this.EmitWrapperCallBody(wrapperMethod, loggerMethod);
@@ -114,6 +163,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             this.writer.EmitInstruction(OpCodeNumber.Ret);
             this.writer.DetachInstructionSequence();
 
+            // return instruction at the end of the method
             InstructionSequence retSequence = leaveTryBlock.AddInstructionSequence(null, NodePosition.After, null);
             this.writer.AttachInstructionSequence(retSequence);
             this.writer.EmitInstruction(OpCodeNumber.Ret);
@@ -121,9 +171,14 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
             InstructionSequence trySequence = tryBlock.AddInstructionSequence(null, NodePosition.After, null);
             this.writer.AttachInstructionSequence(trySequence);
-            this.writer.EmitInstruction(OpCodeNumber.Ldarg_0);
-            this.writer.EmitInstruction(OpCodeNumber.Ldarg_1);
-            this.writer.EmitInstructionMethod(OpCodeNumber.Callvirt, loggerMethod);
+
+            for (int i = 0; i < wrapperMethod.Parameters.Count; i++)
+            {
+                writer.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)i);
+            }
+
+            writer.EmitInstructionMethod(wrapperMethod.IsVirtual ? OpCodeNumber.Callvirt : OpCodeNumber.Call, loggerMethod);
+
             this.writer.DetachInstructionSequence();
 
             InstructionSequence leaveSequence = tryBlock.AddInstructionSequence(null, NodePosition.After, null);
@@ -142,6 +197,22 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             this.writer.EmitInstructionField(OpCodeNumber.Stsfld, this.isLoggingField);
             //this.writer.EmitInstruction(OpCodeNumber.Endfinally);
             this.writer.DetachInstructionSequence();
+        }
+
+        private void EmitContstructorBlock(MethodDefDeclaration staticConstructor)
+        {
+            this.constructorBlock = staticConstructor.MethodBody.RootInstructionBlock = staticConstructor.MethodBody.CreateInstructionBlock();
+            this.returnSequence = staticConstructor.MethodBody.RootInstructionBlock.AddInstructionSequence(null,
+                                                                                                           NodePosition.After,
+                                                                                                           null);
+            this.writer.AttachInstructionSequence(this.returnSequence);
+            this.writer.EmitInstruction(OpCodeNumber.Ret);
+            this.writer.DetachInstructionSequence();
+        }
+
+        private void EmitStringFormatOverload()
+        {
+
         }
 
         private FieldDefDeclaration CreateIsLoggingField()
@@ -229,17 +300,6 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             }
 
             return new CustomAttributeDeclaration( this.threadStaticAttributeConstructor );
-        }
-
-        private void EmitContstructorBlock(MethodDefDeclaration staticConstructor)
-        {
-            this.constructorBlock = staticConstructor.MethodBody.RootInstructionBlock = staticConstructor.MethodBody.CreateInstructionBlock();
-            this.returnSequence = staticConstructor.MethodBody.RootInstructionBlock.AddInstructionSequence(null,
-                                                                                                           NodePosition.After,
-                                                                                                           null);
-            this.writer.AttachInstructionSequence(this.returnSequence);
-            this.writer.EmitInstruction(OpCodeNumber.Ret);
-            this.writer.DetachInstructionSequence();
         }
     }
 }

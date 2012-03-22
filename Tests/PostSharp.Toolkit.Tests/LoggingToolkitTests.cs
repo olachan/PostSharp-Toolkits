@@ -70,5 +70,19 @@ namespace PostSharp.Toolkit.Tests
             string output = OutputString.ToString();
             StringAssert.Contains("MethodWith2Arguments(string stringArg = \"TEST\", int32 intArg = 12345)", output);
         }
+
+        [Test]
+        public void LoggingToolkit_UserDefinedType_DoesNotLogMethodCallsRecursively()
+        {
+            Person person = new Person
+            {
+                FirstName = "John",
+                LastName = "Smith"
+            };
+            string s = person.ToString();
+
+            string output = OutputString.ToString();
+            StringAssert.Contains("PostSharp.Toolkit.Tests.Person.GetFirstName(PostSharp.Toolkit.Tests.Person person = John Smith)", output);
+        }
     }
 }

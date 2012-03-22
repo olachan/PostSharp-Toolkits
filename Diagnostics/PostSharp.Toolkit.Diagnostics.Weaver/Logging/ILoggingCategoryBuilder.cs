@@ -9,11 +9,8 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
         void EmitGetIsEnabled(InstructionWriter writer, LogSeverity logSeverity);
 
-        void EmitWrite(InstructionWriter writer,
-                       string messageFormattingString,
-                       int argumentsCount,
-                       LogSeverity logSeverity,
-                       Action<InstructionWriter> getExceptionAction,
-                       Action<int, InstructionWriter> loadArgumentAction);
+        void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount,
+                       LogSeverity logSeverity, Action<InstructionWriter> getExceptionAction,
+                       Action<int, InstructionWriter> loadArgumentAction, bool useWrapper);
     }
 }

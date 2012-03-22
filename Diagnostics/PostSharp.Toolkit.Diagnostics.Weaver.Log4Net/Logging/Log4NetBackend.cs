@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using PostSharp.Sdk.AspectWeaver;
 using PostSharp.Sdk.CodeModel;
 using PostSharp.Sdk.CodeModel.TypeSignatures;
-using PostSharp.Sdk.Collections;
 using PostSharp.Toolkit.Diagnostics.Weaver.Logging;
 using log4net;
 
@@ -192,12 +190,59 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Log4Net.Logging
                 }
             }
 
-            public void EmitWrite(InstructionWriter writer, string messageFormattingString,
-                                  int argumentsCount, LogSeverity logSeverity, Action<InstructionWriter> getExceptionAction,
-                                  Action<int, InstructionWriter> loadArgumentAction)
+            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, 
+                                  LogSeverity logSeverity, Action<InstructionWriter> getExceptionAction,
+                                  Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
             {
-                bool createArgsArray = false;
+                bool createArgsArray;
+                IMethod method = this.GetLoggerMethod(argumentsCount, logSeverity, out createArgsArray);
 
+                if (getExceptionAction != null)
+                {
+                    getExceptionAction(writer);
+                }
+
+                writer.EmitInstructionField(OpCodeNumber.Ldsfld, this.loggerField);
+                writer.EmitInstructionString(OpCodeNumber.Ldstr, messageFormattingString);
+
+                if (createArgsArray)
+                {
+                    writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, argumentsCount);
+                    writer.EmitInstructionType(OpCodeNumber.Newarr,
+                                               this.parent.module.Cache.GetIntrinsicBoxedType(IntrinsicType.Object));
+                }
+
+                for (int i = 0; i < argumentsCount; i++)
+                {
+                    if (createArgsArray)
+                    {
+                        writer.EmitInstruction(OpCodeNumber.Dup);
+                        writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, i);
+                    }
+
+                    if (loadArgumentAction != null)
+                    {
+                        loadArgumentAction(i, writer);
+                    }
+
+                    if (createArgsArray)
+                    {
+                        writer.EmitInstruction(OpCodeNumber.Stelem_Ref);
+                    }
+                }
+
+                if (useWrapper)
+                {
+                    method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, method);
+                }
+
+                writer.EmitInstructionMethod(OpCodeNumber.Call, method);
+            }
+
+            // todo refactor this
+            private IMethod GetLoggerMethod(int argumentsCount, LogSeverity logSeverity, out bool createArgsArray)
+            {
+                createArgsArray = false;
                 IMethod method;
                 switch (logSeverity)
                 {
@@ -309,42 +354,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Log4Net.Logging
                     default:
                         throw new ArgumentOutOfRangeException("logSeverity");
                 }
-
-                if (getExceptionAction != null)
-                {
-                    getExceptionAction(writer);
-                }
-
-                writer.EmitInstructionField(OpCodeNumber.Ldsfld, this.loggerField);
-                writer.EmitInstructionString(OpCodeNumber.Ldstr, messageFormattingString);
-
-                if (createArgsArray)
-                {
-                    writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, argumentsCount);
-                    writer.EmitInstructionType(OpCodeNumber.Newarr,
-                                               this.parent.module.Cache.GetIntrinsicBoxedType(IntrinsicType.Object));
-                }
-
-                for (int i = 0; i < argumentsCount; i++)
-                {
-                    if (createArgsArray)
-                    {
-                        writer.EmitInstruction(OpCodeNumber.Dup);
-                        writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, i);
-                    }
-
-                    if (loadArgumentAction != null)
-                    {
-                        loadArgumentAction(i, writer);
-                    }
-
-                    if (createArgsArray)
-                    {
-                        writer.EmitInstruction(OpCodeNumber.Stelem_Ref);
-                    }
-                }
-
-                writer.EmitInstructionMethod(OpCodeNumber.Call, method);
+                return method;
             }
         }
     }

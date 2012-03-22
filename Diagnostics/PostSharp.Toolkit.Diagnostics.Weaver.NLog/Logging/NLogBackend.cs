@@ -119,9 +119,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.NLog.Logging
                 }
             }
 
-            public void EmitWrite(InstructionWriter writer, string messageFormattingString,
-                                  int argumentsCount, LogSeverity logSeverity, Action<InstructionWriter> getExceptionAction,
-                                  Action<int, InstructionWriter> loadArgumentAction)
+            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogSeverity logSeverity, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
             {
                 IMethod method;
                 switch (logSeverity)

@@ -1,4 +1,4 @@
-﻿namespace PostSharp.Toolkit.Tests
+﻿namespace PostSharp.Toolkit.Tests.Log4Net
 {
     public class Person
     {
