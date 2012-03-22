@@ -85,11 +85,23 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             }
             
             this.writer.EmitInstructionMethod(OpCodeNumber.Call, this.stringFormatArrayMethod);
-            this.writer.EmitInstructionMethod(loggerMethod.IsVirtual ? OpCodeNumber.Callvirt : OpCodeNumber.Call, loggerMethod);
+
+
+            this.EmitCallHandler(loggerMethod);
+
             this.writer.EmitInstruction(OpCodeNumber.Ret);
             this.writer.DetachInstructionSequence();
 
             return formatWrapperMethod;
+        }
+
+        private void EmitCallHandler(IMethod loggerMethod)
+        {
+            this.writer.EmitInstructionMethod(
+                !loggerMethod.IsVirtual || (loggerMethod.IsSealed || loggerMethod.DeclaringType.IsSealed)
+                    ? OpCodeNumber.Call
+                    : OpCodeNumber.Callvirt,
+                loggerMethod.TranslateMethod(this.module));
         }
 
         public MethodDefDeclaration GetWriteWrapperMethod(string name, IMethod loggerMethod)
@@ -177,7 +189,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 writer.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)i);
             }
 
-            writer.EmitInstructionMethod(wrapperMethod.IsVirtual ? OpCodeNumber.Callvirt : OpCodeNumber.Call, loggerMethod);
+            this.EmitCallHandler(loggerMethod);
 
             this.writer.DetachInstructionSequence();
 
