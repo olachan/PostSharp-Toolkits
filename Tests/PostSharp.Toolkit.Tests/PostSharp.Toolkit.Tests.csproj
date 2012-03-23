@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="ConsoleTestsFixture.cs" />
     <Compile Include="LoggingToolkitTests.cs" />
+    <Compile Include="LogLevelTests.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

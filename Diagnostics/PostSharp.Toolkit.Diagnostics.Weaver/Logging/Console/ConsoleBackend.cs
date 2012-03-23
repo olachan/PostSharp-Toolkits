@@ -100,12 +100,12 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Console
                 get { return false; }
             }
 
-            public void EmitGetIsEnabled(InstructionWriter writer, LogSeverity logLevel)
+            public void EmitGetIsEnabled(InstructionWriter writer, LogLevel logLevel)
             {
             }
 
-            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogSeverity logLevel, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction,
-                bool useWrapper)
+            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogLevel logLevel, 
+                                  Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
             {
                 IMethod method;
                 bool createArgsArray = false;
@@ -138,6 +138,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Console
                     getExceptionAction(writer);
                 }
 
+                messageFormattingString = string.Format("{0}|{1}", logLevel, messageFormattingString);
                 writer.EmitInstructionString(OpCodeNumber.Ldstr, messageFormattingString);
 
                 if (createArgsArray)

@@ -16,7 +16,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.NLog.Logging
         private ITypeSignature loggerType;
         private ModuleDeclaration module;
 
-        private readonly Dictionary<LogSeverity, LoggerMethods> loggerMethods = new Dictionary<LogSeverity, LoggerMethods>();
+        private readonly Dictionary<LogLevel, LoggerMethods> loggerMethods = new Dictionary<LogLevel, LoggerMethods>();
 
         public void Initialize(ModuleDeclaration module)
         {
@@ -29,11 +29,11 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.NLog.Logging
             this.categoryInitializerMethod = module.FindMethod(module.FindType(typeof(LogManager)), "GetLogger", 
                 method => method.Parameters.Count == 1 && IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String) );
 
-            this.loggerMethods[LogSeverity.Debug] = builder.CreateLoggerMethods("Trace");
-            this.loggerMethods[LogSeverity.Info] = builder.CreateLoggerMethods("Info");
-            this.loggerMethods[LogSeverity.Warning] = builder.CreateLoggerMethods("Warn");
-            this.loggerMethods[LogSeverity.Error] = builder.CreateLoggerMethods("Error");
-            this.loggerMethods[LogSeverity.Fatal] = builder.CreateLoggerMethods("Fatal");
+            this.loggerMethods[LogLevel.Debug] = builder.CreateLoggerMethods("Trace");
+            this.loggerMethods[LogLevel.Info] = builder.CreateLoggerMethods("Info");
+            this.loggerMethods[LogLevel.Warning] = builder.CreateLoggerMethods("Warn");
+            this.loggerMethods[LogLevel.Error] = builder.CreateLoggerMethods("Error");
+            this.loggerMethods[LogLevel.Fatal] = builder.CreateLoggerMethods("Fatal");
         }
 
         public ILoggingBackendInstance CreateInstance(AspectWeaverInstance aspectWeaverInstance)
@@ -41,7 +41,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.NLog.Logging
             return new NLogBackendInstance(this);
         }
 
-        private LoggerMethods GetLoggerMethods(LogSeverity logLevel)
+        private LoggerMethods GetLoggerMethods(LogLevel logLevel)
         {
             return this.loggerMethods[logLevel];
         }
@@ -82,14 +82,14 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.NLog.Logging
                 get { return true; }
             }
 
-            public void EmitGetIsEnabled(InstructionWriter writer, LogSeverity logLevel)
+            public void EmitGetIsEnabled(InstructionWriter writer, LogLevel logLevel)
             {
                 writer.EmitInstructionField(OpCodeNumber.Ldsfld, this.loggerField);
                 LoggerMethods loggerMethods = this.parent.GetLoggerMethods(logLevel);
                 writer.EmitInstructionMethod(OpCodeNumber.Callvirt, loggerMethods.IsLoggingEnabledMethod);
             }
 
-            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogSeverity logLevel, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
+            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogLevel logLevel, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
             {
                 bool createArgsArray;
                 IMethod method = GetTargetLoggerMethod(logLevel, argumentsCount, out createArgsArray);
@@ -144,7 +144,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.NLog.Logging
                 writer.EmitInstructionMethod(method.IsVirtual ? OpCodeNumber.Callvirt : OpCodeNumber.Call, method);
             }
 
-            private IMethod GetTargetLoggerMethod(LogSeverity logLevel, int argumentsCount, out bool createArgsArray)
+            private IMethod GetTargetLoggerMethod(LogLevel logLevel, int argumentsCount, out bool createArgsArray)
             {
                 LoggerMethods loggerMethods = this.parent.GetLoggerMethods(logLevel);
                 createArgsArray = false;

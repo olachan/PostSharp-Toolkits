@@ -15,29 +15,50 @@ namespace PostSharp.Toolkit.Diagnostics
       AllowMultiple = true)]
     [Metric("UsedFeatures", "Toolkit.Diagnostics.Logging")]
     //[AspectConfigurationAttributeType(typeof(LogAspectConfigurationAttribute))]
-    //[LogAspectConfiguration(OnEntryLogOptions = LogOptions.IncludeParameterName | LogOptions.IncludeParameterType | LogOptions.IncludeParameterValue, OnExitLogOption = LogOptions.None)]
+    //[LogAspectConfiguration(OnEntryLogParametersOptions = LogParametersOptions.IncludeParameterName | LogParametersOptions.IncludeParameterType | LogParametersOptions.IncludeParameterValue, OnExitLogOption = LogParametersOptions.None)]
     public class LogAttribute : MethodLevelAspect, ILogAspect, ILogAspectBuildSemantics
     {
 #if !SMALL
-        private LogOptions? onEntryOptions;
-        public LogOptions OnEntryLogOptions
+        private LogParametersOptions? onEntryParametersOptions;
+        public LogParametersOptions OnEntryLogParametersOptions
         {
-            get { return this.onEntryOptions.GetValueOrDefault(LogOptions.None); }
-            set { this.onEntryOptions = value; }
+            get { return this.onEntryParametersOptions.GetValueOrDefault(LogParametersOptions.None); }
+            set { this.onEntryParametersOptions = value; }
         }
 
-        private LogOptions? onSuccessOptions;
-        public LogOptions OnSuccessLogOptions
+        private LogParametersOptions? onSuccessParametersOptions;
+        public LogParametersOptions OnSuccessLogParametersOptions
         {
-            get { return this.onSuccessOptions.GetValueOrDefault(LogOptions.None); }
-            set { this.onSuccessOptions = value; }
+            get { return this.onSuccessParametersOptions.GetValueOrDefault(LogParametersOptions.None); }
+            set { this.onSuccessParametersOptions = value; }
         }
 
-        private LogOptions? onExceptionOptions;
-        public LogOptions OnExceptionLogOptions
+        private LogParametersOptions? onExceptionParametersOptions;
+        public LogParametersOptions OnExceptionLogParametersOptions
         {
-            get { return this.onSuccessOptions.GetValueOrDefault(LogOptions.None); }
-            set { this.onSuccessOptions = value; }
+            get { return this.onExceptionParametersOptions.GetValueOrDefault(LogParametersOptions.None); }
+            set { this.onExceptionParametersOptions = value; }
+        }
+
+        private LogLevel? onEntryLogLevel;
+        public LogLevel OnEntryLogLevel 
+        {
+            get { return this.onEntryLogLevel.GetValueOrDefault(LogLevel.None); }
+            set { this.onEntryLogLevel = value; }
+        }
+
+        private LogLevel? onSuccessLogLevel;
+        public LogLevel OnSuccessLogLevel
+        {
+            get { return this.onSuccessLogLevel.GetValueOrDefault(LogLevel.None); }
+            set { this.onSuccessLogLevel = value; }
+        }
+
+        private LogLevel? onExceptionLogLevel;
+        public LogLevel OnExceptionLogLevel
+        {
+            get { return this.onExceptionLogLevel.GetValueOrDefault(LogLevel.None); }
+            set { this.onExceptionLogLevel = value; }
         }
 
         protected override AspectConfiguration CreateAspectConfiguration()
@@ -48,9 +69,12 @@ namespace PostSharp.Toolkit.Diagnostics
         protected override void SetAspectConfiguration(AspectConfiguration aspectConfiguration, System.Reflection.MethodBase targetMethod)
         {
             LogAspectConfiguration configuration = (LogAspectConfiguration)aspectConfiguration;
-            configuration.OnEntryOptions = this.onEntryOptions;
-            configuration.OnSuccessOptions = this.onSuccessOptions;
-            configuration.OnExceptionOptions = this.onExceptionOptions;
+            configuration.OnEntryParametersOptions = this.onEntryParametersOptions;
+            configuration.OnSuccessParametersOptions = this.onSuccessParametersOptions;
+            configuration.OnExceptionParametersOptions = this.onExceptionParametersOptions;
+            configuration.OnEntryLogLevel = this.onEntryLogLevel;
+            configuration.OnSuccessLogLevel = this.onSuccessLogLevel;
+            configuration.OnExceptionLogLevel = this.onExceptionLogLevel;
         }
 #endif
     }

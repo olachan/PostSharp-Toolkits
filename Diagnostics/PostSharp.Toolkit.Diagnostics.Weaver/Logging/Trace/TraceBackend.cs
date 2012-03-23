@@ -91,11 +91,11 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
                 get { return false; }
             }
 
-            public void EmitGetIsEnabled(InstructionWriter writer, LogSeverity logLevel)
+            public void EmitGetIsEnabled(InstructionWriter writer, LogLevel logLevel)
             {
             }
 
-            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogSeverity logLevel, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
+            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogLevel logLevel, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
             {
                 bool isStringFormat = argumentsCount > 0;
                 bool createArgsArray = isStringFormat;
@@ -105,18 +105,18 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
 
                 switch (logLevel)
                 {
-                    case LogSeverity.Debug:
+                    case LogLevel.Debug:
                         method = this.parent.writeLineString;
                         useFormattingWrapper = isStringFormat;
                         break;
-                    case LogSeverity.Info:
+                    case LogLevel.Info:
                         method = isStringFormat ? this.parent.traceInfoFormat : this.parent.traceInfoString;
                         break;
-                    case LogSeverity.Warning:
+                    case LogLevel.Warning:
                         method = isStringFormat ? this.parent.traceWarningFormat : this.parent.traceWarningString;
                         break;
-                    case LogSeverity.Error:
-                    case LogSeverity.Fatal:
+                    case LogLevel.Error:
+                    case LogLevel.Fatal:
                         method = isStringFormat ? this.parent.traceErrorFormat : this.parent.traceErrorString;
                         break;
                     default:
