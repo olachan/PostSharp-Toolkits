@@ -2,7 +2,8 @@ namespace PostSharp.Toolkit.Diagnostics
 {
     public enum LogSeverity
     {
-        Trace,
+        None,
+        Debug,
         Info,
         Warning,
         Error,

@@ -55,5 +55,19 @@ namespace PostSharp.Toolkit.Tests.NLog
             string output = OutputString.ToString();
             StringAssert.Contains("System.Exception", output);
         }
+
+        [Test]
+        public void NLog_UserDefinedType_DoesNotLogMethodCallsRecursively()
+        {
+            Person person = new Person
+            {
+                FirstName = "John",
+                LastName = "Smith"
+            };
+
+            string s = person.ToString();
+            string output = OutputString.ToString();
+            StringAssert.Contains("PostSharp.Toolkit.Tests.NLog.Person|Entering: PostSharp.Toolkit.Tests.NLog.Person.GetFirstName(PostSharp.Toolkit.Tests.NLog.Person person = John Smith)", output);
+        }
     }
 }

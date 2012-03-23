@@ -165,7 +165,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     
                     if (builder.SupportsIsEnabled)
                     {
-                        builder.EmitGetIsEnabled(writer, LogSeverity.Trace);
+                        builder.EmitGetIsEnabled(writer, LogSeverity.Debug);
                         InstructionSequence branchSequence = block.AddInstructionSequence(null, NodePosition.After, sequence);
                         writer.EmitBranchingInstruction(OpCodeNumber.Brfalse_S, branchSequence);
                     }
@@ -176,7 +176,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     //TODO set depending on parameters:
                     bool useWrapper = true;
 
-                    builder.EmitWrite(writer, messageFormatString, parameterCount, LogSeverity.Trace, null, (i, instructionWriter) =>
+                    builder.EmitWrite(writer, messageFormatString, parameterCount, LogSeverity.Debug, null, (i, instructionWriter) =>
                     {
                         instructionWriter.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)(hasThis ? i + 1 : i));
                         instructionWriter.EmitConvertToObject(this.Context.MethodMapping.MethodSignature.GetParameterType(i));

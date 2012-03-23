@@ -91,11 +91,11 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
                 get { return false; }
             }
 
-            public void EmitGetIsEnabled(InstructionWriter writer, LogSeverity logSeverity)
+            public void EmitGetIsEnabled(InstructionWriter writer, LogSeverity logLevel)
             {
             }
 
-            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogSeverity logSeverity, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
+            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogSeverity logLevel, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
             {
                 bool isStringFormat = argumentsCount > 0;
                 bool createArgsArray = isStringFormat;
@@ -103,9 +103,9 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
 
                 IMethod method;
 
-                switch (logSeverity)
+                switch (logLevel)
                 {
-                    case LogSeverity.Trace:
+                    case LogSeverity.Debug:
                         method = this.parent.writeLineString;
                         useFormattingWrapper = isStringFormat;
                         break;
@@ -120,7 +120,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
                         method = isStringFormat ? this.parent.traceErrorFormat : this.parent.traceErrorString;
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException("logSeverity");
+                        throw new ArgumentOutOfRangeException("logLevel");
                 }
 
                 if (getExceptionAction != null)

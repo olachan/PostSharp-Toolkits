@@ -52,6 +52,8 @@
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="Log4NetProjectConfiguration.cs" />
+    <Compile Include="Logging\LoggerMethods.cs" />
+    <Compile Include="Logging\LoggerMethodsBuilder.cs" />
     <Compile Include="Logging\Log4NetBackend.cs" />
     <Compile Include="Logging\Log4NetBackendProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

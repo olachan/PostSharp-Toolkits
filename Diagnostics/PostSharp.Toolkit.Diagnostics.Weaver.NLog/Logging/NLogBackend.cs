@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using NLog;
 using PostSharp.Sdk.AspectWeaver;
 using PostSharp.Sdk.CodeModel;
@@ -10,51 +11,39 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.NLog.Logging
     internal sealed class NLogBackend : ILoggingBackend
     {
         private LoggingImplementationTypeBuilder loggingImplementation;
-        private StringFormatWriter formatWriter;
 
-        private IMethod writeDebugMethod;
-        private IMethod writeInfoMethod;
-        private IMethod writeWarnMethod;
-        private IMethod writeErrorMethod;
-        private IMethod writeFatalMethod;
-
-        private IMethod getIsTraceEnabledMethod;
-        private IMethod getIsInfoEnabledMethod;
-        private IMethod getIsWarnEnabledMethod;
-        private IMethod getIsErrorEnabledMethod;
-        private IMethod getIsFatalEnabledMethod;
         private IMethod categoryInitializerMethod;
         private ITypeSignature loggerType;
+        private ModuleDeclaration module;
+
+        private readonly Dictionary<LogSeverity, LoggerMethods> loggerMethods = new Dictionary<LogSeverity, LoggerMethods>();
 
         public void Initialize(ModuleDeclaration module)
         {
+            this.module = module;
             this.loggingImplementation = new LoggingImplementationTypeBuilder(module);
-            this.formatWriter = new StringFormatWriter(module);
-
             this.loggerType = module.FindType(typeof(Logger));
-
-            Predicate<MethodDefDeclaration> singleMessagePredicate = 
-                method => method.Parameters.Count == 1 && 
-                    IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String);
             
-            this.categoryInitializerMethod = module.FindMethod(module.FindType(typeof(LogManager)), "GetLogger", singleMessagePredicate);
+            LoggerMethodsBuilder builder = new LoggerMethodsBuilder(module, this.loggerType);
 
-            this.writeDebugMethod = module.FindMethod(this.loggerType, "Trace", singleMessagePredicate);
-            this.writeInfoMethod = module.FindMethod(this.loggerType, "Info", singleMessagePredicate);
-            this.writeWarnMethod = module.FindMethod(this.loggerType, "Warn", singleMessagePredicate);
-            this.writeErrorMethod = module.FindMethod(this.loggerType, "Error", singleMessagePredicate);
-            this.writeFatalMethod = module.FindMethod(this.loggerType, "Fatal", singleMessagePredicate);
+            this.categoryInitializerMethod = module.FindMethod(module.FindType(typeof(LogManager)), "GetLogger", 
+                method => method.Parameters.Count == 1 && IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String) );
 
-            this.getIsTraceEnabledMethod = module.FindMethod(this.loggerType, "get_IsTraceEnabled");
-            this.getIsInfoEnabledMethod = module.FindMethod(this.loggerType, "get_IsInfoEnabled");
-            this.getIsWarnEnabledMethod = module.FindMethod(this.loggerType, "get_IsWarnEnabled");
-            this.getIsErrorEnabledMethod = module.FindMethod(this.loggerType, "get_IsErrorEnabled");
-            this.getIsFatalEnabledMethod = module.FindMethod(this.loggerType, "get_IsFatalEnabled");
+            this.loggerMethods[LogSeverity.Debug] = builder.CreateLoggerMethods("Trace");
+            this.loggerMethods[LogSeverity.Info] = builder.CreateLoggerMethods("Info");
+            this.loggerMethods[LogSeverity.Warning] = builder.CreateLoggerMethods("Warn");
+            this.loggerMethods[LogSeverity.Error] = builder.CreateLoggerMethods("Error");
+            this.loggerMethods[LogSeverity.Fatal] = builder.CreateLoggerMethods("Fatal");
         }
 
         public ILoggingBackendInstance CreateInstance(AspectWeaverInstance aspectWeaverInstance)
         {
             return new NLogBackendInstance(this);
+        }
+
+        private LoggerMethods GetLoggerMethods(LogSeverity logLevel)
+        {
+            return this.loggerMethods[logLevel];
         }
 
         private class NLogBackendInstance : ILoggingBackendInstance
@@ -93,55 +82,17 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.NLog.Logging
                 get { return true; }
             }
 
-            public void EmitGetIsEnabled(InstructionWriter writer, LogSeverity logSeverity)
+            public void EmitGetIsEnabled(InstructionWriter writer, LogSeverity logLevel)
             {
                 writer.EmitInstructionField(OpCodeNumber.Ldsfld, this.loggerField);
-
-                switch (logSeverity)
-                {
-                    case LogSeverity.Trace:
-                        writer.EmitInstructionMethod(OpCodeNumber.Callvirt, this.parent.getIsTraceEnabledMethod);
-                        break;
-                    case LogSeverity.Info:
-                        writer.EmitInstructionMethod(OpCodeNumber.Callvirt, this.parent.getIsInfoEnabledMethod);
-                        break;
-                    case LogSeverity.Warning:
-                        writer.EmitInstructionMethod(OpCodeNumber.Callvirt, this.parent.getIsWarnEnabledMethod);
-                        break;
-                    case LogSeverity.Error:
-                        writer.EmitInstructionMethod(OpCodeNumber.Callvirt, this.parent.getIsErrorEnabledMethod);
-                        break;
-                    case LogSeverity.Fatal:
-                        writer.EmitInstructionMethod(OpCodeNumber.Callvirt, this.parent.getIsFatalEnabledMethod);
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException("logSeverity");
-                }
+                LoggerMethods loggerMethods = this.parent.GetLoggerMethods(logLevel);
+                writer.EmitInstructionMethod(OpCodeNumber.Callvirt, loggerMethods.IsLoggingEnabledMethod);
             }
 
-            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogSeverity logSeverity, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
+            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogSeverity logLevel, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
             {
-                IMethod method;
-                switch (logSeverity)
-                {
-                    case LogSeverity.Trace:
-                        method = this.parent.writeDebugMethod;
-                        break;
-                    case LogSeverity.Info:
-                        method = this.parent.writeInfoMethod;
-                        break;
-                    case LogSeverity.Warning:
-                        method = this.parent.writeWarnMethod;
-                        break;
-                    case LogSeverity.Error:
-                        method = this.parent.writeErrorMethod;
-                        break;
-                    case LogSeverity.Fatal:
-                        method = this.parent.writeFatalMethod;
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException("logSeverity");
-                }
+                bool createArgsArray;
+                IMethod method = GetTargetLoggerMethod(logLevel, argumentsCount, out createArgsArray);
 
                 if (getExceptionAction != null)
                 {
@@ -149,17 +100,69 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.NLog.Logging
                 }
 
                 writer.EmitInstructionField(OpCodeNumber.Ldsfld, this.loggerField);
+                writer.EmitInstructionString(OpCodeNumber.Ldstr, messageFormattingString);
 
-                if (argumentsCount > 0)
+                if (createArgsArray)
                 {
-                    this.parent.formatWriter.EmitFormatArguments(writer, messageFormattingString, argumentsCount, loadArgumentAction);
-                }
-                else
-                {
-                    writer.EmitInstructionString(OpCodeNumber.Ldstr, messageFormattingString);
+                    writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, argumentsCount);
+                    writer.EmitInstructionType(OpCodeNumber.Newarr,
+                                               this.parent.module.Cache.GetIntrinsicBoxedType(IntrinsicType.Object));
                 }
 
-                writer.EmitInstructionMethod(OpCodeNumber.Callvirt, method);
+                for (int i = 0; i < argumentsCount; i++)
+                {
+                    if (createArgsArray)
+                    {
+                        writer.EmitInstruction(OpCodeNumber.Dup);
+                        writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, i);
+                    }
+
+                    if (loadArgumentAction != null)
+                    {
+                        loadArgumentAction(i, writer);
+                    }
+
+                    if (createArgsArray)
+                    {
+                        writer.EmitInstruction(OpCodeNumber.Stelem_Ref);
+                    }
+                }
+
+                if (useWrapper)
+                {
+                    if (createArgsArray)
+                    {
+                        IMethod stringFormatMethod = this.parent.loggingImplementation.GetStringFormatWrapper("NLog", method);
+                        method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, stringFormatMethod);
+                    }
+                    else
+                    {
+                        method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, method);
+                    }
+                }
+
+                writer.EmitInstructionMethod(method.IsVirtual ? OpCodeNumber.Callvirt : OpCodeNumber.Call, method);
+            }
+
+            private IMethod GetTargetLoggerMethod(LogSeverity logLevel, int argumentsCount, out bool createArgsArray)
+            {
+                LoggerMethods loggerMethods = this.parent.GetLoggerMethods(logLevel);
+                createArgsArray = false;
+
+                switch (argumentsCount)
+                {
+                    case 0:
+                        return loggerMethods.WriteStringMethod;
+                    case 1:
+                        return loggerMethods.WriteStringFormat1Method;
+                    case 2:
+                        return loggerMethods.WriteStringFormat2Method;
+                    case 3:
+                        return loggerMethods.WriteStringFormat3Method;
+                    default:
+                        createArgsArray = true;
+                        return loggerMethods.WriteStringFormatArrayMethod;
+                }
             }
         }
     }

@@ -7,10 +7,10 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
     {
         bool SupportsIsEnabled { get; }
 
-        void EmitGetIsEnabled(InstructionWriter writer, LogSeverity logSeverity);
+        void EmitGetIsEnabled(InstructionWriter writer, LogSeverity logLevel);
 
         void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount,
-                       LogSeverity logSeverity, Action<InstructionWriter> getExceptionAction,
+                       LogSeverity logLevel, Action<InstructionWriter> getExceptionAction,
                        Action<int, InstructionWriter> loadArgumentAction, bool useWrapper);
     }
 }

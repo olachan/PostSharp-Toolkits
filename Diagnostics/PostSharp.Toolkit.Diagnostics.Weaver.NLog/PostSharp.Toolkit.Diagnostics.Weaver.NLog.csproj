@@ -53,6 +53,8 @@
     <Compile Include="..\..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="Logging\LoggerMethods.cs" />
+    <Compile Include="Logging\LoggerMethodsBuilder.cs" />
     <Compile Include="NLogProjectConfiguration.cs" />
     <Compile Include="Logging\NLogBackend.cs" />
     <Compile Include="Logging\NLogBackendProvider.cs" />
