@@ -51,7 +51,7 @@
     <Compile Include="LogAspectConfigurationAttribute.cs" />
     <Compile Include="LogAttribute.cs" />
     <Compile Include="LogLevel.cs" />
-    <Compile Include="LogParametersOptions.cs" />
+    <Compile Include="LogOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

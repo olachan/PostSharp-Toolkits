@@ -55,12 +55,12 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             {
                 private readonly LoggingAspectTransformationInstance transformationInstance;
                 private readonly ILoggingBackendInstance backendInstance;
-                private readonly LogParametersOptions onEntryParametersOptions;
-                private readonly LogParametersOptions onSuccessParametersOptions;
-                private readonly LogParametersOptions onExceptionParametersOptions;
-                private readonly LogLevel onEntryLogLevel;
-                private readonly LogLevel onSuccessLogLevel;
-                private readonly LogLevel onExceptionLogLevel;
+                private readonly LogOptions onEntryOptions;
+                private readonly LogOptions onSuccessOptions;
+                private readonly LogOptions onExceptionOptions;
+                private readonly LogLevel onEntryLevel;
+                private readonly LogLevel onSuccessLevel;
+                private readonly LogLevel onExceptionLevel;
 
 
                 public Implementation(LoggingAspectTransformationInstance transformationInstance, MethodBodyTransformationContext context)
@@ -70,23 +70,23 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     this.backendInstance = this.transformationInstance.parent.backend.CreateInstance(transformationInstance.AspectWeaverInstance);
 
                     AspectWeaverInstance aspectWeaverInstance = this.transformationInstance.AspectWeaverInstance;
-                    this.onEntryParametersOptions = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogParametersOptions>(c => c.OnEntryParametersOptions);
-                    this.onSuccessParametersOptions = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogParametersOptions>(c => c.OnSuccessParametersOptions);
-                    this.onExceptionParametersOptions = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogParametersOptions>(c => c.OnExceptionParametersOptions);
-                    this.onEntryLogLevel = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogLevel>(c => c.OnEntryLogLevel);
-                    this.onSuccessLogLevel = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogLevel>(c => c.OnSuccessLogLevel);
-                    this.onExceptionLogLevel = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogLevel>(c => c.OnExceptionLogLevel);
+                    this.onEntryOptions = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogOptions>(c => c.OnEntryOptions);
+                    this.onSuccessOptions = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogOptions>(c => c.OnSuccessOptions);
+                    this.onExceptionOptions = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogOptions>(c => c.OnExceptionOptions);
+                    this.onEntryLevel = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogLevel>(c => c.OnEntryLevel);
+                    this.onSuccessLevel = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogLevel>(c => c.OnSuccessLevel);
+                    this.onExceptionLevel = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogLevel>(c => c.OnExceptionLevel);
                 }
 
                 public void Implement()
                 {
                     ITypeSignature exceptionSignature = this.transformationInstance.AspectWeaver.Module.Cache.GetType(typeof(Exception));
 
-                    bool hasOnEntry = this.onEntryLogLevel != LogLevel.None;
+                    bool hasOnEntry = this.onEntryLevel != LogLevel.None;
 
-                    bool hasOnSuccess = this.onSuccessLogLevel != LogLevel.None;
+                    bool hasOnSuccess = this.onSuccessLevel != LogLevel.None;
 
-                    bool hasOnException = this.onExceptionLogLevel != LogLevel.None;
+                    bool hasOnException = this.onExceptionLevel != LogLevel.None;
 
                     Implement(hasOnEntry, hasOnSuccess, false, hasOnException ? new[] { exceptionSignature } : null);
                     this.Context.AddRedirection(this.Redirection);
@@ -139,9 +139,9 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                         return;
                     }
 
-                    string messageFormatString = this.CreateMessageFormatString(this.onEntryParametersOptions, targetMethod);
+                    string messageFormatString = this.CreateMessageFormatString(this.onEntryOptions, targetMethod);
 
-                    this.EmitMessage(block, writer, targetMethod, this.onEntryLogLevel, "Entering: " + messageFormatString);
+                    this.EmitMessage(block, writer, targetMethod, this.onEntryLevel, "Entering: " + messageFormatString);
                 }
 
                 protected override void ImplementOnSuccess(InstructionBlock block, InstructionWriter writer)
@@ -152,12 +152,12 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                         return;
                     }
 
-                    string messageFormatString = this.CreateMessageFormatString(this.onSuccessParametersOptions, targetMethod);
+                    string messageFormatString = this.CreateMessageFormatString(this.onSuccessOptions, targetMethod);
 
-                    this.EmitMessage(block, writer, targetMethod, this.onSuccessLogLevel, "Leaving: " + messageFormatString);
+                    this.EmitMessage(block, writer, targetMethod, this.onSuccessLevel, "Leaving: " + messageFormatString);
                 }
 
-                private void EmitMessage(InstructionBlock block, InstructionWriter writer, MethodDefDeclaration targetMethod, LogLevel entryLogLevel, string messageFormatString)
+                private void EmitMessage(InstructionBlock block, InstructionWriter writer, MethodDefDeclaration targetMethod, LogLevel logLevel, string messageFormatString)
                 {
                     // TODO: nested types
                     string category = targetMethod.DeclaringType.Name;
@@ -168,7 +168,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     
                     if (builder.SupportsIsEnabled)
                     {
-                        builder.EmitGetIsEnabled(writer, LogLevel.Debug);
+                        builder.EmitGetIsEnabled(writer, logLevel);
                         InstructionSequence branchSequence = block.AddInstructionSequence(null, NodePosition.After, sequence);
                         writer.EmitBranchingInstruction(OpCodeNumber.Brfalse_S, branchSequence);
                     }
@@ -178,7 +178,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     
                     bool useWrapper = ShouldUseWrapper(Context);
 
-                    builder.EmitWrite(writer, messageFormatString, parameterCount, LogLevel.Debug, null, (i, instructionWriter) =>
+                    builder.EmitWrite(writer, messageFormatString, parameterCount, logLevel, null, (i, instructionWriter) =>
                     {
                         instructionWriter.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)(hasThis ? i + 1 : i));
                         instructionWriter.EmitConvertToObject(this.Context.MethodMapping.MethodSignature.GetParameterType(i));
@@ -193,7 +193,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     return true;
                 }
 
-                private string CreateMessageFormatString(LogParametersOptions logParametersOption, MethodDefDeclaration targetMethod)
+                private string CreateMessageFormatString(LogOptions logOption, MethodDefDeclaration targetMethod)
                 {
                     StringBuilder formatBuilder = new StringBuilder();
 
@@ -209,19 +209,19 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                         }
 
                         ITypeSignature parameterType = Context.MethodMapping.MethodSignature.GetParameterType(i);
-                        if ((logParametersOption & LogParametersOptions.IncludeParameterType) != 0)
+                        if ((logOption & LogOptions.IncludeParameterType) != 0)
                         {
                             formatBuilder.Append(parameterType.ToString());
                             formatBuilder.Append(' ');
                         }
 
-                        if ((logParametersOption & LogParametersOptions.IncludeParameterName) != 0)
+                        if ((logOption & LogOptions.IncludeParameterName) != 0)
                         {
                             formatBuilder.Append(Context.MethodMapping.MethodMappingInformation.GetParameterName(i));
                             formatBuilder.Append(' ');
                         }
 
-                        if ((logParametersOption & LogParametersOptions.IncludeParameterValue) != 0)
+                        if ((logOption & LogOptions.IncludeParameterValue) != 0)
                         {
                             formatBuilder.AppendFormat("= ");
 

@@ -1,8 +1,11 @@
+using System;
+
 namespace PostSharp.Toolkit.Diagnostics
 {
     /// <summary>
     /// Specifies the severity of a logged message.
     /// </summary>
+    [Serializable]
     public enum LogLevel
     {
         /// <summary>

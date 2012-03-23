@@ -7,8 +7,4 @@ namespace PostSharp.Toolkit.Diagnostics
     public interface ILogAspect : IAspect
     {
     }
-
-    public interface ILogAspectBuildSemantics : IAspectBuildSemantics
-    {
-    }
 }

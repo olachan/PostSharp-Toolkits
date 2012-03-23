@@ -6,7 +6,8 @@ namespace PostSharp.Toolkit.Diagnostics
     /// Specifies the options for logging parameter names, types and values.
     /// </summary>
     [Flags]
-    public enum LogParametersOptions
+    [Serializable]
+    public enum LogOptions
     {
         /// <summary>
         /// No parameter information included.
@@ -26,6 +27,8 @@ namespace PostSharp.Toolkit.Diagnostics
         /// <summary>
         /// Includes parameter value, by calling <see cref="object.ToString"/> on the object instance.
         /// </summary>
-        IncludeParameterValue = 4
+        IncludeParameterValue = 4,
+
+        All = IncludeParameterType | IncludeParameterName | IncludeParameterValue
     }
 }
