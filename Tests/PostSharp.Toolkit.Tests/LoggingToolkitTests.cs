@@ -72,6 +72,16 @@ namespace PostSharp.Toolkit.Tests
         }
 
         [Test]
+        public void LoggingToolkit_StringArgumentIsNull_PrintsEmptyString()
+        {
+            SimpleClass s = new SimpleClass();
+            s.MethodWith1Argument(null);
+
+            string output = OutputString.ToString();
+            StringAssert.Contains("MethodWith1Argument(string stringArg = \"\")", output);
+        }
+
+        [Test]
         public void LoggingToolkit_UserDefinedType_DoesNotLogMethodCallsRecursively()
         {
             Person person = new Person

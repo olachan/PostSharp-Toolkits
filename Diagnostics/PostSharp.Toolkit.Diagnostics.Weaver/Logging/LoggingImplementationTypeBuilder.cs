@@ -13,12 +13,16 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
     {
         private readonly Dictionary<string, FieldDefDeclaration> categoryFields;
         private readonly Dictionary<IMethod, MethodDefDeclaration> wrapperMethods;
+
         private readonly InstructionWriter writer = new InstructionWriter();
-        private readonly TypeDefDeclaration containingType;
+
+        private readonly TypeDefDeclaration implementationType;
         private readonly FieldDefDeclaration isLoggingField;
         private readonly ModuleDeclaration module;
         private readonly WeavingHelper weavingHelper;
+
         private readonly IMethod stringFormatArrayMethod;
+        private readonly IMethod traceWriteLineMethod;
 
         private InstructionSequence returnSequence;
         private InstructionBlock constructorBlock;
@@ -36,8 +40,12 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                           IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String) &&
                           method.Parameters[1].ParameterType.BelongsToClassification(TypeClassifications.Array));
 
+            this.traceWriteLineMethod = module.FindMethod(module.Cache.GetType(typeof(System.Diagnostics.Trace)), "WriteLine",
+                method => method.Parameters.Count == 1 &&
+                          IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String));
+
             this.weavingHelper = new WeavingHelper(module);
-            this.containingType = this.CreateContainingType();
+            this.implementationType = this.CreateContainingType();
             this.isLoggingField = this.CreateIsLoggingField();
         }
 
@@ -53,23 +61,23 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             return categoryField;
         }
 
-        public MethodDefDeclaration GetStringFormatMethod(string prefix, IMethod loggerMethod)
+        public MethodDefDeclaration GetTraceStringFormatMethod(string prefix)
         {
-            string wrapperName = string.Format("{0}{1}Format", prefix, loggerMethod.Name);
-            MethodDefDeclaration wrapperMethod = this.containingType.Methods.GetOneByName(wrapperName) ??
-                                                 this.CreateStringFormatWrapper(wrapperName, loggerMethod);
+            string wrapperName = string.Format("{0}{1}Format", prefix, this.traceWriteLineMethod.Name);
+            MethodDefDeclaration wrapperMethod = this.implementationType.Methods.GetOneByName(wrapperName) ??
+                                                 this.CreateTraceStringFormatWrapper(wrapperName);
 
             return wrapperMethod;
         }
 
-        private MethodDefDeclaration CreateStringFormatWrapper(string name, IMethod loggerMethod)
+        private MethodDefDeclaration CreateTraceStringFormatWrapper(string name)
         {
             MethodDefDeclaration formatWrapperMethod = new MethodDefDeclaration
             {
                 Name = name,
                 Attributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
             };
-            this.containingType.Methods.Add(formatWrapperMethod);
+            this.implementationType.Methods.Add(formatWrapperMethod);
 
             formatWrapperMethod.Parameters.Add(new ParameterDeclaration(0, "format", this.module.Cache.GetIntrinsic(IntrinsicType.String)));
             formatWrapperMethod.Parameters.Add(new ParameterDeclaration(1, "args", this.module.Cache.GetType(typeof(object[]))));
@@ -86,9 +94,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             
             this.writer.EmitInstructionMethod(OpCodeNumber.Call, this.stringFormatArrayMethod);
 
-
-            this.EmitCallHandler(loggerMethod);
-
+            this.EmitCallHandler(this.traceWriteLineMethod);
             this.writer.EmitInstruction(OpCodeNumber.Ret);
             this.writer.DetachInstructionSequence();
 
@@ -125,7 +131,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 Name = methodName,
                 Attributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
             };
-            this.containingType.Methods.Add(wrapperMethod);
+            this.implementationType.Methods.Add(wrapperMethod);
 
             wrapperMethod.ReturnParameter = new ParameterDeclaration
             {
@@ -235,7 +241,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 Attributes = FieldAttributes.Private | FieldAttributes.Static,
                 FieldType = this.module.Cache.GetType(typeof(bool))
             };
-            this.containingType.Fields.Add(isLoggingFieldDef);
+            this.implementationType.Fields.Add(isLoggingFieldDef);
 
             isLoggingFieldDef.CustomAttributes.Add(this.CreateThreadStaticAttribute());
 
@@ -280,7 +286,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
         private FieldDefDeclaration CreateCategoryField(ITypeSignature fieldType, Action<InstructionWriter> initializeFieldAction)
         {
-            string fieldName = string.Format("l{0}", this.containingType.Fields.Count);
+            string fieldName = string.Format("l{0}", this.implementationType.Fields.Count);
 
             FieldDefDeclaration loggerFieldDef = new FieldDefDeclaration
             {
@@ -288,7 +294,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 Attributes = FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly,
                 FieldType = fieldType
             };
-            this.containingType.Fields.Add(loggerFieldDef);
+            this.implementationType.Fields.Add(loggerFieldDef);
 
             InstructionSequence sequence = this.constructorBlock.AddInstructionSequence(null,
                                                                                         NodePosition.Before,

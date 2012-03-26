@@ -106,8 +106,11 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
                 switch (logLevel)
                 {
                     case LogLevel.Debug:
-                        method = this.parent.writeLineString;
                         useStringFormat = createArgsArray;
+
+                        method = useStringFormat
+                                     ? this.parent.loggingImplementation.GetTraceStringFormatMethod("Trace")
+                                     : this.parent.writeLineString;
                         break;
                     case LogLevel.Info:
                         method = createArgsArray ? this.parent.traceInfoFormat : this.parent.traceInfoString;
@@ -153,27 +156,11 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
                     {
                         writer.EmitInstruction(OpCodeNumber.Stelem_Ref);
                     }
-    
                 }
 
                 if (useWrapper)
                 {
-                    if (useStringFormat)
-                    {
-                        IMethod stringFormatMethod = this.parent.loggingImplementation.GetStringFormatMethod("Trace", method);
-                        method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, stringFormatMethod);
-                    }
-                    else
-                    {
-                        method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, method);
-                    }
-                }
-                else
-                {
-                    if (useStringFormat)
-                    {
-                        method = this.parent.loggingImplementation.GetStringFormatMethod("Trace", method);
-                    }
+                    method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, method);
                 }
 
                 writer.EmitInstructionMethod(OpCodeNumber.Call, method);

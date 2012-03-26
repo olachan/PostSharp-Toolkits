@@ -130,15 +130,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.NLog.Logging
 
                 if (useWrapper)
                 {
-                    if (createArgsArray)
-                    {
-                        IMethod stringFormatMethod = this.parent.loggingImplementation.GetStringFormatMethod("NLog", method);
-                        method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, stringFormatMethod);
-                    }
-                    else
-                    {
-                        method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, method);
-                    }
+                    method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, method);
                 }
 
                 writer.EmitInstructionMethod(method.IsVirtual ? OpCodeNumber.Callvirt : OpCodeNumber.Call, method);
