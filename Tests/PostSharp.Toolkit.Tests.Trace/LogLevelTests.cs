@@ -1,8 +1,8 @@
-﻿using NUnit.Framework;
+﻿using System.Diagnostics;
+using NUnit.Framework;
 using TestAssembly;
-using log4net.Config;
 
-namespace PostSharp.Toolkit.Tests.Log4Net
+namespace PostSharp.Toolkit.Tests.Trace
 {
     [TestFixture]
     public class LogLevelTests : ConsoleTestsFixture
@@ -10,8 +10,8 @@ namespace PostSharp.Toolkit.Tests.Log4Net
         [SetUp]
         public override void SetUp()
         {
-            BasicConfigurator.Configure();
             base.SetUp();
+            System.Diagnostics.Trace.Listeners.Add(new TextWriterTraceListener(TextWriter));
         }
 
         [Test]
@@ -21,8 +21,8 @@ namespace PostSharp.Toolkit.Tests.Log4Net
             s.NormalMethod();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("DEBUG TestAssembly.SimpleClass2 (null) - Entering: TestAssembly.SimpleClass2.NormalMethod()", output);
-            StringAssert.Contains("DEBUG TestAssembly.SimpleClass2 (null) - Leaving: TestAssembly.SimpleClass2.NormalMethod()", output);
+            StringAssert.Contains("Entering: TestAssembly.SimpleClass2.NormalMethod()", output);
+            StringAssert.Contains("Leaving: TestAssembly.SimpleClass2.NormalMethod()", output);
         }
 
         [Test]
@@ -32,8 +32,8 @@ namespace PostSharp.Toolkit.Tests.Log4Net
             s.ErrorMethod();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("ERROR TestAssembly.SimpleClass2 (null) - Entering: TestAssembly.SimpleClass2.ErrorMethod()", output);
-            StringAssert.Contains("ERROR TestAssembly.SimpleClass2 (null) - Leaving: TestAssembly.SimpleClass2.ErrorMethod()", output);
+            StringAssert.Contains("Error: 0 : Entering: TestAssembly.SimpleClass2.ErrorMethod()", output);
+            StringAssert.Contains("Error: 0 : Leaving: TestAssembly.SimpleClass2.ErrorMethod()", output);
         }
 
         [Test]

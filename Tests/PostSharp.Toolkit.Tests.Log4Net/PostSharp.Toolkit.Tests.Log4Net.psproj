@@ -22,6 +22,11 @@
               AttributeTargetAssemblies="TestAssembly"
               AttributeTargetTypes="TestAssembly.SimpleClass2"
               AttributeTargetMembers="ErrorMethod" OnEntryLevel="Error" OnSuccessLevel="Error" />
+
+    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics"
+              AttributeTargetAssemblies="TestAssembly"
+              AttributeTargetTypes="TestAssembly.SimpleClass"
+              AttributeTargetMembers="LogThisArgument" OnEntryOptions="IncludeThisArgument" />
   </Data>
 
 </Project>
