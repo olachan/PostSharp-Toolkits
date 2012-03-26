@@ -53,7 +53,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             return categoryField;
         }
 
-        public MethodDefDeclaration GetStringFormatWrapper(string prefix, IMethod loggerMethod)
+        public MethodDefDeclaration GetStringFormatMethod(string prefix, IMethod loggerMethod)
         {
             string wrapperName = string.Format("{0}{1}Format", prefix, loggerMethod.Name);
             MethodDefDeclaration wrapperMethod = this.containingType.Methods.GetOneByName(wrapperName) ??
@@ -67,7 +67,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             MethodDefDeclaration formatWrapperMethod = new MethodDefDeclaration
             {
                 Name = name,
-                Attributes = MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
+                Attributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
             };
             this.containingType.Methods.Add(formatWrapperMethod);
 

@@ -1,4 +1,5 @@
 using System;
+using PostSharp.Toolkit.Diagnostics;
 
 namespace TestAssembly
 {
@@ -30,6 +31,11 @@ namespace TestAssembly
 
         public void MethodWith4Arguments(string arg0, string arg1, string arg2, string arg3)
         {
+        }
+
+        public void LogThisArgument()
+        {
+            
         }
     }
 }

@@ -24,7 +24,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
             this.loggingImplementation = new LoggingImplementationTypeBuilder(module);
 
             ITypeSignature traceTypeSignature = module.Cache.GetType(typeof(System.Diagnostics.Trace));
-
+            
             this.writeLineString = module.FindMethod(traceTypeSignature, "WriteLine",
                 method => method.Parameters.Count == 1 &&
                           IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String));
@@ -95,11 +95,11 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
             {
             }
 
-            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogLevel logLevel, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
+            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogLevel logLevel, 
+                                  Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
             {
-                bool isStringFormat = argumentsCount > 0;
-                bool createArgsArray = isStringFormat;
-                bool useFormattingWrapper = false;
+                bool createArgsArray = argumentsCount > 0;
+                bool useStringFormat = false;
 
                 IMethod method;
 
@@ -107,17 +107,17 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
                 {
                     case LogLevel.Debug:
                         method = this.parent.writeLineString;
-                        useFormattingWrapper = isStringFormat;
+                        useStringFormat = createArgsArray;
                         break;
                     case LogLevel.Info:
-                        method = isStringFormat ? this.parent.traceInfoFormat : this.parent.traceInfoString;
+                        method = createArgsArray ? this.parent.traceInfoFormat : this.parent.traceInfoString;
                         break;
                     case LogLevel.Warning:
-                        method = isStringFormat ? this.parent.traceWarningFormat : this.parent.traceWarningString;
+                        method = createArgsArray ? this.parent.traceWarningFormat : this.parent.traceWarningString;
                         break;
                     case LogLevel.Error:
                     case LogLevel.Fatal:
-                        method = isStringFormat ? this.parent.traceErrorFormat : this.parent.traceErrorString;
+                        method = createArgsArray ? this.parent.traceErrorFormat : this.parent.traceErrorString;
                         break;
                     default:
                         throw new ArgumentOutOfRangeException("logLevel");
@@ -158,17 +158,22 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
 
                 if (useWrapper)
                 {
-                    if (useFormattingWrapper)
+                    if (useStringFormat)
                     {
-                        IMethod stringFormatMethod = this.parent.loggingImplementation.GetStringFormatWrapper("Trace", method);
+                        IMethod stringFormatMethod = this.parent.loggingImplementation.GetStringFormatMethod("Trace", method);
                         method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, stringFormatMethod);
                     }
                     else
                     {
                         method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, method);
                     }
-
-
+                }
+                else
+                {
+                    if (useStringFormat)
+                    {
+                        method = this.parent.loggingImplementation.GetStringFormatMethod("Trace", method);
+                    }
                 }
 
                 writer.EmitInstructionMethod(OpCodeNumber.Call, method);

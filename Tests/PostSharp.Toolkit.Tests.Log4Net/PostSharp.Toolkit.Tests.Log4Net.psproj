@@ -12,8 +12,16 @@
     <XmlMulticast />
   </Tasks>
   <Data Name="XmlMulticast">
-    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics" AttributeTargetAssemblies = "TestAssembly" />
-    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics" AttributeTargetTypes="PostSharp.Toolkit.Tests.Log4Net.Person" />
+    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics"
+                  AttributeTargetTypes="PostSharp.Toolkit.Tests.Log4Net.Person" />
+
+    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics" 
+                  AttributeTargetAssemblies = "TestAssembly" />
+
+    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics" 
+              AttributeTargetAssemblies="TestAssembly"
+              AttributeTargetTypes="TestAssembly.SimpleClass2"
+              AttributeTargetMembers="ErrorMethod" OnEntryLevel="Error" OnSuccessLevel="Error" />
   </Data>
 
 </Project>

@@ -91,9 +91,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Log4Net.Logging
                 writer.EmitInstructionMethod(OpCodeNumber.Callvirt, loggerMethods.IsLoggingEnabledMethod);
             }
 
-            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, 
-                                  LogLevel logLevel, Action<InstructionWriter> getExceptionAction,
-                                  Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
+            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogLevel logLevel, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
             {
                 bool createArgsArray;
                 IMethod method = this.GetLoggerMethod(logLevel, argumentsCount, out createArgsArray);

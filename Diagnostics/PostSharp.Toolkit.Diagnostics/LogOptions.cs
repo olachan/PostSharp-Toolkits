@@ -29,6 +29,11 @@ namespace PostSharp.Toolkit.Diagnostics
         /// </summary>
         IncludeParameterValue = 4,
 
+        /// <summary>
+        /// Includes the value of <c>this</c> argument in an instance method.
+        /// </summary>
+        IncludeThisArgument = 8,
+
         All = IncludeParameterType | IncludeParameterName | IncludeParameterValue
     }
 }

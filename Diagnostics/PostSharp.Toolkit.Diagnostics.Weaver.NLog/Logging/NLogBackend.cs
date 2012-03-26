@@ -132,7 +132,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.NLog.Logging
                 {
                     if (createArgsArray)
                     {
-                        IMethod stringFormatMethod = this.parent.loggingImplementation.GetStringFormatWrapper("NLog", method);
+                        IMethod stringFormatMethod = this.parent.loggingImplementation.GetStringFormatMethod("NLog", method);
                         method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, stringFormatMethod);
                     }
                     else

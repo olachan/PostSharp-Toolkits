@@ -61,8 +61,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 private readonly LogLevel onEntryLevel;
                 private readonly LogLevel onSuccessLevel;
                 private readonly LogLevel onExceptionLevel;
-
-
+                
                 public Implementation(LoggingAspectTransformationInstance transformationInstance, MethodBodyTransformationContext context)
                     : base(transformationInstance.AspectWeaver.AspectInfrastructureTask, context)
                 {
@@ -109,17 +108,16 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     LocalVariableSymbol exceptionLocal = block.MethodBody.RootInstructionBlock.DefineLocalVariable(
                         exceptionType, DebuggerSpecialNames.GetVariableSpecialName("ex"));
 
-                    LogLevel logLevel = LogLevel.Warning;
                     if (builder.SupportsIsEnabled)
                     {
-                        builder.EmitGetIsEnabled(writer, logLevel);
+                        builder.EmitGetIsEnabled(writer, this.onExceptionLevel);
                         InstructionSequence branchSequence = block.AddInstructionSequence(null, NodePosition.After, sequence);
                         writer.EmitBranchingInstruction(OpCodeNumber.Brfalse_S, branchSequence);
                     }
 
                     bool useWrapper = this.ShouldUseWrapper(Context);
 
-                    builder.EmitWrite(writer, "An exception occurred:\n{0}", 1, logLevel,
+                    builder.EmitWrite(writer, "An exception occurred:\n{0}", 1, this.onExceptionLevel,
                                       w => w.EmitInstructionLocalVariable(OpCodeNumber.Stloc, exceptionLocal),
                                       (i, w) => w.EmitInstructionLocalVariable(OpCodeNumber.Ldloc, exceptionLocal), useWrapper);
 
@@ -127,38 +125,30 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     writer.DetachInstructionSequence();
                 }
 
-                protected override void ImplementOnExit(InstructionBlock block, InstructionWriter writer)
-                {
-                }
+                protected override void ImplementOnExit(InstructionBlock block, InstructionWriter writer) { }
 
                 protected override void ImplementOnEntry(InstructionBlock block, InstructionWriter writer)
                 {
-                    MethodDefDeclaration targetMethod = Context.TargetElement as MethodDefDeclaration;
-                    if (targetMethod == null)
-                    {
-                        return;
-                    }
+                    string messageFormatString = this.CreateMessageFormatString(this.onEntryOptions);
 
-                    string messageFormatString = this.CreateMessageFormatString(this.onEntryOptions, targetMethod);
-
-                    this.EmitMessage(block, writer, targetMethod, this.onEntryLevel, "Entering: " + messageFormatString);
+                    this.EmitMessage(block, writer, this.onEntryLevel, this.onEntryOptions, "Entering: " + messageFormatString);
                 }
 
                 protected override void ImplementOnSuccess(InstructionBlock block, InstructionWriter writer)
                 {
+                    string messageFormatString = this.CreateMessageFormatString(this.onSuccessOptions);
+
+                    this.EmitMessage(block, writer, this.onSuccessLevel, this.onSuccessOptions, "Leaving: " + messageFormatString);
+                }
+
+                private void EmitMessage(InstructionBlock block, InstructionWriter writer, LogLevel logLevel, LogOptions logOptions, string messageFormatString)
+                {
                     MethodDefDeclaration targetMethod = Context.TargetElement as MethodDefDeclaration;
                     if (targetMethod == null)
                     {
                         return;
                     }
 
-                    string messageFormatString = this.CreateMessageFormatString(this.onSuccessOptions, targetMethod);
-
-                    this.EmitMessage(block, writer, targetMethod, this.onSuccessLevel, "Leaving: " + messageFormatString);
-                }
-
-                private void EmitMessage(InstructionBlock block, InstructionWriter writer, MethodDefDeclaration targetMethod, LogLevel logLevel, string messageFormatString)
-                {
                     // TODO: nested types
                     string category = targetMethod.DeclaringType.Name;
                     ILoggingCategoryBuilder builder = this.backendInstance.GetCategoryBuilder(category);
@@ -173,72 +163,59 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                         writer.EmitBranchingInstruction(OpCodeNumber.Brfalse_S, branchSequence);
                     }
 
-                    int parameterCount = Context.MethodMapping.MethodSignature.ParameterCount;
-                    bool hasThis = Context.MethodMapping.MethodSignature.CallingConvention == CallingConvention.HasThis;
                     
+                    bool hasThis = Context.MethodMapping.MethodSignature.CallingConvention == CallingConvention.HasThis;
+
+                    int parameterCount = Context.MethodMapping.MethodSignature.ParameterCount;
+                    
+                    int startArgument = 0;
+                    bool shouldLogThisArgument = ((logOptions & LogOptions.IncludeThisArgument) != 0 && hasThis);
+                    if (shouldLogThisArgument)
+                    {
+                        parameterCount++;
+                        startArgument = 1;
+                    }
+
                     bool useWrapper = ShouldUseWrapper(Context);
 
                     builder.EmitWrite(writer, messageFormatString, parameterCount, logLevel, null, (i, instructionWriter) =>
                     {
-                        instructionWriter.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)(hasThis ? i + 1 : i));
-                        instructionWriter.EmitConvertToObject(this.Context.MethodMapping.MethodSignature.GetParameterType(i));
-                    }, useWrapper);
+                        if (shouldLogThisArgument && i == 0)
+                        {
+                            instructionWriter.EmitInstruction(OpCodeNumber.Ldarg_0);
+                        }
+                        else
+                        {
+                            instructionWriter.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)(hasThis ? i + 1 : i));
+
+                            instructionWriter.EmitConvertToObject(Context.MethodMapping.MethodSignature.GetParameterType(shouldLogThisArgument ? i - startArgument : i));
+                        }
+                    },
+                    
+                    useWrapper);
                     
                     writer.DetachInstructionSequence();
                 }
 
                 private bool ShouldUseWrapper(MethodBodyTransformationContext context)
                 {
-                    //TODO set depending on parameters
-                    return true;
-                }
-
-                private string CreateMessageFormatString(LogOptions logOption, MethodDefDeclaration targetMethod)
-                {
-                    StringBuilder formatBuilder = new StringBuilder();
-
-                    formatBuilder.AppendFormat("{0}.{1}", targetMethod.DeclaringType, targetMethod.Name);
-                    formatBuilder.Append("(");
-
-                    int parameterCount = Context.MethodMapping.MethodSignature.ParameterCount;
-                    for (int i = 0; i < parameterCount; i++)
+                    for (int i = 0; i < context.MethodMapping.MethodSignature.ParameterCount; i++)
                     {
-                        if (i > 0)
-                        {
-                            formatBuilder.Append(", ");
-                        }
+                        ITypeSignature parameterType = context.MethodMapping.MethodSignature.GetParameterType(i);
 
-                        ITypeSignature parameterType = Context.MethodMapping.MethodSignature.GetParameterType(i);
-                        if ((logOption & LogOptions.IncludeParameterType) != 0)
+                        if (!parameterType.BelongsToClassification(TypeClassifications.Intrinsic) ||
+                            IntrinsicTypeSignature.Is(parameterType, IntrinsicType.Object))
                         {
-                            formatBuilder.Append(parameterType.ToString());
-                            formatBuilder.Append(' ');
-                        }
-
-                        if ((logOption & LogOptions.IncludeParameterName) != 0)
-                        {
-                            formatBuilder.Append(Context.MethodMapping.MethodMappingInformation.GetParameterName(i));
-                            formatBuilder.Append(' ');
-                        }
-
-                        if ((logOption & LogOptions.IncludeParameterValue) != 0)
-                        {
-                            formatBuilder.AppendFormat("= ");
-
-                            if (IntrinsicTypeSignature.Is(parameterType, IntrinsicType.String))
-                            {
-                                formatBuilder.AppendFormat("\"" + "{{{0}}}" + "\"", i);
-                            }
-                            else
-                            {
-                                formatBuilder.AppendFormat("{{{0}}}", i);
-                            }
+                            return true;
                         }
                     }
 
-                    formatBuilder.Append(")");
+                    return false;
+                }
 
-                    return formatBuilder.ToString();
+                private string CreateMessageFormatString(LogOptions logOptions)
+                {
+                    return MessageFormatStringBuilder.CreateMessageFormatString(logOptions, Context);
                 }
             }
         }
