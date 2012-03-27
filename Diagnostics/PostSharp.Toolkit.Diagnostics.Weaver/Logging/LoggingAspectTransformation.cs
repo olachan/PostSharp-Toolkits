@@ -10,7 +10,7 @@ using PostSharp.Sdk.Utilities;
 
 namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 {
-    internal class LoggingAspectTransformation : MethodBodyTransformation
+    internal sealed class LoggingAspectTransformation : MethodBodyTransformation
     {
         private readonly ILoggingBackend backend;
 
@@ -199,6 +199,15 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
                 private bool ShouldUseWrapper(MethodBodyTransformationContext context)
                 {
+                    MethodDefDeclaration methodDef = context.TargetElement as MethodDefDeclaration;
+                    if (methodDef != null)
+                    {
+                        if (methodDef.Name == "ToString")
+                        {
+                            return true;
+                        }
+                    }
+
                     for (int i = 0; i < context.MethodMapping.MethodSignature.ParameterCount; i++)
                     {
                         ITypeSignature parameterType = context.MethodMapping.MethodSignature.GetParameterType(i);
@@ -215,7 +224,73 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
                 private string CreateMessageFormatString(LogOptions logOptions)
                 {
-                    return MessageFormatStringBuilder.CreateMessageFormatString(logOptions, Context);
+                    MethodBodyTransformationContext context1 = Context;
+                    StringBuilder formatBuilder = new StringBuilder();
+
+                    MethodDefDeclaration targetMethod = context1.TargetElement as MethodDefDeclaration;
+                    if (targetMethod == null)
+                    {
+                        return null;
+                    }
+
+                    formatBuilder.AppendFormat("{0}.{1}", targetMethod.DeclaringType, targetMethod.Name);
+                    formatBuilder.Append("(");
+
+                    int startParameter = 0;
+                    if ((logOptions & LogOptions.IncludeThisArgument) != 0)
+                    {
+                        if (context1.MethodMapping.MethodSignature.CallingConvention == CallingConvention.HasThis)
+                        {
+                            formatBuilder.AppendFormat("this = ");
+                            AppendFormatPlaceholder(0, formatBuilder, targetMethod.DeclaringType);
+                            startParameter = 1;
+                        }
+                    }
+
+                    int parameterCount = context1.MethodMapping.MethodSignature.ParameterCount;
+                    for (int i = 0; i < parameterCount; i++)
+                    {
+                        if (i > 0)
+                        {
+                            formatBuilder.Append(", ");
+                        }
+
+                        ITypeSignature parameterType = context1.MethodMapping.MethodSignature.GetParameterType(i);
+                        if ((logOptions & LogOptions.IncludeParameterType) != 0)
+                        {
+                            formatBuilder.Append(parameterType.ToString());
+                            formatBuilder.Append(' ');
+                        }
+
+                        if ((logOptions & LogOptions.IncludeParameterName) != 0)
+                        {
+                            formatBuilder.Append(context1.MethodMapping.MethodMappingInformation.GetParameterName(i));
+                            formatBuilder.Append(' ');
+                        }
+
+                        if ((logOptions & LogOptions.IncludeParameterValue) != 0)
+                        {
+                            formatBuilder.AppendFormat("= ");
+
+                            AppendFormatPlaceholder(i + startParameter, formatBuilder, parameterType);
+                        }
+                    }
+            
+                    formatBuilder.Append(")");
+
+                    return formatBuilder.ToString();
+                }
+            }
+
+            private static void AppendFormatPlaceholder(int i, StringBuilder formatBuilder, ITypeSignature parameterType)
+            {
+                if (IntrinsicTypeSignature.Is(parameterType, IntrinsicType.String))
+                {
+                    formatBuilder.AppendFormat("\"" + "{{{0}}}" + "\"", i);
+                }
+                else
+                {
+                    formatBuilder.AppendFormat("{{{0}}}", i);
                 }
             }
         }

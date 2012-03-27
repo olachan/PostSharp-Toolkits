@@ -48,7 +48,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="LoggingToolkitForNLogTests.cs" />
-    <Compile Include="LogLevelTests.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

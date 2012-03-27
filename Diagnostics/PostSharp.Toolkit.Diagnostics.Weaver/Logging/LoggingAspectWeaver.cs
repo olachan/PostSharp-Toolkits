@@ -5,7 +5,7 @@ using PostSharp.Sdk.AspectWeaver.AspectWeavers;
 
 namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 {
-    public sealed class LoggingAspectWeaver : MethodLevelAspectWeaver
+    internal sealed class LoggingAspectWeaver : MethodLevelAspectWeaver
     {
         private static readonly LogAspectConfigurationAttribute defaultConfiguration = new LogAspectConfigurationAttribute
         {

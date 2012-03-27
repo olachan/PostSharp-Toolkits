@@ -69,5 +69,26 @@ namespace PostSharp.Toolkit.Tests.NLog
             string output = OutputString.ToString();
             StringAssert.Contains("PostSharp.Toolkit.Tests.NLog.Person|Entering: PostSharp.Toolkit.Tests.NLog.Person.GetFirstName(PostSharp.Toolkit.Tests.NLog.Person person = John Smith)", output);
         }
+
+        [Test]
+        public void LogLevel_ErrorMethod_MethodIsLoggedWithErrorLevel()
+        {
+            LogLevelTestClass s = new LogLevelTestClass();
+            s.ErrorMethod();
+
+            string output = OutputString.ToString();
+            StringAssert.Contains("ERROR|TestAssembly.LogLevelTestClass|Entering: TestAssembly.LogLevelTestClass.ErrorMethod()", output);
+            StringAssert.Contains("ERROR|TestAssembly.LogLevelTestClass|Leaving: TestAssembly.LogLevelTestClass.ErrorMethod()", output);
+        }
+
+        [Test]
+        public void ParameterOptions_ThisParameter_ValueOfThisParameterIsPrinted()
+        {
+            ThisArgumentTestClass s = new ThisArgumentTestClass();
+            s.LogThisArgument();
+
+            string output = OutputString.ToString();
+            StringAssert.Contains("TestAssembly.ThisArgumentTestClass.LogThisArgument(this = TestAssembly.ThisArgumentTestClass)", output);
+        }
     }
 }

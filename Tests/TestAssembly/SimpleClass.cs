@@ -1,5 +1,5 @@
 using System;
-using PostSharp.Toolkit.Diagnostics;
+using System.Text;
 
 namespace TestAssembly
 {
@@ -13,7 +13,6 @@ namespace TestAssembly
 
         public void MethodThrowsException()
         {
-            
             throw new Exception("This is an exception");
         }
 
@@ -33,9 +32,8 @@ namespace TestAssembly
         {
         }
 
-        public void LogThisArgument()
+        public void MethodWithObjectArguments(object arg0, StringBuilder arg1)
         {
-            
         }
     }
 }

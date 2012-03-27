@@ -14,16 +14,17 @@
     <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics" AttributeTargetTypes="PostSharp.Toolkit.Tests.Person" />
     
     <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics"
-                  AttributeTargetAssemblies="TestAssembly"
-                  AttributeTargetTypes="TestAssembly.SimpleClass2"
-                  AttributeTargetMembers="ErrorMethod" OnEntryLevel="Error" OnSuccessLevel="Error" />
+              AttributeTargetAssemblies="TestAssembly"
+              AttributeTargetTypes="TestAssembly.SimpleClass" />
+
+    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics"
+              AttributeTargetAssemblies="TestAssembly"
+              AttributeTargetTypes="TestAssembly.ThisArgumentTestClass" OnEntryOptions="IncludeThisArgument" />
 
     <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics"
                   AttributeTargetAssemblies="TestAssembly"
-                  AttributeTargetTypes="TestAssembly.SimpleClass"
-                  AttributeTargetMembers="LogThisArgument" OnEntryOptions="IncludeThisArgument" />
-
-    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics" AttributeTargetAssemblies="TestAssembly" />
+                  AttributeTargetTypes="TestAssembly.LogLevelTestClass"
+                  AttributeTargetMembers="ErrorMethod" OnEntryLevel="Error" OnSuccessLevel="Error" />
   </Data>
 
 </Project>

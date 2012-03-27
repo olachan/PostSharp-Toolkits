@@ -89,10 +89,32 @@ namespace PostSharp.Toolkit.Tests
                 FirstName = "John",
                 LastName = "Smith"
             };
-            string s = person.ToString();
+            string actual = person.ToString();
 
             string output = OutputString.ToString();
+            Assert.AreEqual("John Smith", actual);
             StringAssert.Contains("PostSharp.Toolkit.Tests.Person.GetFirstName(PostSharp.Toolkit.Tests.Person person = John Smith)", output);
+        }
+
+        [Test]
+        public void LogLevel_ErrorMethod_MethodIsLoggedWithErrorLevel()
+        {
+            LogLevelTestClass s = new LogLevelTestClass();
+            s.ErrorMethod();
+
+            string output = OutputString.ToString();
+            StringAssert.Contains("Error|Entering: TestAssembly.LogLevelTestClass.ErrorMethod()", output);
+            StringAssert.Contains("Error|Leaving: TestAssembly.LogLevelTestClass.ErrorMethod()", output);
+        }
+
+        [Test]
+        public void ParameterOptions_ThisParameter_ValueOfThisParameterIsPrinted()
+        {
+            ThisArgumentTestClass s = new ThisArgumentTestClass();
+            s.LogThisArgument();
+
+            string output = OutputString.ToString();
+            StringAssert.Contains("TestAssembly.ThisArgumentTestClass.LogThisArgument(this = TestAssembly.ThisArgumentTestClass)", output);
         }
     }
 }

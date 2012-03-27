@@ -44,7 +44,6 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="LogLevelTests.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ToolkitForLog4NetTests.cs" />

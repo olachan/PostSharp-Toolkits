@@ -1,6 +1,6 @@
 ﻿namespace TestAssembly
 {
-    public class SimpleClass2
+    public class LogLevelTestClass
     {
         public void NormalMethod()
         {

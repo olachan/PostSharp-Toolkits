@@ -82,5 +82,27 @@ namespace PostSharp.Toolkit.Tests.Trace
             string output = OutputString.ToString();
             StringAssert.Contains("PostSharp.Toolkit.Tests.Trace.Person.GetFirstName(PostSharp.Toolkit.Tests.Trace.Person person = John Smith)", output);
         }
+
+
+        [Test]
+        public void LogLevel_ErrorMethod_MethodIsLoggedWithErrorLevel()
+        {
+            LogLevelTestClass s = new LogLevelTestClass();
+            s.ErrorMethod();
+
+            string output = OutputString.ToString();
+            StringAssert.Contains("Error: 0 : Entering: TestAssembly.LogLevelTestClass.ErrorMethod()", output);
+            StringAssert.Contains("Error: 0 : Leaving: TestAssembly.LogLevelTestClass.ErrorMethod()", output);
+        }
+
+        [Test]
+        public void ParameterOptions_ThisParameter_ValueOfThisParameterIsPrinted()
+        {
+            ThisArgumentTestClass s = new ThisArgumentTestClass();
+            s.LogThisArgument();
+
+            string output = OutputString.ToString();
+            StringAssert.Contains("TestAssembly.ThisArgumentTestClass.LogThisArgument(this = TestAssembly.ThisArgumentTestClass)", output);
+        }
     }
 }

@@ -112,5 +112,25 @@ namespace PostSharp.Toolkit.Tests.Log4Net
             StringAssert.Contains("Entering: PostSharp.Toolkit.Tests.Log4Net.Person.GetFirstName(PostSharp.Toolkit.Tests.Log4Net.Person person = John Smith)", output);
         }
 
+        [Test]
+        public void LogLevel_ErrorMethod_MethodIsLoggedWithErrorLevel()
+        {
+            LogLevelTestClass s = new LogLevelTestClass();
+            s.ErrorMethod();
+
+            string output = OutputString.ToString();
+            StringAssert.Contains(" ERROR TestAssembly.LogLevelTestClass (null) - Entering: TestAssembly.LogLevelTestClass.ErrorMethod()", output);
+            StringAssert.Contains(" ERROR TestAssembly.LogLevelTestClass (null) - Leaving: TestAssembly.LogLevelTestClass.ErrorMethod()", output);
+        }
+
+        [Test]
+        public void ParameterOptions_ThisParameter_ValueOfThisParameterIsPrinted()
+        {
+            ThisArgumentTestClass s = new ThisArgumentTestClass();
+            s.LogThisArgument();
+
+            string output = OutputString.ToString();
+            StringAssert.Contains("TestAssembly.ThisArgumentTestClass.LogThisArgument(this = TestAssembly.ThisArgumentTestClass)", output);
+        }
     }
 }
