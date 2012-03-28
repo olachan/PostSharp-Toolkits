@@ -1,18 +1,16 @@
 ﻿using System;
-using System.Diagnostics;
 using NUnit.Framework;
 using TestAssembly;
 
 namespace PostSharp.Toolkit.Tests.Trace
 {
     [TestFixture]
-    public class TraceTests : ConsoleTestsFixture
+    public class TraceTests : BaseTestsFixture
     {
         [SetUp]
         public override void SetUp()
         {
             base.SetUp();
-            System.Diagnostics.Trace.Listeners.Add(new TextWriterTraceListener(TextWriter));
         }
 
         [Test]

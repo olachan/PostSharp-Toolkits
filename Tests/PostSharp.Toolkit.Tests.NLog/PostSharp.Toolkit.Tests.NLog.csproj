@@ -47,6 +47,12 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\PostSharp.Toolkit.Tests\MethodArgumentsTests.cs">
+      <Link>MethodArgumentsTests.cs</Link>
+    </Compile>
+    <Compile Include="..\PostSharp.Toolkit.Tests\ReturnValueTests.cs">
+      <Link>ReturnValueTests.cs</Link>
+    </Compile>
     <Compile Include="LoggingToolkitForNLogTests.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

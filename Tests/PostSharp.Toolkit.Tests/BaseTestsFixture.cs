@@ -1,11 +1,12 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using NUnit.Framework;
 
 namespace PostSharp.Toolkit.Tests
 {
-    public class ConsoleTestsFixture
+    public class BaseTestsFixture
     {
         public StringWriter TextWriter { get; private set; }
 
@@ -17,6 +18,7 @@ namespace PostSharp.Toolkit.Tests
             this.OutputString = new StringBuilder();
             this.TextWriter = new StringWriter(this.OutputString);
             Console.SetOut(this.TextWriter);
+            Trace.Listeners.Add(new TextWriterTraceListener(TextWriter));
         }
 
         [TearDown]

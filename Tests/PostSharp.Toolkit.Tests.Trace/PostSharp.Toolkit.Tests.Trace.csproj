@@ -43,11 +43,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\PostSharp.Toolkit.Tests\MethodArgumentsTests.cs">
+      <Link>MethodArgumentsTests.cs</Link>
+    </Compile>
+    <Compile Include="..\PostSharp.Toolkit.Tests\ReturnValueTests.cs">
+      <Link>ReturnValueTests.cs</Link>
+    </Compile>
     <Compile Include="Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TraceTests.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="App.config" />
     <None Include="PostSharp.Toolkit.Tests.Trace.psproj">
       <SubType>Designer</SubType>
     </None>

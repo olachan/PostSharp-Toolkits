@@ -228,11 +228,6 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             this.writer.DetachInstructionSequence();
         }
 
-        private void EmitStringFormatOverload()
-        {
-
-        }
-
         private FieldDefDeclaration CreateIsLoggingField()
         {
             FieldDefDeclaration isLoggingFieldDef = new FieldDefDeclaration

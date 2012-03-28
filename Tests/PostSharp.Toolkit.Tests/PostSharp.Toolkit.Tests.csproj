@@ -44,10 +44,12 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ConsoleTestsFixture.cs" />
+    <Compile Include="BaseTestsFixture.cs" />
     <Compile Include="LoggingToolkitTests.cs" />
+    <Compile Include="MethodArgumentsTests.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ReturnValueTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

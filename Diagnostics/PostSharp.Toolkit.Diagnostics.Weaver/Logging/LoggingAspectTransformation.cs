@@ -64,6 +64,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 private readonly IMethodSignature toStringMethodSignature;
                 
                 private const int ThisArgumentPosition = -1;
+                private const int ReturnParameter = -2;
 
                 public Implementation(LoggingAspectTransformationInstance transformationInstance, MethodBodyTransformationContext context)
                     : base(transformationInstance.AspectWeaver.AspectInfrastructureTask, context)
@@ -138,7 +139,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     int[] arguments;
                     string messageFormatString = this.CreateMessageFormatString(this.onEntryOptions, out arguments);
 
-                    this.EmitMessage(block, writer, this.onEntryLevel, this.onEntryOptions, "Entering: " + messageFormatString, arguments);
+                    this.EmitMessage(block, writer, this.onEntryLevel, "Entering: " + messageFormatString, arguments);
                 }
 
                 protected override void ImplementOnSuccess(InstructionBlock block, InstructionWriter writer)
@@ -146,10 +147,10 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     int[] arguments;
                     string messageFormatString = this.CreateMessageFormatString(this.onSuccessOptions, out arguments);
 
-                    this.EmitMessage(block, writer, this.onSuccessLevel, this.onSuccessOptions, "Leaving: " + messageFormatString, arguments);
+                    this.EmitMessage(block, writer, this.onSuccessLevel, "Leaving: " + messageFormatString, arguments);
                 }
 
-                private void EmitMessage(InstructionBlock block, InstructionWriter writer, LogLevel logLevel, LogOptions logOptions, string messageFormatString, int[] arguments)
+                private void EmitMessage(InstructionBlock block, InstructionWriter writer, LogLevel logLevel, string messageFormatString, int[] arguments)
                 {
                     MethodDefDeclaration targetMethod = Context.TargetElement as MethodDefDeclaration;
                     if (targetMethod == null)
@@ -174,29 +175,27 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     
                     bool hasThis = Context.MethodMapping.MethodSignature.CallingConvention == CallingConvention.HasThis;
 
-                    int parameterCount = Context.MethodMapping.MethodSignature.ParameterCount;
-                    
-                    int startArgument = 0;
-                    bool shouldLogThisArgument = ((logOptions & LogOptions.IncludeThisArgument) != 0 && hasThis);
-                    if (shouldLogThisArgument)
-                    {
-                        parameterCount++;
-                        startArgument = 1;
-                    }
-
                     bool useWrapper = ShouldUseWrapper(Context);
 
-                    builder.EmitWrite(writer, messageFormatString, parameterCount, logLevel, null, (i, instructionWriter) =>
+                    builder.EmitWrite(writer, messageFormatString, arguments.Length, logLevel, null, (i, instructionWriter) =>
                     {
-                        if (shouldLogThisArgument && i == 0)
+                        int value = arguments[i];
+                        if (value == ThisArgumentPosition)
                         {
                             instructionWriter.EmitInstruction(OpCodeNumber.Ldarg_0);
                         }
+
+                        else if (value == ReturnParameter)
+                        {
+                            instructionWriter.EmitInstructionLocalVariable( OpCodeNumber.Ldloc, Context.ReturnValueVariable );
+                            instructionWriter.EmitConvertToObject(Context.MethodMapping.MethodSignature.ReturnType);
+                        }
+
                         else
                         {
-                            instructionWriter.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)(hasThis ? i + 1 : i));
+                            instructionWriter.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)(hasThis ? value + 1 : value));
 
-                            instructionWriter.EmitConvertToObject(Context.MethodMapping.MethodSignature.GetParameterType(shouldLogThisArgument ? i - startArgument : i));
+                            instructionWriter.EmitConvertToObject(Context.MethodMapping.MethodSignature.GetParameterType(value));
                         }
                     },
                     
@@ -233,8 +232,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 private string CreateMessageFormatString(LogOptions logOptions, out int[] arguments)
                 {
                     StringBuilder formatBuilder = new StringBuilder();
-                    arguments = new int[64];
-
+                    
                     MethodDefDeclaration targetMethod = Context.TargetElement as MethodDefDeclaration;
                     if (targetMethod == null)
                     {
@@ -242,13 +240,17 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                         return null;
                     }
 
+                    int arrayLength = GetArrayLength(Context, logOptions);
+
+                    arguments = new int[arrayLength];
+
                     formatBuilder.AppendFormat("{0}.{1}", targetMethod.DeclaringType, targetMethod.Name);
                     formatBuilder.Append("(");
 
                     int startParameter = 0;
                     if ((logOptions & LogOptions.IncludeThisArgument) != 0)
                     {
-                        if (Context.MethodMapping.MethodSignature.CallingConvention == CallingConvention.HasThis)
+                        if ((Context.MethodMapping.MethodSignature.CallingConvention & CallingConvention.HasThis) != 0)
                         {
                             formatBuilder.AppendFormat("this = ");
                             AppendFormatPlaceholder(0, formatBuilder, targetMethod.DeclaringType);
@@ -269,18 +271,16 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                         if ((logOptions & LogOptions.IncludeParameterType) != 0)
                         {
                             formatBuilder.Append(parameterType.ToString());
-                            formatBuilder.Append(' ');
                         }
 
                         if ((logOptions & LogOptions.IncludeParameterName) != 0)
                         {
-                            formatBuilder.Append(Context.MethodMapping.MethodMappingInformation.GetParameterName(i));
-                            formatBuilder.Append(' ');
+                            formatBuilder.AppendFormat(" {0}", Context.MethodMapping.MethodMappingInformation.GetParameterName(i));
                         }
 
                         if ((logOptions & LogOptions.IncludeParameterValue) != 0)
                         {
-                            formatBuilder.AppendFormat("= ");
+                            formatBuilder.AppendFormat(" = ");
 
                             int index = i + startParameter;
                             AppendFormatPlaceholder(index, formatBuilder, parameterType);
@@ -290,7 +290,43 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             
                     formatBuilder.Append(")");
 
+                    if (ShouldLogReturnType(Context, logOptions))
+                    {
+                        formatBuilder.Append(" : ");
+                        AppendFormatPlaceholder(arguments.Length - 1, formatBuilder, targetMethod.ReturnParameter.ParameterType);
+                        arguments[arguments.Length - 1] = ReturnParameter;
+                    }
+
                     return formatBuilder.ToString();
+                }
+
+                private int GetArrayLength(MethodBodyTransformationContext context, LogOptions logOptions)
+                {
+                    int result = 0;
+
+                    if ((logOptions & LogOptions.IncludeParameterValue) != 0)
+                    {
+                        result = context.MethodMapping.MethodSignature.ParameterCount;
+                    }
+
+                    if ((logOptions & LogOptions.IncludeThisArgument) != 0)
+                    {
+                        ++result;
+                    }
+
+                    if (ShouldLogReturnType(context, logOptions))
+                    {
+                        ++result;
+                    }
+
+                    return result;
+                }
+
+                private static bool ShouldLogReturnType(MethodBodyTransformationContext context, LogOptions logOptions)
+                {
+                    return (logOptions & LogOptions.IncludeReturnValue) != 0 &&
+                           (context.MethodMapping.MethodSignature.CallingConvention & CallingConvention.HasThis) != 0 &&
+                           !IntrinsicTypeSignature.Is( context.MethodMapping.MethodSignature.ReturnType, IntrinsicType.Void );
                 }
             }
 

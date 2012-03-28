@@ -7,7 +7,7 @@ using TestAssembly;
 namespace PostSharp.Toolkit.Tests.NLog
 {
     [TestFixture]
-    public class LoggingToolkitForNLogTests : ConsoleTestsFixture
+    public class LoggingToolkitForNLogTests : BaseTestsFixture
     {
         [Test]
         public void NLog_Methods_LogsMethodEnter()
