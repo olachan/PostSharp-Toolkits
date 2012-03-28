@@ -61,6 +61,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 private readonly LogLevel onEntryLevel;
                 private readonly LogLevel onSuccessLevel;
                 private readonly LogLevel onExceptionLevel;
+                private readonly IMethodSignature toStringMethodSignature;
                 
                 public Implementation(LoggingAspectTransformationInstance transformationInstance, MethodBodyTransformationContext context)
                     : base(transformationInstance.AspectWeaver.AspectInfrastructureTask, context)
@@ -75,6 +76,9 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     this.onEntryLevel = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogLevel>(c => c.OnEntryLevel);
                     this.onSuccessLevel = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogLevel>(c => c.OnSuccessLevel);
                     this.onExceptionLevel = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogLevel>(c => c.OnExceptionLevel);
+
+                    this.toStringMethodSignature = aspectWeaverInstance.AspectWeaver.Module.FindMethod(
+                        aspectWeaverInstance.AspectWeaver.Module.Cache.GetType(typeof(object)), "ToString");
                 }
 
                 public void Implement()
@@ -202,7 +206,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     MethodDefDeclaration methodDef = context.TargetElement as MethodDefDeclaration;
                     if (methodDef != null)
                     {
-                        if (methodDef.Name == "ToString")
+                        if (methodDef.Name == "ToString" && methodDef.GetParentDefinition(true).MatchesReference(toStringMethodSignature))
                         {
                             return true;
                         }
