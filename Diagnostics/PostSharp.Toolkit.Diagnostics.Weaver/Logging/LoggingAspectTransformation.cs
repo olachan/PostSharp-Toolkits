@@ -1,5 +1,4 @@
 using System;
-using System.Text;
 using PostSharp.Sdk.AspectInfrastructure;
 using PostSharp.Sdk.AspectWeaver;
 using PostSharp.Sdk.AspectWeaver.Transformations;
@@ -13,11 +12,14 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
     internal sealed class LoggingAspectTransformation : MethodBodyTransformation
     {
         private readonly ILoggingBackend backend;
+        private readonly Assets assets;
 
         public LoggingAspectTransformation(LoggingAspectWeaver aspectWeaver, ILoggingBackend backend)
             : base(aspectWeaver)
         {
             this.backend = backend;
+
+            this.assets = aspectWeaver.Module.Cache.GetItem(() => new Assets(aspectWeaver.Module));
         }
 
         public override string GetDisplayName(MethodSemantics semantic)
@@ -30,7 +32,17 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             return new LoggingAspectTransformationInstance(this, aspectWeaverInstance);
         }
 
-        public class LoggingAspectTransformationInstance : MethodBodyTransformationInstance
+        private class Assets
+        {
+            public IMethodSignature ToStringMethodSignature { get; private set; }
+
+            public Assets(ModuleDeclaration module)
+            {
+                this.ToStringMethodSignature = module.FindMethod(module.Cache.GetType(typeof(object)), "ToString");
+            }
+        }
+
+        private class LoggingAspectTransformationInstance : MethodBodyTransformationInstance
         {
             private readonly LoggingAspectTransformation parent;
 
@@ -53,46 +65,29 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
             private sealed class Implementation : MethodBodyWrappingImplementation
             {
-                private readonly LoggingAspectTransformationInstance transformationInstance;
                 private readonly ILoggingBackendInstance backendInstance;
-                private readonly LogOptions onEntryOptions;
-                private readonly LogOptions onSuccessOptions;
-                private readonly LogOptions onExceptionOptions;
-                private readonly LogLevel onEntryLevel;
-                private readonly LogLevel onSuccessLevel;
-                private readonly LogLevel onExceptionLevel;
-                private readonly IMethodSignature toStringMethodSignature;
-                
-                private const int ThisArgumentPosition = -1;
-                private const int ReturnParameter = -2;
+                private readonly LoggingAspectTransformationInstance transformationInstance;
+                private readonly ConfigurationOptions options;
+                private readonly MessageArgumentsFormatter argumentsFormatter;
 
                 public Implementation(LoggingAspectTransformationInstance transformationInstance, MethodBodyTransformationContext context)
                     : base(transformationInstance.AspectWeaver.AspectInfrastructureTask, context)
                 {
                     this.transformationInstance = transformationInstance;
                     this.backendInstance = this.transformationInstance.parent.backend.CreateInstance(transformationInstance.AspectWeaverInstance);
-
-                    AspectWeaverInstance aspectWeaverInstance = this.transformationInstance.AspectWeaverInstance;
-                    this.onEntryOptions = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogOptions>(c => c.OnEntryOptions);
-                    this.onSuccessOptions = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogOptions>(c => c.OnSuccessOptions);
-                    this.onExceptionOptions = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogOptions>(c => c.OnExceptionOptions);
-                    this.onEntryLevel = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogLevel>(c => c.OnEntryLevel);
-                    this.onSuccessLevel = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogLevel>(c => c.OnSuccessLevel);
-                    this.onExceptionLevel = aspectWeaverInstance.GetConfigurationValue<LogAspectConfiguration, LogLevel>(c => c.OnExceptionLevel);
-
-                    this.toStringMethodSignature = aspectWeaverInstance.AspectWeaver.Module.FindMethod(
-                        aspectWeaverInstance.AspectWeaver.Module.Cache.GetType(typeof(object)), "ToString");
+                    this.options = new ConfigurationOptions(this.transformationInstance.AspectWeaverInstance);
+                    this.argumentsFormatter = new MessageArgumentsFormatter(context);
                 }
 
                 public void Implement()
                 {
                     ITypeSignature exceptionSignature = this.transformationInstance.AspectWeaver.Module.Cache.GetType(typeof(Exception));
 
-                    bool hasOnEntry = this.onEntryLevel != LogLevel.None;
+                    bool hasOnEntry = this.options.OnEntryLevel != LogLevel.None;
 
-                    bool hasOnSuccess = this.onSuccessLevel != LogLevel.None;
+                    bool hasOnSuccess = this.options.OnSuccessLevel != LogLevel.None;
 
-                    bool hasOnException = this.onExceptionLevel != LogLevel.None;
+                    bool hasOnException = this.options.OnExceptionLevel != LogLevel.None;
 
                     Implement(hasOnEntry, hasOnSuccess, false, hasOnException ? new[] { exceptionSignature } : null);
                     this.Context.AddRedirection(this.Redirection);
@@ -117,14 +112,14 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
                     if (builder.SupportsIsEnabled)
                     {
-                        builder.EmitGetIsEnabled(writer, this.onExceptionLevel);
+                        builder.EmitGetIsEnabled(writer, this.options.OnExceptionLevel);
                         InstructionSequence branchSequence = block.AddInstructionSequence(null, NodePosition.After, sequence);
                         writer.EmitBranchingInstruction(OpCodeNumber.Brfalse_S, branchSequence);
                     }
 
-                    bool useWrapper = this.ShouldUseWrapper(Context);
+                    bool useWrapper = this.ShouldUseWrapper(targetMethod);
 
-                    builder.EmitWrite(writer, "An exception occurred:\n{0}", 1, this.onExceptionLevel,
+                    builder.EmitWrite(writer, "An exception occurred:\n{0}", 1, this.options.OnExceptionLevel,
                                       w => w.EmitInstructionLocalVariable(OpCodeNumber.Stloc, exceptionLocal),
                                       (i, w) => w.EmitInstructionLocalVariable(OpCodeNumber.Ldloc, exceptionLocal), useWrapper);
 
@@ -136,18 +131,18 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
                 protected override void ImplementOnEntry(InstructionBlock block, InstructionWriter writer)
                 {
-                    int[] arguments;
-                    string messageFormatString = this.CreateMessageFormatString(this.onEntryOptions, out arguments);
+                    int[] argumentsIndex;
+                    string messageFormatString = this.argumentsFormatter.CreateMessageArguments(this.options.OnEntryOptions, out argumentsIndex);
 
-                    this.EmitMessage(block, writer, this.onEntryLevel, "Entering: " + messageFormatString, arguments);
+                    this.EmitMessage(block, writer, this.options.OnEntryLevel, "Entering: " + messageFormatString, argumentsIndex);
                 }
 
                 protected override void ImplementOnSuccess(InstructionBlock block, InstructionWriter writer)
                 {
-                    int[] arguments;
-                    string messageFormatString = this.CreateMessageFormatString(this.onSuccessOptions, out arguments);
+                    int[] argumentsIndex;
+                    string messageFormatString = this.argumentsFormatter.CreateMessageArguments(this.options.OnSuccessOptions, out argumentsIndex);
 
-                    this.EmitMessage(block, writer, this.onSuccessLevel, "Leaving: " + messageFormatString, arguments);
+                    this.EmitMessage(block, writer, this.options.OnSuccessLevel, "Leaving: " + messageFormatString, argumentsIndex);
                 }
 
                 private void EmitMessage(InstructionBlock block, InstructionWriter writer, LogLevel logLevel, string messageFormatString, int[] arguments)
@@ -172,52 +167,49 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                         writer.EmitBranchingInstruction(OpCodeNumber.Brfalse_S, branchSequence);
                     }
 
-                    
-                    bool hasThis = Context.MethodMapping.MethodSignature.CallingConvention == CallingConvention.HasThis;
-
-                    bool useWrapper = ShouldUseWrapper(Context);
+                    bool hasThis = ((Context.MethodMapping.MethodSignature.CallingConvention & CallingConvention.HasThis) != 0);
+                    bool useWrapper = ShouldUseWrapper(targetMethod);
 
                     builder.EmitWrite(writer, messageFormatString, arguments.Length, logLevel, null, (i, instructionWriter) =>
                     {
-                        int value = arguments[i];
-                        if (value == ThisArgumentPosition)
+                        int index = arguments[i];
+                        if (index == MessageArgumentsFormatter.ThisArgumentPosition)
                         {
                             instructionWriter.EmitInstruction(OpCodeNumber.Ldarg_0);
                         }
-
-                        else if (value == ReturnParameter)
+                        else if (index == MessageArgumentsFormatter.ReturnParameterPosition)
                         {
-                            instructionWriter.EmitInstructionLocalVariable( OpCodeNumber.Ldloc, Context.ReturnValueVariable );
+                            instructionWriter.EmitInstructionLocalVariable(OpCodeNumber.Ldloc, Context.ReturnValueVariable);
                             instructionWriter.EmitConvertToObject(Context.MethodMapping.MethodSignature.ReturnType);
                         }
-
                         else
                         {
-                            instructionWriter.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)(hasThis ? value + 1 : value));
-
-                            instructionWriter.EmitConvertToObject(Context.MethodMapping.MethodSignature.GetParameterType(value));
+                            instructionWriter.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)(hasThis ? index + 1 : index));
+                            instructionWriter.EmitConvertToObject(Context.MethodMapping.MethodSignature.GetParameterType(index));
                         }
-                    },
-                    
-                    useWrapper);
+                    }, useWrapper);
                     
                     writer.DetachInstructionSequence();
                 }
 
-                private bool ShouldUseWrapper(MethodBodyTransformationContext context)
+                private bool ShouldUseWrapper(MethodDefDeclaration targetMethod)
                 {
-                    MethodDefDeclaration methodDef = context.TargetElement as MethodDefDeclaration;
-                    if (methodDef != null)
+                    if (targetMethod.Name == "ToString")
                     {
-                        if (methodDef.Name == "ToString" && methodDef.GetParentDefinition(true).MatchesReference(toStringMethodSignature))
+                        MethodDefDeclaration parent = targetMethod.GetParentDefinition(true);
+                        if (parent != null)
                         {
-                            return true;
+                            if (parent.MatchesReference(
+                                this.transformationInstance.parent.assets.ToStringMethodSignature))
+                            {
+                                return true;
+                            }
                         }
                     }
 
-                    for (int i = 0; i < context.MethodMapping.MethodSignature.ParameterCount; i++)
+                    for (int i = 0; i < targetMethod.Parameters.Count; i++)
                     {
-                        ITypeSignature parameterType = context.MethodMapping.MethodSignature.GetParameterType(i);
+                        ITypeSignature parameterType = targetMethod.Parameters[i].ParameterType;
 
                         if (!parameterType.BelongsToClassification(TypeClassifications.Intrinsic) ||
                             IntrinsicTypeSignature.Is(parameterType, IntrinsicType.Object))
@@ -227,125 +219,6 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     }
 
                     return false;
-                }
-
-                private string CreateMessageFormatString(LogOptions logOptions, out int[] arguments)
-                {
-                    StringBuilder formatBuilder = new StringBuilder();
-                    
-                    MethodDefDeclaration targetMethod = Context.TargetElement as MethodDefDeclaration;
-                    if (targetMethod == null)
-                    {
-                        arguments = null;
-                        return null;
-                    }
-
-                    int arrayLength = GetArrayLength(Context, logOptions);
-
-                    arguments = new int[arrayLength];
-
-                    formatBuilder.AppendFormat("{0}.{1}", targetMethod.DeclaringType, targetMethod.Name);
-                    formatBuilder.Append("(");
-
-                    int startParameter = 0;
-                    if ((logOptions & LogOptions.IncludeThisArgument) != 0)
-                    {
-                        if ((Context.MethodMapping.MethodSignature.CallingConvention & CallingConvention.HasThis) != 0)
-                        {
-                            formatBuilder.AppendFormat("this = ");
-                            AppendFormatPlaceholder(0, formatBuilder, targetMethod.DeclaringType);
-                            startParameter = 1;
-                            arguments[0] = ThisArgumentPosition;
-                        }
-                    }
-
-                    int parameterCount = Context.MethodMapping.MethodSignature.ParameterCount;
-                    for (int i = 0; i < parameterCount; i++)
-                    {
-                        if (i > 0)
-                        {
-                            formatBuilder.Append(", ");
-                        }
-
-                        ITypeSignature parameterType = Context.MethodMapping.MethodSignature.GetParameterType(i);
-                        if ((logOptions & LogOptions.IncludeParameterType) != 0)
-                        {
-                            formatBuilder.Append(parameterType.ToString());
-                        }
-
-                        if ((logOptions & LogOptions.IncludeParameterName) != 0)
-                        {
-                            formatBuilder.AppendFormat(" {0}", Context.MethodMapping.MethodMappingInformation.GetParameterName(i));
-                        }
-
-                        if ((logOptions & LogOptions.IncludeParameterValue) != 0)
-                        {
-                            formatBuilder.AppendFormat(" = ");
-
-                            int index = i + startParameter;
-                            AppendFormatPlaceholder(index, formatBuilder, parameterType);
-                            arguments[index] = i;
-                        }
-                    }
-            
-                    formatBuilder.Append(")");
-
-                    if (ShouldLogReturnType(Context, logOptions))
-                    {
-                        formatBuilder.Append(" : ");
-                        AppendFormatPlaceholder(arguments.Length - 1, formatBuilder, targetMethod.ReturnParameter.ParameterType);
-                        arguments[arguments.Length - 1] = ReturnParameter;
-                    }
-
-                    return formatBuilder.ToString();
-                }
-
-                private int GetArrayLength(MethodBodyTransformationContext context, LogOptions logOptions)
-                {
-                    int result = 0;
-
-                    if ((logOptions & LogOptions.IncludeParameterValue) != 0)
-                    {
-                        result = context.MethodMapping.MethodSignature.ParameterCount;
-                    }
-
-                    if ((logOptions & LogOptions.IncludeThisArgument) != 0)
-                    {
-                        ++result;
-                    }
-
-                    if (ShouldLogReturnType(context, logOptions))
-                    {
-                        ++result;
-                    }
-
-                    return result;
-                }
-
-                private static bool ShouldLogReturnType(MethodBodyTransformationContext context, LogOptions logOptions)
-                {
-                    return (logOptions & LogOptions.IncludeReturnValue) != 0 &&
-                           (context.MethodMapping.MethodSignature.CallingConvention & CallingConvention.HasThis) != 0 &&
-                           !IntrinsicTypeSignature.Is( context.MethodMapping.MethodSignature.ReturnType, IntrinsicType.Void );
-                }
-            }
-
-            private static void AppendFormatPlaceholder(int i, StringBuilder formatBuilder, ITypeSignature parameterType)
-            {
-                if (IntrinsicTypeSignature.Is(parameterType, IntrinsicType.String))
-                {
-                    formatBuilder.AppendFormat("\"" + "{{{0}}}" + "\"", i);
-                }
-                else if (!parameterType.BelongsToClassification(TypeClassifications.Intrinsic) ||
-                            IntrinsicTypeSignature.Is(parameterType, IntrinsicType.Object))
-                {
-                    formatBuilder.Append("{{");
-                    formatBuilder.AppendFormat("{{{0}}}", i);
-                    formatBuilder.Append("}}");
-                }
-                else
-                {
-                    formatBuilder.AppendFormat("{{{0}}}", i);
                 }
             }
         }
