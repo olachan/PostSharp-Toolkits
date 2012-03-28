@@ -18,6 +18,15 @@ namespace PostSharp.Toolkit.Tests
         }
 
         [Test]
+        public void ReturnValue_VoidMethod_VoidIsNotAppendedToTheMethodName()
+        {
+            underTest.VoidMethod();
+
+            string output = OutputString.ToString();
+            StringAssert.DoesNotContain(" : void", output);
+        }
+
+        [Test]
         public void ReturnValue_StringValue_StringValueIsPrintedInQuotes()
         {
             underTest.ReturnsHelloString();

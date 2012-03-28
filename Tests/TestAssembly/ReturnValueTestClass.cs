@@ -2,6 +2,10 @@
 {
     public class ReturnValueTestClass
     {
+        public void VoidMethod()
+        {
+        }
+
         public string ReturnsHelloString()
         {
             return "Hello";
