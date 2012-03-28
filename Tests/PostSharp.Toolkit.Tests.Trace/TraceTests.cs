@@ -80,7 +80,7 @@ namespace PostSharp.Toolkit.Tests.Trace
 
             string s = person.ToString();
             string output = OutputString.ToString();
-            StringAssert.Contains("PostSharp.Toolkit.Tests.Trace.Person.GetFirstName(PostSharp.Toolkit.Tests.Trace.Person person = John Smith)", output);
+            StringAssert.Contains("PostSharp.Toolkit.Tests.Trace.Person.GetFirstName(PostSharp.Toolkit.Tests.Trace.Person person = {John Smith})", output);
         }
 
 
@@ -102,7 +102,7 @@ namespace PostSharp.Toolkit.Tests.Trace
             s.LogThisArgument();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("TestAssembly.ThisArgumentTestClass.LogThisArgument(this = TestAssembly.ThisArgumentTestClass)", output);
+            StringAssert.Contains("TestAssembly.ThisArgumentTestClass.LogThisArgument(this = {TestAssembly.ThisArgumentTestClass})", output);
         }
     }
 }

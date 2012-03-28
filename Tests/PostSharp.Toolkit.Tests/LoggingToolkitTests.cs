@@ -93,7 +93,7 @@ namespace PostSharp.Toolkit.Tests
 
             string output = OutputString.ToString();
             Assert.AreEqual("John Smith", actual);
-            StringAssert.Contains("PostSharp.Toolkit.Tests.Person.GetFirstName(PostSharp.Toolkit.Tests.Person person = John Smith)", output);
+            StringAssert.Contains("PostSharp.Toolkit.Tests.Person.GetFirstName(PostSharp.Toolkit.Tests.Person person = {John Smith})", output);
         }
 
         [Test]
@@ -114,7 +114,7 @@ namespace PostSharp.Toolkit.Tests
             s.LogThisArgument();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("TestAssembly.ThisArgumentTestClass.LogThisArgument(this = TestAssembly.ThisArgumentTestClass)", output);
+            StringAssert.Contains("TestAssembly.ThisArgumentTestClass.LogThisArgument(this = {TestAssembly.ThisArgumentTestClass})", output);
         }
     }
 }

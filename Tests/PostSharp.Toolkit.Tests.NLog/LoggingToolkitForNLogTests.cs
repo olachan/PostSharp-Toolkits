@@ -67,7 +67,7 @@ namespace PostSharp.Toolkit.Tests.NLog
 
             string s = person.ToString();
             string output = OutputString.ToString();
-            StringAssert.Contains("PostSharp.Toolkit.Tests.NLog.Person|Entering: PostSharp.Toolkit.Tests.NLog.Person.GetFirstName(PostSharp.Toolkit.Tests.NLog.Person person = John Smith)", output);
+            StringAssert.Contains("PostSharp.Toolkit.Tests.NLog.Person|Entering: PostSharp.Toolkit.Tests.NLog.Person.GetFirstName(PostSharp.Toolkit.Tests.NLog.Person person = {John Smith})", output);
         }
 
         [Test]
@@ -88,7 +88,7 @@ namespace PostSharp.Toolkit.Tests.NLog
             s.LogThisArgument();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("TestAssembly.ThisArgumentTestClass.LogThisArgument(this = TestAssembly.ThisArgumentTestClass)", output);
+            StringAssert.Contains("TestAssembly.ThisArgumentTestClass.LogThisArgument(this = {TestAssembly.ThisArgumentTestClass})", output);
         }
     }
 }

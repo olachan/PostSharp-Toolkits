@@ -109,7 +109,7 @@ namespace PostSharp.Toolkit.Tests.Log4Net
 
             string s = person.ToString();
             string output = OutputString.ToString();
-            StringAssert.Contains("Entering: PostSharp.Toolkit.Tests.Log4Net.Person.GetFirstName(PostSharp.Toolkit.Tests.Log4Net.Person person = John Smith)", output);
+            StringAssert.Contains("Entering: PostSharp.Toolkit.Tests.Log4Net.Person.GetFirstName(PostSharp.Toolkit.Tests.Log4Net.Person person = {John Smith})", output);
         }
 
         [Test]
@@ -130,7 +130,7 @@ namespace PostSharp.Toolkit.Tests.Log4Net
             s.LogThisArgument();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("TestAssembly.ThisArgumentTestClass.LogThisArgument(this = TestAssembly.ThisArgumentTestClass)", output);
+            StringAssert.Contains("TestAssembly.ThisArgumentTestClass.LogThisArgument(this = {TestAssembly.ThisArgumentTestClass})", output);
         }
     }
 }
