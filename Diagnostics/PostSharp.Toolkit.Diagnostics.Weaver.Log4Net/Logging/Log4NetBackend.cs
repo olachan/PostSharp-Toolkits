@@ -132,7 +132,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Log4Net.Logging
 
                 if (useWrapper)
                 {
-                    method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, method);
+                    method = this.parent.loggingImplementation.GetWriteWrapperMethod(method);
                 }
 
                 writer.EmitInstructionMethod(method.IsVirtual ? OpCodeNumber.Callvirt : OpCodeNumber.Call, method);

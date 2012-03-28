@@ -168,7 +168,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Console
 
                 if (useWrapper)
                 {
-                    method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, method);
+                    method = this.parent.loggingImplementation.GetWriteWrapperMethod(method);
                 }
 
                 writer.EmitInstructionMethod(OpCodeNumber.Call, method);

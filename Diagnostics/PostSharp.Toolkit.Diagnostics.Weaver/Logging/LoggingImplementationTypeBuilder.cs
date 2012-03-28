@@ -23,7 +23,8 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
         private readonly IMethod stringFormatArrayMethod;
         private readonly IMethod traceWriteLineMethod;
-
+        
+        private MethodDefDeclaration traceWriteLineWrapperMethod;
         private InstructionSequence returnSequence;
         private InstructionBlock constructorBlock;
 
@@ -61,13 +62,10 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             return categoryField;
         }
 
-        public MethodDefDeclaration GetTraceStringFormatMethod(string prefix)
+        public MethodDefDeclaration GetTraceStringFormatMethod()
         {
-            string wrapperName = string.Format("{0}{1}Format", prefix, this.traceWriteLineMethod.Name);
-            MethodDefDeclaration wrapperMethod = this.implementationType.Methods.GetOneByName(wrapperName) ??
-                                                 this.CreateTraceStringFormatWrapper(wrapperName);
-
-            return wrapperMethod;
+            return this.traceWriteLineWrapperMethod ??
+                   (this.traceWriteLineWrapperMethod = this.CreateTraceStringFormatWrapper("TraceWriteLineFormat"));
         }
 
         private MethodDefDeclaration CreateTraceStringFormatWrapper(string name)
@@ -110,25 +108,25 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 loggerMethod.TranslateMethod(this.module));
         }
 
-        public MethodDefDeclaration GetWriteWrapperMethod(string name, IMethod loggerMethod)
+        public MethodDefDeclaration GetWriteWrapperMethod(IMethod loggerMethod)
         {
             MethodDefDeclaration wrapperMethod;
             if (!this.wrapperMethods.TryGetValue(loggerMethod, out wrapperMethod))
             {
                 IMethod targetMethod = loggerMethod;
                 
-                wrapperMethod = this.CreateWrapperMethod(name, targetMethod);
+                wrapperMethod = this.CreateWrapperMethod(targetMethod);
                 this.wrapperMethods[loggerMethod] = wrapperMethod;
             }
 
             return wrapperMethod;
         }
 
-        private MethodDefDeclaration CreateWrapperMethod(string methodName, IMethod loggerMethod)
+        private MethodDefDeclaration CreateWrapperMethod(IMethod loggerMethod)
         {
             MethodDefDeclaration wrapperMethod = new MethodDefDeclaration
             {
-                Name = methodName,
+                Name = this.implementationType.Methods.GetUniqueName(loggerMethod.Name + "{0}"),
                 Attributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
             };
             this.implementationType.Methods.Add(wrapperMethod);

@@ -99,17 +99,14 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
                                   Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
             {
                 bool createArgsArray = argumentsCount > 0;
-                bool useStringFormat = false;
 
                 IMethod method;
 
                 switch (logLevel)
                 {
                     case LogLevel.Debug:
-                        useStringFormat = createArgsArray;
-
-                        method = useStringFormat
-                                     ? this.parent.loggingImplementation.GetTraceStringFormatMethod("Trace")
+                        method = createArgsArray
+                                     ? this.parent.loggingImplementation.GetTraceStringFormatMethod()
                                      : this.parent.writeLineString;
                         break;
                     case LogLevel.Info:
@@ -160,7 +157,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
 
                 if (useWrapper)
                 {
-                    method = this.parent.loggingImplementation.GetWriteWrapperMethod(method.Name, method);
+                    method = this.parent.loggingImplementation.GetWriteWrapperMethod(method);
                 }
 
                 writer.EmitInstructionMethod(OpCodeNumber.Call, method);
