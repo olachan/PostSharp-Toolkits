@@ -38,39 +38,20 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             if ((logOptions & LogOptions.IncludeThisArgument) != 0 &&
                 (this.context.MethodMapping.MethodSignature.CallingConvention & CallingConvention.HasThis) != 0)
             {
-                formatBuilder.AppendFormat("this = ");
+                formatBuilder.Append("this = ");
                 AppendFormatPlaceholder(0, formatBuilder, this.targetMethod.DeclaringType);
                 startParameter = 1;
                 argumentsIndex[0] = ThisArgumentPosition;
             }
 
-            int parameterCount = context.MethodMapping.MethodSignature.ParameterCount;
-            for (int i = 0; i < parameterCount; i++)
+
+            bool includeParameterName = (logOptions & LogOptions.IncludeParameterName) != 0;
+            bool includeParameterType = (logOptions & LogOptions.IncludeParameterType) != 0;
+            bool includeParameterValue = (logOptions & LogOptions.IncludeParameterValue) != 0;
+            
+            if (includeParameterName || includeParameterType || includeParameterValue)
             {
-                if (i > 0)
-                {
-                    formatBuilder.Append(", ");
-                }
-
-                ITypeSignature parameterType = context.MethodMapping.MethodSignature.GetParameterType(i);
-                if ((logOptions & LogOptions.IncludeParameterType) != 0)
-                {
-                    formatBuilder.Append(parameterType.ToString());
-                }
-
-                if ((logOptions & LogOptions.IncludeParameterName) != 0)
-                {
-                    formatBuilder.AppendFormat(" {0}", context.MethodMapping.MethodMappingInformation.GetParameterName(i));
-                }
-
-                if ((logOptions & LogOptions.IncludeParameterValue) != 0)
-                {
-                    formatBuilder.AppendFormat(" = ");
-
-                    int index = i + startParameter;
-                    AppendFormatPlaceholder(index, formatBuilder, parameterType);
-                    argumentsIndex[index] = i;
-                }
+                this.WriteMethodArguments(formatBuilder, argumentsIndex, startParameter, includeParameterName, includeParameterType, includeParameterValue);
             }
 
             formatBuilder.Append(")");
@@ -84,6 +65,42 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
             return formatBuilder.ToString();
 
+        }
+
+        private void WriteMethodArguments(StringBuilder formatBuilder, int[] argumentsIndex, int startParameter, bool includeParameterName, bool includeParameterType, bool includeParameterValue)
+        {
+            int parameterCount = this.context.MethodMapping.MethodSignature.ParameterCount;
+            for (int i = 0; i < parameterCount; i++)
+            {
+                int index = i + startParameter;
+
+                if (index > 0)
+                {
+                    formatBuilder.Append(", ");
+                }
+
+                ITypeSignature parameterType = this.context.MethodMapping.MethodSignature.GetParameterType(i);
+                if (includeParameterType)
+                {
+                    formatBuilder.Append(parameterType.ToString());
+                }
+
+                if (includeParameterName)
+                {
+                    formatBuilder.AppendFormat(" {0}", this.context.MethodMapping.MethodMappingInformation.GetParameterName(i));
+                }
+
+                if (includeParameterValue)
+                {
+                    if (includeParameterName || includeParameterType)
+                    {
+                        formatBuilder.AppendFormat(" = ");
+                    }
+
+                    AppendFormatPlaceholder(index, formatBuilder, parameterType);
+                    argumentsIndex[index] = i;
+                }
+            }
         }
 
         private int GetArrayLength(LogOptions logOptions)
