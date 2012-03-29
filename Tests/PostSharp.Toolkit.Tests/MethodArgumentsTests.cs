@@ -45,6 +45,5 @@ namespace PostSharp.Toolkit.Tests
             string output = OutputString.ToString();
             StringAssert.Contains("TestAssembly.SimpleClass.MethodWith4Arguments(string arg0 = \"arg0\", string arg1 = \"arg1\", string arg2 = \"arg2\", string arg3 = \"arg3\")", output);
         }
-
     }
 }

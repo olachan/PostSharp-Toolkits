@@ -45,11 +45,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BaseTestsFixture.cs" />
-    <Compile Include="LoggingToolkitTests.cs" />
-    <Compile Include="MethodArgumentsTests.cs" />
+    <Compile Include="LoggingToolkitTests.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MethodArgumentsTests.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MethodInterceptionTest.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReturnValueTests.cs" />
+    <Compile Include="MethodInterception.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

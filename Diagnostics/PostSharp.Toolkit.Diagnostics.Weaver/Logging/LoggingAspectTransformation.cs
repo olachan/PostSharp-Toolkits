@@ -69,6 +69,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 private readonly LoggingAspectTransformationInstance transformationInstance;
                 private readonly ConfigurationOptions options;
                 private readonly MessageArgumentsFormatter argumentsFormatter;
+                private readonly MethodMappingWriter methodMappingWriter;
 
                 public Implementation(LoggingAspectTransformationInstance transformationInstance, MethodBodyTransformationContext context)
                     : base(transformationInstance.AspectWeaver.AspectInfrastructureTask, context)
@@ -77,6 +78,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     this.backendInstance = this.transformationInstance.parent.backend.CreateInstance(transformationInstance.AspectWeaverInstance);
                     this.options = new ConfigurationOptions(this.transformationInstance.AspectWeaverInstance);
                     this.argumentsFormatter = new MessageArgumentsFormatter(context);
+                    this.methodMappingWriter = context.MethodMapping.CreateWriter();
                 }
 
                 public void Implement()
@@ -167,7 +169,6 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                         writer.EmitBranchingInstruction(OpCodeNumber.Brfalse_S, branchSequence);
                     }
 
-                    bool hasThis = ((Context.MethodMapping.MethodSignature.CallingConvention & CallingConvention.HasThis) != 0);
                     bool useWrapper = ShouldUseWrapper(targetMethod);
 
                     builder.EmitWrite(writer, messageFormatString, arguments.Length, logLevel, null, (i, instructionWriter) =>
@@ -175,7 +176,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                         int index = arguments[i];
                         if (index == MessageArgumentsFormatter.ThisArgumentPosition)
                         {
-                            instructionWriter.EmitInstruction(OpCodeNumber.Ldarg_0);
+                            this.methodMappingWriter.EmitLoadInstance(false, instructionWriter);
                         }
                         else if (index == MessageArgumentsFormatter.ReturnParameterPosition)
                         {
@@ -184,8 +185,9 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                         }
                         else
                         {
-                            instructionWriter.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)(hasThis ? index + 1 : index));
-                            instructionWriter.EmitConvertToObject(Context.MethodMapping.MethodSignature.GetParameterType(index));
+                            this.methodMappingWriter.EmitLoadArgument(index, instructionWriter);
+
+                            instructionWriter.EmitConvertToObject(this.methodMappingWriter.MethodMapping.MethodSignature.GetParameterType(index));
                         }
                     }, useWrapper);
                     
