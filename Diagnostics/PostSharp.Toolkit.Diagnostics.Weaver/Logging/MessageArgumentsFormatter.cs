@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.Remoting.Contexts;
 using System.Text;
 using PostSharp.Sdk.AspectInfrastructure;
 using PostSharp.Sdk.CodeModel;
@@ -13,7 +12,6 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
         public const int ReturnParameterPosition = -2;
 
         private readonly MethodBodyTransformationContext context;
-        private readonly StringBuilder formatBuilder = new StringBuilder();
         private readonly MethodDefDeclaration targetMethod;
 
         public MessageArgumentsFormatter(MethodBodyTransformationContext context)
@@ -28,18 +26,20 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
         public string CreateMessageArguments(LogOptions logOptions, out int[] argumentsIndex)
         {
+            StringBuilder formatBuilder = new StringBuilder();
+
             int arrayLength = this.GetArrayLength(logOptions);
             argumentsIndex = new int[arrayLength];
             
-            this.formatBuilder.AppendFormat("{0}.{1}", this.targetMethod.DeclaringType, this.targetMethod.Name);
-            this.formatBuilder.Append("(");
+            formatBuilder.AppendFormat("{0}.{1}", this.targetMethod.DeclaringType, this.targetMethod.Name);
+            formatBuilder.Append("(");
 
             int startParameter = 0;
             if ((logOptions & LogOptions.IncludeThisArgument) != 0 &&
                 (this.context.MethodMapping.MethodSignature.CallingConvention & CallingConvention.HasThis) != 0)
             {
-                this.formatBuilder.AppendFormat("this = ");
-                AppendFormatPlaceholder(0, this.formatBuilder, this.targetMethod.DeclaringType);
+                formatBuilder.AppendFormat("this = ");
+                AppendFormatPlaceholder(0, formatBuilder, this.targetMethod.DeclaringType);
                 startParameter = 1;
                 argumentsIndex[0] = ThisArgumentPosition;
             }
@@ -49,40 +49,40 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             {
                 if (i > 0)
                 {
-                    this.formatBuilder.Append(", ");
+                    formatBuilder.Append(", ");
                 }
 
                 ITypeSignature parameterType = context.MethodMapping.MethodSignature.GetParameterType(i);
                 if ((logOptions & LogOptions.IncludeParameterType) != 0)
                 {
-                    this.formatBuilder.Append(parameterType.ToString());
+                    formatBuilder.Append(parameterType.ToString());
                 }
 
                 if ((logOptions & LogOptions.IncludeParameterName) != 0)
                 {
-                    this.formatBuilder.AppendFormat(" {0}", context.MethodMapping.MethodMappingInformation.GetParameterName(i));
+                    formatBuilder.AppendFormat(" {0}", context.MethodMapping.MethodMappingInformation.GetParameterName(i));
                 }
 
                 if ((logOptions & LogOptions.IncludeParameterValue) != 0)
                 {
-                    this.formatBuilder.AppendFormat(" = ");
+                    formatBuilder.AppendFormat(" = ");
 
                     int index = i + startParameter;
-                    AppendFormatPlaceholder(index, this.formatBuilder, parameterType);
+                    AppendFormatPlaceholder(index, formatBuilder, parameterType);
                     argumentsIndex[index] = i;
                 }
             }
 
-            this.formatBuilder.Append(")");
+            formatBuilder.Append(")");
 
             if (ShouldLogReturnType(logOptions))
             {
-                this.formatBuilder.Append(" : ");
-                AppendFormatPlaceholder(argumentsIndex.Length - 1, this.formatBuilder, this.targetMethod.ReturnParameter.ParameterType);
+                formatBuilder.Append(" : ");
+                AppendFormatPlaceholder(argumentsIndex.Length - 1, formatBuilder, this.targetMethod.ReturnParameter.ParameterType);
                 argumentsIndex[argumentsIndex.Length - 1] = ReturnParameterPosition;
             }
 
-            return this.formatBuilder.ToString();
+            return formatBuilder.ToString();
 
         }
 
