@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Default project used when PostSharp is detected according to project references. -->
+<Project xmlns="http://schemas.postsharp.org/1.0/configuration" ReferenceDirectory="{$ReferenceDirectory}">
+  <Property Name="LoggingBackend" Value="nlog" />
+  <Using File="default" />
+  <Using File="..\packages\PostSharp-Diagnostics-Toolkit.2.1.1.2\tools\PostSharp.Toolkit.Diagnostics.Weaver.dll" />
+  <Using File="..\packages\PostSharp-Diagnostics-Toolkit-NLog.2.1.1.2\tools\PostSharp.Toolkit.Diagnostics.Weaver.NLog.dll" />
+  <Tasks>
+    <XmlMulticast />
+  </Tasks>
+  <Data Name="XmlMulticast">
+    <!-- Exclude property getters and setters -->
+    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics" OnEntryOptions="IncludeParameterType | IncludeParameterName | IncludeParameterValue" />
+    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics" AttributeTargetAssemblies="FamilyShowLib" OnEntryOptions="IncludeParameterType | IncludeParameterName | IncludeParameterValue | IncludeThisArgument" />
+    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics" AttributePriority="10" AttributeExclude="true" AttributeTargetMembers="regex:get_.*|set_.*" />
+  </Data>
+</Project>
