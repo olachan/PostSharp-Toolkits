@@ -112,7 +112,8 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 result = this.context.MethodMapping.MethodSignature.ParameterCount;
             }
 
-            if ((logOptions & LogOptions.IncludeThisArgument) != 0)
+            if ((logOptions & LogOptions.IncludeThisArgument) != 0 &&
+                (this.context.MethodMapping.MethodSignature.CallingConvention & CallingConvention.HasThis) != 0)
             {
                 ++result;
             }
