@@ -34,6 +34,10 @@
     <Reference Include="nunit.framework">
       <HintPath>..\..\packages\NUnit.2.5.10.11092\lib\nunit.framework.dll</HintPath>
     </Reference>
+    <Reference Include="PostSharp, Version=2.1.0.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\PostSharp-2.1\Build\bin\Debug\PostSharp.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -45,6 +49,12 @@
   <ItemGroup>
     <Compile Include="..\PostSharp.Toolkit.Tests\MethodArgumentsTests.cs">
       <Link>MethodArgumentsTests.cs</Link>
+    </Compile>
+    <Compile Include="..\PostSharp.Toolkit.Tests\MethodInterception.cs">
+      <Link>MethodInterception.cs</Link>
+    </Compile>
+    <Compile Include="..\PostSharp.Toolkit.Tests\MethodInterceptionTest.cs">
+      <Link>MethodInterceptionTest.cs</Link>
     </Compile>
     <Compile Include="..\PostSharp.Toolkit.Tests\ReturnValueTests.cs">
       <Link>ReturnValueTests.cs</Link>
@@ -60,6 +70,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Diagnostics\PostSharp.Toolkit.Diagnostics\PostSharp.Toolkit.Diagnostics.csproj">
+      <Project>{19C7E7BD-4C68-4796-97ED-24E6CEFD95B0}</Project>
+      <Name>PostSharp.Toolkit.Diagnostics</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PostSharp.Toolkit.Tests\PostSharp.Toolkit.Tests.csproj">
       <Project>{6A747DDC-F969-4BF7-8925-10A7E9CA3FFF}</Project>
       <Name>PostSharp.Toolkit.Tests</Name>

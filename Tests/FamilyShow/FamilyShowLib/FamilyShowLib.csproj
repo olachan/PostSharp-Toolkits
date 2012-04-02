@@ -92,7 +92,6 @@
   <ItemGroup>
     <None Include="FamilyShowLib.cd" />
     <None Include="FamilyShowLib.snk" />
-    <None Include="Migrated rules for FamilyShowLib %282%29.ruleset" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
