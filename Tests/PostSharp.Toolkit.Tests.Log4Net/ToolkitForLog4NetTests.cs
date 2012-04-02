@@ -40,7 +40,7 @@ namespace PostSharp.Toolkit.Tests.Log4Net
             s.Property1 = "Test";
 
             string output = OutputString.ToString();
-            StringAssert.Contains("DEBUG TestAssembly.SimpleClass (null) - Entering: TestAssembly.SimpleClass.set_Property1(string value = \"Test\")", output);
+            StringAssert.Contains("DEBUG TestAssembly.SimpleClass (null) - Entering: TestAssembly.SimpleClass.set_Property1(System.String value = \"Test\")", output);
         }
 
         [Test]

@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MethodInterception.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReturnValueTestClass.cs" />
     <Compile Include="SimpleClass.cs" />

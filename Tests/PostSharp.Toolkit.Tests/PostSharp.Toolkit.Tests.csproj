@@ -51,11 +51,11 @@
     <Compile Include="MethodArgumentsTests.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="MethodInterception.cs" />
     <Compile Include="MethodInterceptionTest.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReturnValueTests.cs" />
-    <Compile Include="MethodInterception.cs" />
     <Compile Include="StaticTests.cs" />
   </ItemGroup>
   <ItemGroup>

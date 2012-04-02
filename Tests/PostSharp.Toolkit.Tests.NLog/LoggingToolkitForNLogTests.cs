@@ -37,7 +37,7 @@ namespace PostSharp.Toolkit.Tests.NLog
 
             string output = OutputString.ToString();
             StringAssert.Contains(
-                "TRACE|TestAssembly.SimpleClass|Entering: TestAssembly.SimpleClass.set_Property1(string value = \"Test\")", output);
+                "TRACE|TestAssembly.SimpleClass|Entering: TestAssembly.SimpleClass.set_Property1(System.String value = \"Test\")", output);
         }
 
         [Test]

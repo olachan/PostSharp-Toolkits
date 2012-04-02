@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using NUnit.Framework;
+using TestAssembly;
 
 namespace PostSharp.Toolkit.Tests
 {
