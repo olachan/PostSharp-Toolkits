@@ -49,6 +49,7 @@
     <Compile Include="ReturnValueTestClass.cs" />
     <Compile Include="SimpleClass.cs" />
     <Compile Include="LogLevelTestClass.cs" />
+    <Compile Include="StaticClass.cs" />
     <Compile Include="ThisArgumentTestClass.cs" />
   </ItemGroup>
   <ItemGroup>

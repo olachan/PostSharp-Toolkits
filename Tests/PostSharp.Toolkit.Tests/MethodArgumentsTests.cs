@@ -13,7 +13,7 @@ namespace PostSharp.Toolkit.Tests
             s.MethodWith1Argument("Test");
 
             string output = OutputString.ToString();
-            StringAssert.Contains("TestAssembly.SimpleClass.MethodWith1Argument(string stringArg = \"Test\")", output);
+            StringAssert.Contains("TestAssembly.SimpleClass.MethodWith1Argument(System.String stringArg = \"Test\")", output);
         }
 
         [Test]
@@ -23,7 +23,7 @@ namespace PostSharp.Toolkit.Tests
             s.MethodWith2Arguments("Test", 42);
 
             string output = OutputString.ToString();
-            StringAssert.Contains("TestAssembly.SimpleClass.MethodWith2Arguments(string stringArg = \"Test\", int32 intArg = 42)", output);
+            StringAssert.Contains("TestAssembly.SimpleClass.MethodWith2Arguments(System.String stringArg = \"Test\", System.Int32 intArg = 42)", output);
         }
 
         [Test]
@@ -33,7 +33,7 @@ namespace PostSharp.Toolkit.Tests
             s.MethodWith3Arguments("Test", 42, 128.5);
 
             string output = OutputString.ToString();
-            StringAssert.Contains("TestAssembly.SimpleClass.MethodWith3Arguments(string stringArg = \"Test\", int32 intArg = 42, float64 doubleArg = 128.5)", output);
+            StringAssert.Contains("TestAssembly.SimpleClass.MethodWith3Arguments(System.String stringArg = \"Test\", System.Int32 intArg = 42, System.Double doubleArg = 128.5)", output);
         }
 
         [Test]
@@ -43,7 +43,8 @@ namespace PostSharp.Toolkit.Tests
             s.MethodWith4Arguments("arg0", "arg1", "arg2", "arg3");
 
             string output = OutputString.ToString();
-            StringAssert.Contains("TestAssembly.SimpleClass.MethodWith4Arguments(string arg0 = \"arg0\", string arg1 = \"arg1\", string arg2 = \"arg2\", string arg3 = \"arg3\")", output);
+            StringAssert.Contains("TestAssembly.SimpleClass.MethodWith4Arguments(System.String arg0 = \"arg0\", " + 
+                "System.String arg1 = \"arg1\", System.String arg2 = \"arg2\", System.String arg3 = \"arg3\")", output);
         }
     }
 }

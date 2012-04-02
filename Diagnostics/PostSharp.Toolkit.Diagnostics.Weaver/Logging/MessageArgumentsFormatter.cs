@@ -82,7 +82,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 ITypeSignature parameterType = this.context.MethodMapping.MethodSignature.GetParameterType(i);
                 if (includeParameterType)
                 {
-                    formatBuilder.Append(parameterType.ToString());
+                    formatBuilder.Append(parameterType.GetReflectionName());
                 }
 
                 if (includeParameterName)

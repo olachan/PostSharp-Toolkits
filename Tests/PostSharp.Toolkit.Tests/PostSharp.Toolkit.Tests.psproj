@@ -30,6 +30,12 @@
                   AttributeTargetAssemblies="TestAssembly"
                   AttributeTargetTypes="TestAssembly.ReturnValueTestClass"
                   OnSuccessOptions="IncludeReturnValue" />
+
+    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics"
+              AttributeTargetAssemblies="TestAssembly"
+              AttributeTargetTypes="TestAssembly.StaticClass"
+              OnEntryOptions="IncludeThisArgument | IncludeParameterType | IncludeParameterName | IncludeParameterValue"
+              OnSuccessOptions="IncludeReturnValue" />
   </Data>
 
 </Project>

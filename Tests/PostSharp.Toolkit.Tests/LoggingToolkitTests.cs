@@ -34,7 +34,7 @@ namespace PostSharp.Toolkit.Tests
             s.Property1 = "Test";
 
             string output = OutputString.ToString();
-            StringAssert.Contains("Entering: TestAssembly.SimpleClass.set_Property1(string value = \"Test\")", output);
+            StringAssert.Contains("Entering: TestAssembly.SimpleClass.set_Property1(System.String value = \"Test\")", output);
         }
 
         [Test]
@@ -68,7 +68,7 @@ namespace PostSharp.Toolkit.Tests
             s.MethodWith2Arguments(stringArg: "TEST", intArg: 12345);
 
             string output = OutputString.ToString();
-            StringAssert.Contains("MethodWith2Arguments(string stringArg = \"TEST\", int32 intArg = 12345)", output);
+            StringAssert.Contains("MethodWith2Arguments(System.String stringArg = \"TEST\", System.Int32 intArg = 12345)", output);
         }
 
         [Test]
@@ -78,7 +78,7 @@ namespace PostSharp.Toolkit.Tests
             s.MethodWith1Argument(null);
 
             string output = OutputString.ToString();
-            StringAssert.Contains("MethodWith1Argument(string stringArg = \"\")", output);
+            StringAssert.Contains("MethodWith1Argument(System.String stringArg = \"\")", output);
         }
 
         [Test]
