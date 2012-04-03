@@ -12,7 +12,7 @@ $xml = [xml] @"
   <Data Name="XmlMulticast">
     <!-- Exclude property getters and setters -->
     <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics" />
-    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics" AttributePriority="10" AttributeExclude="true" AttributeTargetMembers="regex:get_.*|set_.*" />
+    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics" AttributeExclude="true" AttributeTargetMembers="regex:get_.*|set_.*" />
   </Data>
 </Project>
 "@

@@ -17,7 +17,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <tags>postsharp sharcrafters aop aspect monitoring instrumentation log logging tracing nlog log4net elmah toolkit toolkits</tags>
     <dependencies>
-      <dependency id="PostSharp" version="2.1.6.4" />      
+      <dependency id="PostSharp" version="2.1.6.13" />
     </dependencies>
   </metadata>
   <files>
