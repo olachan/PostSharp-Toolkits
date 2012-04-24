@@ -37,3 +37,4 @@ packages/*
 /AssemblyVersion.cs
 *.version
 Private/Distribution/source-status
+/Build/source-status

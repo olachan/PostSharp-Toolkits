@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using PostSharp.Sdk.AspectInfrastructure;
 using PostSharp.Sdk.CodeModel;
@@ -82,7 +83,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 ITypeSignature parameterType = this.context.MethodMapping.MethodSignature.GetParameterType(i);
                 if (includeParameterType)
                 {
-                    formatBuilder.Append(parameterType.GetReflectionName());
+                    formatBuilder.Append(parameterType.GetReflectionName(ReflectionNameOptions.MethodParameterContext, NameShortener.Instance));
                 }
 
                 if (includeParameterName)
@@ -148,6 +149,54 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             else
             {
                 formatBuilder.AppendFormat("{{{0}}}", i);
+            }
+        }
+
+        class NameShortener : NameMapper
+        {
+            private readonly Dictionary<IntrinsicType, string> intrinsicNames = new Dictionary<IntrinsicType, string>
+                                                                           {
+                                                                               {IntrinsicType.Boolean, "bool"},
+                                                                               {IntrinsicType.Byte, "byte"},
+                                                                               {IntrinsicType.Char, "char"},
+                                                                               {IntrinsicType.Double, "double"},
+                                                                               {IntrinsicType.Int16, "short"},
+                                                                               {IntrinsicType.Int32, "int"},
+                                                                               {IntrinsicType.Int64, "long"},
+                                                                               {IntrinsicType.IntPtr, "IntPtr"},
+                                                                               {IntrinsicType.NativeReal, "NativeReal"},
+                                                                               {IntrinsicType.Null, "null"},
+                                                                               {IntrinsicType.Object, "object"},
+                                                                               {IntrinsicType.SByte, "sbyte"},
+                                                                               {IntrinsicType.Single, "float"},
+                                                                               {IntrinsicType.String, "string"},
+                                                                               {IntrinsicType.Token, "Token"},
+                                                                               {IntrinsicType.TypedReference, "TypedReference"},
+                                                                               {IntrinsicType.UInt16, "ushort"},
+                                                                               {IntrinsicType.UInt32, "uint"},
+                                                                               {IntrinsicType.UInt64, "ulong"},
+                                                                               {IntrinsicType.UIntPtr, "UIntPtr"},
+                                                                               {IntrinsicType.Void, "void"},
+                                                                           };
+            public static readonly NameShortener Instance = new NameShortener();
+            public override string GetName(INamedMetadataDeclaration declaration, ReflectionNameOptions options)
+            {
+                // Suppress the "System" namespace.
+                int lastDot = declaration.Name.LastIndexOf( '.' );
+                if (lastDot > 0 && declaration.Name.Substring(0, lastDot) == "System")
+                    return declaration.Name.Substring( lastDot + 1 );
+
+                return base.GetName( declaration, options );
+            }
+
+
+            public override string GetName(IntrinsicType intrinsicType, ReflectionNameOptions options)
+            {
+                string name;
+                if (this.intrinsicNames.TryGetValue(intrinsicType, out name))
+                    return name;
+
+                return base.GetName(intrinsicType, options);
             }
         }
     }

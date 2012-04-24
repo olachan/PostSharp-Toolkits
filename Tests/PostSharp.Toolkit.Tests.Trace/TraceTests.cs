@@ -40,7 +40,7 @@ namespace PostSharp.Toolkit.Tests.Trace
             s.Property1 = "Test";
 
             string output = OutputString.ToString();
-            StringAssert.Contains("Entering: TestAssembly.SimpleClass.set_Property1(System.String value = \"Test\")", output);
+            StringAssert.Contains("Entering: TestAssembly.SimpleClass.set_Property1(string value = \"Test\")", output);
         }
 
         [Test]

@@ -15,7 +15,7 @@ namespace PostSharp.Toolkit.Tests
             t.Method1("Test");
 
             string output = OutputString.ToString();
-            StringAssert.Contains("MethodInterception.Method1(System.String arg = \"Test\")", output);
+            StringAssert.Contains("MethodInterception.Method1(string arg = \"Test\")", output);
         }
 
         [Test]
