@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Tests.Tra
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Threading", "Threading\PostSharp.Toolkit.Threading\PostSharp.Toolkit.Threading.csproj", "{A3338835-6A17-442C-A7B2-C4F2BDDC06F3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Threading.Tests", "PostSharp.Toolkit.Threading.Tests\PostSharp.Toolkit.Threading.Tests.csproj", "{24509C87-563B-4256-9326-7595AA6C55D4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -76,6 +78,10 @@ Global
 		{A3338835-6A17-442C-A7B2-C4F2BDDC06F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A3338835-6A17-442C-A7B2-C4F2BDDC06F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A3338835-6A17-442C-A7B2-C4F2BDDC06F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24509C87-563B-4256-9326-7595AA6C55D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24509C87-563B-4256-9326-7595AA6C55D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24509C87-563B-4256-9326-7595AA6C55D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24509C87-563B-4256-9326-7595AA6C55D4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -86,5 +92,6 @@ Global
 		{315DB367-6AB0-4D92-8CD8-4269C1321CAE} = {E79F9017-525A-458D-868D-37990CD4668B}
 		{92CEEEE5-EA8D-4A79-B4C5-4F6C9788E3D5} = {E79F9017-525A-458D-868D-37990CD4668B}
 		{4319200B-C630-421C-B266-C41ED1D1AEEF} = {E79F9017-525A-458D-868D-37990CD4668B}
+		{24509C87-563B-4256-9326-7595AA6C55D4} = {E79F9017-525A-458D-868D-37990CD4668B}
 	EndGlobalSection
 EndGlobal
