@@ -4,7 +4,7 @@ using PostSharp.Aspects;
 using PostSharp.Aspects.Configuration;
 using PostSharp.Aspects.Serialization;
 
-namespace Threading
+namespace PostSharp.Toolkit.Threading
 {
     [EventInterceptionAspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     [Serializable]

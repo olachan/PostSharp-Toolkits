@@ -2,32 +2,30 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
-
 using PostSharp.Aspects;
 using PostSharp.Aspects.Configuration;
 using PostSharp.Aspects.Dependencies;
 using PostSharp.Aspects.Serialization;
 
-namespace Threading
+namespace PostSharp.Toolkit.Threading.SingleThreaded
 {
     /// <summary>
     /// TODO: Update summary.
     /// </summary>
     [Serializable]
-    [CompositionAspectConfiguration(SerializerType = typeof(MsilAspectSerializer))]
     [ProvideAspectRole(StandardRoles.Threading)]
     [Conditional("DEBUG")]
     public class SingleThreadedStaticAttribute : MethodInterceptionAspect
     {
         //TODO: Replace with some .NET 3.5 compatible collection
-        private static ConcurrentDictionary<Type, object> staticLocks = new ConcurrentDictionary<Type, object>();
+        private static ConcurrentDictionary<Type, object> typeLocks = new ConcurrentDictionary<Type, object>();
 
         [NonSerialized]
-        private object instanceLock;
+        private object attributeLock;
 
         private bool instanceLocked;
 
-        public SingleThreadedStaticAttribute(bool isInstanceLocked)
+        public SingleThreadedStaticAttribute(bool isInstanceLocked = true)
         {
             this.instanceLocked = isInstanceLocked;
         }
@@ -36,27 +34,28 @@ namespace Threading
         {
             if (!instanceLocked)
             {
-                this.instanceLock = new object();
+                this.attributeLock = new object();
             }
         }
-
+        
         public override void OnInvoke(MethodInterceptionArgs args)
         {
             object l;
 
             if (this.instanceLocked)
             {
-                l = staticLocks.GetOrAdd(args.Method.DeclaringType, (key) => new object());
+                l = typeLocks.GetOrAdd(args.Method.DeclaringType, (key) => new object());
             }
             else
             {
-                l = this.instanceLock;
+                l = this.attributeLock;
             }
 
             if (!Monitor.TryEnter(l))
             {
                 throw new SingleThreadedException();
             }
+
             try
             {
                 args.Proceed();

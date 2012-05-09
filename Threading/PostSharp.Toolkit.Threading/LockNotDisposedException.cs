@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Threading
+namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
     /// Exception thrown when a lock has been acquired but has not been disposed.

@@ -6,7 +6,7 @@ using PostSharp.Aspects.Configuration;
 using PostSharp.Aspects.Serialization;
 using PostSharp.Extensibility;
 
-namespace Threading
+namespace PostSharp.Toolkit.Threading
 {
     [MethodInterceptionAspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     public sealed class DispatchMethodAttribute : MethodInterceptionAspect

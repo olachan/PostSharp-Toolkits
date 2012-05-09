@@ -4,7 +4,7 @@ using PostSharp.Aspects;
 using PostSharp.Aspects.Configuration;
 using PostSharp.Aspects.Serialization;
 
-namespace Threading
+namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
     /// Custom attribute that, when applied on a method, synchronizes its execution

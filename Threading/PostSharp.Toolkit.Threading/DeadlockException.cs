@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Threading
+namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
     /// Exception thrown by the <see cref="DeadlockMonitor"/> class when a deadlock

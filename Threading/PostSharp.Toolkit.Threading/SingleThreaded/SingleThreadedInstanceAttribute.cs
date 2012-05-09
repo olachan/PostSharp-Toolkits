@@ -1,37 +1,46 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading;
-
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
-using PostSharp.Aspects.Configuration;
 using PostSharp.Aspects.Dependencies;
-using PostSharp.Aspects.Serialization;
 
-namespace Threading
+namespace PostSharp.Toolkit.Threading.SingleThreaded
 {
     /// <summary>
     /// TODO: Update summary.
     /// </summary>
     [Serializable]
-    [IntroduceInterface(typeof(ISynchronized), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
+    [IntroduceInterface(typeof(ISingleThreaded), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
     [ProvideAspectRole(StandardRoles.Threading)]
     [Conditional("DEBUG")]
-    public class SingleThreadedInstanceAttribute : MethodInterceptionAspect, IInstanceScopedAspect, ISynchronized
+    public class SingleThreadedInstanceAttribute : MethodInterceptionAspect, IInstanceScopedAspect, ISingleThreaded
     {
         [NonSerialized]
-        private object @lock;
+        protected object instanceLock;
 
         [NonSerialized]
-        private object instanceLock;
+        protected object attributeLock;
 
-        private bool instanceLocked;
+        protected bool instanceLocked;
 
-        public object Lock { get { return this.@lock; } } 
+        public object Lock { get { return this.instanceLock; } } 
 
-        public SingleThreadedInstanceAttribute(bool isInstanceLocked)
+        public SingleThreadedInstanceAttribute(bool isInstanceLocked = true)
         {
             this.instanceLocked = isInstanceLocked;
+        }
+
+        public void RuntimeInitializeInstance()
+        {
+            if (!this.instanceLocked)
+            {
+                this.attributeLock = new object();
+            }
+            else
+            {
+                this.instanceLock = new object();
+            }
         }
 
         public object CreateInstance(AdviceArgs aspectArgs)
@@ -40,22 +49,10 @@ namespace Threading
             return instance;
         }
 
-        public void RuntimeInitializeInstance()
-        {
-            if (!this.instanceLocked)
-            {
-                this.instanceLock = new object();
-            }
-            else
-            {
-                this.@lock = new object();
-            }
-        }
-
 
         public override void OnInvoke(MethodInterceptionArgs args)
         {
-            object l = this.instanceLocked ? ((ISynchronized)args.Instance).Lock : this.instanceLock;
+            object l = this.instanceLocked ? ((ISingleThreaded)args.Instance).Lock : this.attributeLock;
 
             if (!Monitor.TryEnter(l))
             {

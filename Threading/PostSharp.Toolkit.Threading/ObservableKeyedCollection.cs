@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 
-namespace Threading
+namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
     /// A keyed collection that is both observable through <see cref="INotifyCollectionChanged"/>,

@@ -6,7 +6,7 @@ using PostSharp.Aspects.Configuration;
 using PostSharp.Aspects.Dependencies;
 using PostSharp.Aspects.Serialization;
 
-namespace Threading
+namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
     /// Custom attribute that, when applied on a class, automatically implements

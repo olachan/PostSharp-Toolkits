@@ -30,10 +30,10 @@ namespace PostSharp.Toolkit.Tests
         public void MethodArguments_MethodWith3Arguments_LogsArgument()
         {
             SimpleClass s = new SimpleClass();
-            s.MethodWith3Arguments("Test", 42, 128.5);
+            s.MethodWith3Arguments("Test", 42, 128);
 
             string output = OutputString.ToString();
-            StringAssert.Contains("TestAssembly.SimpleClass.MethodWith3Arguments(string stringArg = \"Test\", int intArg = 42, double doubleArg = 128.5)", output);
+            StringAssert.Contains("TestAssembly.SimpleClass.MethodWith3Arguments(string stringArg = \"Test\", int intArg = 42, double doubleArg = 128)", output);
         }
 
         [Test]

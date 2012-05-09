@@ -1,6 +1,6 @@
 using System.Threading;
 
-namespace Threading
+namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
     /// Interface to be implemented by classes whose instances are synchronized by

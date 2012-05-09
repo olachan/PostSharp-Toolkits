@@ -1,9 +1,9 @@
-﻿namespace Threading
+﻿namespace PostSharp.Toolkit.Threading.SingleThreaded
 {
     /// <summary>
     /// TODO: Update summary.
     /// </summary>
-    public interface ISynchronized
+    public interface ISingleThreaded
     {
         object Lock { get; }
     }

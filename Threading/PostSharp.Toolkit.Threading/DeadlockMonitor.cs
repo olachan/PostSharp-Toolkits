@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
-using ThreadState=System.Threading.ThreadState;
+using ThreadState = System.Threading.ThreadState;
 
-namespace Threading
+namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
     /// Detects deadlocks occurring because of circular wait conditions.

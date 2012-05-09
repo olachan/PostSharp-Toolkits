@@ -1,15 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
-
 using PostSharp.Aspects;
 
-namespace Threading
+namespace PostSharp.Toolkit.Threading.SingleThreaded
 {
     /// <summary>
     /// TODO: Update summary.
     /// </summary>
     [Conditional("DEBUG")]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property)]
     public class SingleThreadedAttribute : MethodLevelAspect, IAspectProvider
     {
         private bool instanceLocked;

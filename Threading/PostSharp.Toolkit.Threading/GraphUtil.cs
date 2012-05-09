@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Threading
+namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
     /// Implementation of some graph algorithms (the breadth-first search algorithm, specifically).

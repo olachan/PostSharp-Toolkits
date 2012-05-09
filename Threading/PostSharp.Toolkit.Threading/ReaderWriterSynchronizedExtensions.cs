@@ -1,4 +1,4 @@
-namespace Threading
+namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
     /// Utility methods to work with classes implementing <see cref="IReaderWriterSynchronized"/>.

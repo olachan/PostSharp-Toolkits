@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Threading
+namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
     /// Semantics of a graph.
