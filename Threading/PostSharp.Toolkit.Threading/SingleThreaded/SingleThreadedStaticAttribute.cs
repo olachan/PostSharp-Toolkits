@@ -15,29 +15,15 @@ namespace PostSharp.Toolkit.Threading.SingleThreaded
     [Serializable]
     [ProvideAspectRole(StandardRoles.Threading)]
     [Conditional("DEBUG")]
-    public class SingleThreadedStaticAttribute : MethodInterceptionAspect
+    public class SingleThreadedStaticAttribute : LockStaticAttributeBase
     {
         //TODO: Replace with some .NET 3.5 compatible collection
-        private static ConcurrentDictionary<Type, object> typeLocks = new ConcurrentDictionary<Type, object>();
-
-        [NonSerialized]
-        private object attributeLock;
-
-        private bool instanceLocked;
 
         public SingleThreadedStaticAttribute(bool isInstanceLocked = true)
+            : base(isInstanceLocked)
         {
-            this.instanceLocked = isInstanceLocked;
         }
 
-        public override void RuntimeInitialize(System.Reflection.MethodBase method)
-        {
-            if (!instanceLocked)
-            {
-                this.attributeLock = new object();
-            }
-        }
-        
         public override void OnInvoke(MethodInterceptionArgs args)
         {
             object l;

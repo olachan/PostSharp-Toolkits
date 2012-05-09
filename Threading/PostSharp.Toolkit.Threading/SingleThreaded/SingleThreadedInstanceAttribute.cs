@@ -14,33 +14,11 @@ namespace PostSharp.Toolkit.Threading.SingleThreaded
     [IntroduceInterface(typeof(ISingleThreaded), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
     [ProvideAspectRole(StandardRoles.Threading)]
     [Conditional("DEBUG")]
-    public class SingleThreadedInstanceAttribute : MethodInterceptionAspect, IInstanceScopedAspect, ISingleThreaded
+    public class SingleThreadedInstanceAttribute : LockInstanceAttributeBase, IInstanceScopedAspect, ISingleThreaded
     {
-        [NonSerialized]
-        protected object instanceLock;
-
-        [NonSerialized]
-        protected object attributeLock;
-
-        protected bool instanceLocked;
-
-        public object Lock { get { return this.instanceLock; } } 
-
         public SingleThreadedInstanceAttribute(bool isInstanceLocked = true)
+            : base(isInstanceLocked)
         {
-            this.instanceLocked = isInstanceLocked;
-        }
-
-        public void RuntimeInitializeInstance()
-        {
-            if (!this.instanceLocked)
-            {
-                this.attributeLock = new object();
-            }
-            else
-            {
-                this.instanceLock = new object();
-            }
         }
 
         public object CreateInstance(AdviceArgs aspectArgs)
@@ -49,6 +27,13 @@ namespace PostSharp.Toolkit.Threading.SingleThreaded
             return instance;
         }
 
+        public object Lock
+        {
+            get
+            {
+                return this.instanceLock;
+            }
+        }
 
         public override void OnInvoke(MethodInterceptionArgs args)
         {
