@@ -9,7 +9,7 @@ using System.Threading;
 
 using NUnit.Framework;
 
-using Threading;
+using PostSharp.Toolkit.Threading.Async;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {

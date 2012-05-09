@@ -31,6 +31,8 @@ namespace PostSharp.Toolkit.Threading.Tests
             }
         }
 
+       
+
         [Test]
         public void TwoInstanceIndependentMethodsInvoked_NoException()
         {
