@@ -16,6 +16,7 @@ namespace Threading
     [Serializable]
     [IntroduceInterface(typeof(ISynchronized), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
     [ProvideAspectRole(StandardRoles.Threading)]
+    [Conditional("DEBUG")]
     public class SingleThreadedInstanceAttribute : MethodInterceptionAspect, IInstanceScopedAspect, ISynchronized
     {
         [NonSerialized]

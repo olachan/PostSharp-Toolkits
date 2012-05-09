@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading;
 
 using PostSharp.Aspects;
@@ -15,6 +16,7 @@ namespace Threading
     [Serializable]
     [CompositionAspectConfiguration(SerializerType = typeof(MsilAspectSerializer))]
     [ProvideAspectRole(StandardRoles.Threading)]
+    [Conditional("DEBUG")]
     public class SingleThreadedStaticAttribute : MethodInterceptionAspect
     {
         //TODO: Replace with some .NET 3.5 compatible collection
