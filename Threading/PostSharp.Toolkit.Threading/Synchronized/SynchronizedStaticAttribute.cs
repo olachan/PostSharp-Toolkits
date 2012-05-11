@@ -8,8 +8,11 @@ using PostSharp.Toolkit.Threading.Deadlock;
 namespace PostSharp.Toolkit.Threading.Synchronized
 {
     /// <summary>
-    /// TODO: Update summary.
+    /// For internal use. Use <see cref="SynchronizedAttribute"/> insted.
     /// </summary>
+    /// <remarks>
+    /// Implements synchronizatian for static methods.
+    /// </remarks>
     [Serializable]
     [ProvideAspectRole(StandardRoles.Threading)]
     public class SynchronizedStaticAttribute : LockStaticAttributeBase

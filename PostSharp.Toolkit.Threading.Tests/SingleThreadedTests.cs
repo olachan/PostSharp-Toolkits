@@ -31,8 +31,6 @@ namespace PostSharp.Toolkit.Threading.Tests
             }
         }
 
-       
-
         [Test]
         public void TwoInstanceIndependentMethodsInvoked_NoException()
         {
@@ -41,10 +39,31 @@ namespace PostSharp.Toolkit.Threading.Tests
         }
 
         [Test]
+        public void TwoInstanceIndependentDerivedMethodsInvoked_NoException()
+        {
+            var o1 = new SingleThreadedMethodsDerivedObject();
+            InvokeSimultaneouslyAndWait(o1.DerivedInstanceIndependentMethod, o1.DerivedInstanceIndependentMethod2);
+        }
+
+        [Test]
+        public void InstanceIndependentDerivedAndOntDerivedMethodsInvoked_NoException()
+        {
+            var o1 = new SingleThreadedMethodsDerivedObject();
+            InvokeSimultaneouslyAndWait(o1.InstanceIndependentMethod, o1.DerivedInstanceIndependentMethod2);
+        }
+
+        [Test]
         public void InstanceDependentAndIndependentMethodsInvoked_NoException()
         {
             var o1 = new SingleThreadedMethodsObject();
             InvokeSimultaneouslyAndWait(o1.InstanceIndependentMethod, o1.InstanceDependentMethod);
+        }
+
+        [Test]
+        public void InstanceDependentAndIndependentDerivedMethodsInvoked_NoException()
+        {
+            var o1 = new SingleThreadedMethodsDerivedObject();
+            InvokeSimultaneouslyAndWait(o1.InstanceIndependentMethod, o1.DerivedInstanceDependentMethod);
         }
 
         [Test]
@@ -61,6 +80,21 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             var o1 = new SingleThreadedMethodsObject();
             InvokeSimultaneouslyAndWait(o1.InstanceIndependentMethod, o1.InstanceIndependentMethod);
+        }
+
+        [Test]
+        public void InstanceIndependentDerivedAndNotDerivedMethodInvoked_NoException()
+        {
+            var o1 = new SingleThreadedMethodsDerivedObject();
+            InvokeSimultaneouslyAndWait(o1.DerivedInstanceIndependentMethod, o1.InstanceIndependentMethod);
+        }
+
+        [Test]
+        [ExpectedException(typeof(SingleThreadedException))]
+        public void InstanceDependentDerivedAndNotDerivedMethodInvoked_Exception()
+        {
+            var o1 = new SingleThreadedMethodsDerivedObject();
+            InvokeSimultaneouslyAndWait(o1.DerivedInstanceDependentMethod, o1.InstanceDependentMethod);
         }
 
         [Test]
@@ -92,6 +126,13 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             InvokeSimultaneouslyAndWait(SingleThreadedMethodsObject.StaticIndependentMethod,
                                         SingleThreadedMethodsObject.StaticIndependentMethod);
+        }
+
+        [Test]
+        public void TypeIndependentStaticDerivedMethodAndNotDerivedInvoked_NoException()
+        {
+            InvokeSimultaneouslyAndWait(SingleThreadedMethodsDerivedObject.DerivedStaticIndependentMethod,
+                                        SingleThreadedMethodsDerivedObject.StaticIndependentMethod);
         }
 
         [Test]
@@ -261,6 +302,51 @@ namespace PostSharp.Toolkit.Threading.Tests
             public static void StaticException()
             {
                 throw new NotSupportedException();
+            }
+        }
+
+        public class SingleThreadedMethodsDerivedObject : SingleThreadedMethodsObject
+        {
+            [SingleThreaded(false)]
+            public static void DerivedStaticIndependentMethod()
+            {
+                Thread.Sleep(200);
+            }
+
+            [SingleThreaded(true)]
+            public static void DerivedStaticTypeDependentMethod()
+            {
+                Thread.Sleep(200);
+            }
+
+            [SingleThreaded(true)]
+            public static void DerivedStaticTypeDependentMethod2()
+            {
+                Thread.Sleep(200);
+            }
+
+            [SingleThreaded(false)]
+            public void DerivedInstanceIndependentMethod()
+            {
+                Thread.Sleep(200);
+            }
+
+            [SingleThreaded(false)]
+            public void DerivedInstanceIndependentMethod2()
+            {
+                Thread.Sleep(200);
+            }
+
+            [SingleThreaded(true)]
+            public void DerivedInstanceDependentMethod()
+            {
+                Thread.Sleep(200);
+            }
+
+            [SingleThreaded(true)]
+            public void DerivedInstanceDependentMethod2()
+            {
+                Thread.Sleep(200);
             }
         }
     }

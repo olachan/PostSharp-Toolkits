@@ -9,12 +9,10 @@ using PostSharp.Toolkit.Threading.Deadlock;
 namespace PostSharp.Toolkit.Threading.Synchronized
 {
     /// <summary>
-    /// Custom attribute that, when applied on a method, synchronizes its execution
-    /// using a simple <see cref="Monitor"/>.
+    /// For internal use. Use <see cref="SynchronizedAttribute"/> insted.
     /// </summary>
     /// <remarks>
-    /// Instance methods are synchronized at instance level; static methods are
-    /// synchronized at type level.
+    /// Implements synchronizatian for instance methods.
     /// </remarks>
     [Serializable]
     [IntroduceInterface(typeof(ISynchronized), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
