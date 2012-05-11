@@ -1,5 +1,4 @@
 ﻿using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 
@@ -7,7 +6,8 @@ using NUnit.Framework;
 
 using PostSharp.Toolkit.Threading.Dispatch;
 
-using Application = System.Windows.Forms.Application;
+using FormsApplication = System.Windows.Forms.Application;
+using WpfApplication = System.Windows.Application;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {
@@ -22,7 +22,8 @@ namespace PostSharp.Toolkit.Threading.Tests
             Thread windowThread = new Thread(() =>
                 {
                     window = new DispatchMethodWpfObject();
-                    window.ShowDialog();
+                    var application = new WpfApplication();
+                    application.Run(window);
                 });
 
             windowThread.SetApartmentState(ApartmentState.STA);
@@ -45,8 +46,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             Thread windowThread = new Thread(() =>
             {
                 window = new DispatchMethodWinFormsObject();
-                Application.Run(window);
-                // window.ShowDialog();
+                FormsApplication.Run(window);
             });
 
             windowThread.SetApartmentState(ApartmentState.STA);
@@ -54,7 +54,7 @@ namespace PostSharp.Toolkit.Threading.Tests
 
             Thread.Sleep(1000); // wait for the window
 
-            window.AddTextBox();
+            window.AddControl();
 
             window.Close();
 
@@ -62,11 +62,12 @@ namespace PostSharp.Toolkit.Threading.Tests
         }
     }
 
+    [System.ComponentModel.DesignerCategory("")]
     public class DispatchMethodWinFormsObject : Form
     {
-        public void AddTextBox()
+        public void AddControl()
         {
-            this.Controls.Add(new TextBox());
+            this.Controls.Add(new Control()); // Adding control deterministicly throws exception when done from not UI thread 
         }
     }
 
