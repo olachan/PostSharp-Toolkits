@@ -77,6 +77,9 @@
     <Compile Include="Synchronized\SynchronizedAttribute.cs" />
     <Compile Include="Synchronized\SynchronizedInstanceAttribute.cs" />
     <Compile Include="ReaderWriter\WriteLockAttribute.cs" />
+    <Compile Include="ThreadAffined\DispatchAttribute.cs" />
+    <Compile Include="ThreadAffined\IThreadAffined.cs" />
+    <Compile Include="ThreadAffined\ThreadAffinedAttribute.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
