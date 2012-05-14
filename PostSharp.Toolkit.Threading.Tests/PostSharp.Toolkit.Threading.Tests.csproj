@@ -60,6 +60,7 @@
     <Compile Include="SingleThreadedAndSynchronizedIntegrationTests.cs" />
     <Compile Include="SingleThreadedTests.cs" />
     <Compile Include="SynchronizedTests.cs" />
+    <Compile Include="TestHelpers.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Threading\PostSharp.Toolkit.Threading\PostSharp.Toolkit.Threading.csproj">

@@ -112,6 +112,11 @@ namespace PostSharp.Toolkit.Threading.Deadlock
 
                     while (!result)
                     {
+                        if (timeout > 100)
+                        {
+                            DeadlockMonitor.DetectDeadlocks();
+                        }
+
                         result = args.Arguments.Count > 0 ? mutex.WaitOne(timeout, (bool)args.Arguments[0]) : mutex.WaitOne(timeout);
 
                         timeout *= 2;
@@ -167,6 +172,11 @@ namespace PostSharp.Toolkit.Threading.Deadlock
 
                 while (!lockTaken)
                 {
+                    if (timeout > 100)
+                    {
+                        DeadlockMonitor.DetectDeadlocks();
+                    }
+
                     Monitor.TryEnter(args.Arguments[0], timeout, ref lockTaken);
 
                     if (args.Arguments.Count > 1)
@@ -205,6 +215,11 @@ namespace PostSharp.Toolkit.Threading.Deadlock
 
                     while (!lockTaken)
                     {
+                        if (timeout > 100)
+                        {
+                            DeadlockMonitor.DetectDeadlocks();
+                        }
+
                         Monitor.TryEnter(args.Arguments[0], timeout, ref lockTaken);
 
                         if ((args.Arguments.Count == 2 && args.Arguments[1] is bool) || (args.Arguments.Count == 3 && args.Arguments[2] is bool))
@@ -282,6 +297,11 @@ namespace PostSharp.Toolkit.Threading.Deadlock
                 {
                     while (!lockTaken)
                     {
+                        if (timeout > 100)
+                        {
+                            DeadlockMonitor.DetectDeadlocks();
+                        }
+
                         var rwl = args.Instance as ReaderWriterLockSlim;
                         switch (this.type)
                         {
@@ -307,6 +327,11 @@ namespace PostSharp.Toolkit.Threading.Deadlock
                     {
                         while (!lockTaken)
                         {
+                            if (timeout > 100)
+                            {
+                                DeadlockMonitor.DetectDeadlocks();
+                            }
+
                             args.Arguments.SetArgument(0, timeout);
 
                             try
