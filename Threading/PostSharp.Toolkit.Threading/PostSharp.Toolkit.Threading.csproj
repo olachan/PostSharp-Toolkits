@@ -48,7 +48,6 @@
     <Compile Include="Async\AsyncAttribute.cs" />
     <Compile Include="Deadlock\DeadlockException.cs" />
     <Compile Include="Deadlock\DeadlockMonitor.cs" />
-    <Compile Include="Deadlock\DedlockDetectionAspects.cs" />
     <Compile Include="Dispatch\DispatchEventAttribute.cs" />
     <Compile Include="Dispatch\DispatchMethodAttribute.cs" />
     <Compile Include="Deadlock\Graph.cs" />
@@ -77,6 +76,9 @@
     <Compile Include="Synchronized\SynchronizedAttribute.cs" />
     <Compile Include="Synchronized\SynchronizedInstanceAttribute.cs" />
     <Compile Include="ReaderWriter\WriteLockAttribute.cs" />
+    <Compile Include="ThreadAffined\DispatchAttribute.cs" />
+    <Compile Include="ThreadAffined\IThreadAffined.cs" />
+    <Compile Include="ThreadAffined\ThreadAffinedAttribute.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
