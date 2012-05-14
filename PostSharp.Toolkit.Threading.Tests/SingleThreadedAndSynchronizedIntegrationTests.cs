@@ -84,7 +84,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                    InvokeSimultaneouslyAndWait(o1.SynchronizedInstanceDependentMethod, o1.SynchronizedInstanceDependentMethod2);
                });
 
-            Assert.Greater(time, 400);
+            Assert.GreaterOrEqual(time, 400);
         }
     }
 

@@ -90,7 +90,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                    InvokeSimultaneouslyAndWait(o1.InstanceIndependentMethod, o1.InstanceIndependentMethod);
                });
 
-            Assert.Greater(time, 400);
+            Assert.GreaterOrEqual(time, 400);
         }
 
         [Test]
@@ -102,7 +102,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                     InvokeSimultaneouslyAndWait(o1.InstanceDependentMethod, o1.InstanceDependentMethod);
                 });
 
-            Assert.Greater(time, 400);
+            Assert.GreaterOrEqual(time, 400);
         }
 
         [Test]
@@ -114,7 +114,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                    InvokeSimultaneouslyAndWait(o1.InstanceDependentMethod, o1.InstanceDependentMethod2);
                });
 
-            Assert.Greater(time, 400);
+            Assert.GreaterOrEqual(time, 400);
         }
 
         [Test]
@@ -130,7 +130,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             var time = this.InvokeAndTraceTime(() => this.InvokeSimultaneouslyAndWait(SynchronizedEntity.StaticIndependentMethod, SynchronizedEntity.StaticIndependentMethod));
 
-            Assert.Greater(time, 400);
+            Assert.GreaterOrEqual(time, 400);
         }
 
         [Test]
@@ -138,7 +138,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             var time = this.InvokeAndTraceTime(() => this.InvokeSimultaneouslyAndWait(SynchronizedEntity.StaticTypeDependentMethod, SynchronizedEntity.StaticTypeDependentMethod));
 
-            Assert.Greater(time, 400);
+            Assert.GreaterOrEqual(time, 400);
         }
 
         [Test]
@@ -146,7 +146,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             var time = this.InvokeAndTraceTime(() => this.InvokeSimultaneouslyAndWait(SynchronizedEntity.StaticTypeDependentMethod, SynchronizedEntity.StaticTypeDependentMethod2));
 
-            Assert.Greater(time, 400);
+            Assert.GreaterOrEqual(time, 400);
         }
 
         [Test]
@@ -191,7 +191,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             var o1 = new SynchronizedMethodsDerivedObject();
             var time = this.InvokeAndTraceTime(() => InvokeSimultaneouslyAndWait(o1.DerivedInstanceDependentMethod, o1.InstanceDependentMethod));
 
-            Assert.Greater(time, 400);
+            Assert.GreaterOrEqual(time, 400);
         }
 
         [Test]
@@ -232,7 +232,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                 () =>
                 { InvokeSimultaneouslyAndWait(() => { o.TestProperty = 3; }, () => { o.TestProperty = 3; }); });
 
-            Assert.Greater(time, 400);
+            Assert.GreaterOrEqual(time, 400);
 
         }
 
@@ -244,7 +244,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                 this.InvokeAndTraceTime(
                     () => { InvokeSimultaneouslyAndWait(() => { o.TestProperty = 3; }, () => { o.TestProperty = 3; }); });
 
-            Assert.Greater(time, 400);
+            Assert.GreaterOrEqual(time, 400);
         }
 
         protected void Swallow<TException>(Action action)

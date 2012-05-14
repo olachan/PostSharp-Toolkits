@@ -53,9 +53,9 @@ namespace PostSharp.Toolkit.Threading.Tests
             var rw = new ReaderWriterEntity();
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            InvokeSimultaneouslyAndWait(() => rw.Write(100, 100), () => rw.Read(100));
+            InvokeSimultaneouslyAndWait(() => rw.Write(100, 101), () => rw.Read(101));
             stopwatch.Stop();
-            Assert.Greater(stopwatch.ElapsedMilliseconds, 200);
+            Assert.GreaterOrEqual(stopwatch.ElapsedMilliseconds, 200);
         }
 
         [Test]
@@ -64,9 +64,9 @@ namespace PostSharp.Toolkit.Threading.Tests
             var rw = new ReaderWriterEntity();
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            InvokeSimultaneouslyAndWait(() => rw.Write(100, 100), () => rw.Read(100));
+            InvokeSimultaneouslyAndWait(() => rw.Write(100, 101), () => rw.Read(101));
             stopwatch.Stop();
-            Assert.Greater(stopwatch.ElapsedMilliseconds, 200);
+            Assert.GreaterOrEqual(stopwatch.ElapsedMilliseconds, 200);
         }
 
         [Test]
@@ -75,9 +75,9 @@ namespace PostSharp.Toolkit.Threading.Tests
             var rw = new ReaderWriterEntity();
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            InvokeSimultaneouslyAndWait(() => rw.Write(100, 100), () => rw.Write(100, 100));
+            InvokeSimultaneouslyAndWait(() => rw.Write(100, 101), () => rw.Write(100, 101));
             stopwatch.Stop();
-            Assert.Greater(stopwatch.ElapsedMilliseconds, 200);
+            Assert.GreaterOrEqual(stopwatch.ElapsedMilliseconds, 200);
         }
 
         [Test]

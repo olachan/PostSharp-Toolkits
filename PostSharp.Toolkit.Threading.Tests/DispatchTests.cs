@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Windows;
 using System.Windows.Forms;
-
+using System.Windows.Threading;
 using NUnit.Framework;
 
 using PostSharp.Toolkit.Threading.Dispatch;
@@ -23,8 +23,8 @@ namespace PostSharp.Toolkit.Threading.Tests
             Thread windowThread = new Thread(() =>
                 {
                     window = new DispatchWpfObject();
-                    var application = new WpfApplication();
-                    application.Run(window);
+                    window.Show();
+                    Dispatcher.Run();
                 });
 
             windowThread.SetApartmentState(ApartmentState.STA);
