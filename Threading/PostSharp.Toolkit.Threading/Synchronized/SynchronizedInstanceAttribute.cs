@@ -47,14 +47,14 @@ namespace PostSharp.Toolkit.Threading.Synchronized
             object l = this.instanceLocked ? ((ISynchronized)args.Instance).Lock : this.attributeLock;
 
             // TODO: deadLock detection logic review
-            DeadlockMonitor.EnterWaiting(l, null, null);
+            DeadlockMonitor.EnterWaiting(l, ResourceType.Lock, null);
 
             if (!Monitor.TryEnter(l, 200))
             {
                 DeadlockMonitor.DetectDeadlocks();
                 Monitor.Enter(l);
             }
-            DeadlockMonitor.ConvertWaitingToAcquired(l, null, null);
+            DeadlockMonitor.ConvertWaitingToAcquired(l, ResourceType.Lock, null);
 
             try
             {
@@ -63,7 +63,7 @@ namespace PostSharp.Toolkit.Threading.Synchronized
             finally
             {
                 Monitor.Exit(l);
-                DeadlockMonitor.ExitAcquired(l, null);
+                DeadlockMonitor.ExitAcquired(l, ResourceType.Lock);
             }
         }
     }

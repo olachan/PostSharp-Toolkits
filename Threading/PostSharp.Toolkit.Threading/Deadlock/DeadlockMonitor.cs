@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using System.Threading;
 
@@ -49,69 +50,8 @@ namespace PostSharp.Toolkit.Threading.Deadlock
     /// </notes>
     public static class DeadlockMonitor
     {
-        private static readonly Dictionary<Edge, EdgeInfo> edges = new Dictionary<Edge, EdgeInfo>();
-        private static int revision;
+        private static readonly Graph graph = new Graph();
         private static bool detectionPending;
-        private static readonly Random random = new Random();
-
-        private static void RandomSleep()
-        {
-            int r;
-            lock ( random )
-            {
-                r = random.Next( 100 );
-            }
-
-            if ( r < 10 )
-                Thread.Sleep( r );
-        }
-
-        private static void AddEdge( object predecessor, string predecessorRole, object predecessorInfo, object successor, string successorRole,
-                                     object successorInfo )
-        {
-            EdgeInfo edgeInfo;
-
-
-            revision++;
-
-            Edge edge = new Edge( predecessor, predecessorRole, successor, successorRole );
-            if ( !edges.TryGetValue( edge, out edgeInfo ) )
-            {
-                edgeInfo = new EdgeInfo {Edge = edge, Counter = 1};
-                edges.Add( edge, edgeInfo );
-            }
-            else
-            {
-                edgeInfo.Counter++;
-            }
-
-
-            edgeInfo.LastChange = Environment.TickCount;
-            if ( predecessorInfo != null ) edgeInfo.PredecessorInfo = predecessorInfo;
-            if ( successorInfo != null ) edgeInfo.SuccessorInfo = successorInfo;
-        }
-
-        private static void RemoveEdge( object predecessor, string predecessorRole, object successor, string successorRole )
-        {
-            revision++;
-
-            Edge edge = new Edge( predecessor, predecessorRole, successor, successorRole );
-            EdgeInfo edgeInfo;
-            if ( !edges.TryGetValue( edge, out edgeInfo ) )
-            {
-                throw new InvalidOperationException( string.Format( "Cannot remove edge {{{0}}} because it has not beed registered before.",
-                                                                    edge.ToString() ) );
-            }
-            else
-            {
-                edgeInfo.Counter--;
-                edgeInfo.LastChange = Environment.TickCount;
-
-                if ( edgeInfo.Counter == 0 )
-                    edges.Remove( edge );
-            }
-        }
-
 
         /// <summary>Method to be invoked before starting to wait for a synchronization object.</summary>
         /// <param name="syncObject">The synchronization object that will be waited for.</param>
@@ -125,11 +65,16 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         ///     <strong>null</strong>
         /// </param>
         [Conditional( "DEBUG" )]
-        public static void EnterWaiting( object syncObject, string syncObjectRole, object syncObjectInfo )
+        public static void EnterWaiting( object syncObject, ResourceType syncObjectRole, object syncObjectInfo )
         {
-            lock ( edges )
+            lock (graph)
             {
-                AddEdge( Thread.CurrentThread, null, null, syncObject, syncObjectRole, syncObjectInfo );
+                graph.AddEdge(Thread.CurrentThread, null, ResourceType.Thread, syncObject, syncObjectInfo, syncObjectRole);
+
+                if (syncObjectRole == ResourceType.Write)
+                {
+                    graph.AddEdge(Thread.CurrentThread, null, ResourceType.Thread, syncObject, syncObjectInfo, ResourceType.Read);
+                }
             }
         }
 
@@ -141,11 +86,16 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         ///     <strong>null</strong> if the synchronization object has no role.
         /// </param>
         [Conditional( "DEBUG" )]
-        public static void ExitWaiting( object syncObject, string syncObjectRole )
+        public static void ExitWaiting(object syncObject, ResourceType syncObjectRole)
         {
-            lock ( edges )
+            lock (graph)
             {
-                RemoveEdge( Thread.CurrentThread, "", syncObject, syncObjectRole );
+                graph.RemoveEdge(Thread.CurrentThread, ResourceType.Thread, syncObject, syncObjectRole);
+
+                if (syncObjectRole == ResourceType.Write)
+                {
+                    graph.RemoveEdge(Thread.CurrentThread, ResourceType.Thread, syncObject, ResourceType.Read);
+                }
             }
         }
 
@@ -162,16 +112,22 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         ///     <strong>null</strong>
         /// </param>
         [Conditional( "DEBUG" )]
-        public static void ConvertWaitingToAcquired( object syncObject, string syncObjectRole, object syncObjectInfo )
+        public static void ConvertWaitingToAcquired(object syncObject, ResourceType syncObjectRole, object syncObjectInfo)
         {
             Thread thread = Thread.CurrentThread;
-            lock ( edges )
+            lock (graph)
             {
-                RemoveEdge( thread, "", syncObject, syncObjectRole );
-                AddEdge( syncObject, syncObjectRole, syncObjectInfo, thread, "", null );
+                graph.RemoveEdge(thread, ResourceType.Thread, syncObject, syncObjectRole);
+                graph.AddEdge(syncObject, syncObjectInfo, syncObjectRole, thread, null, ResourceType.Thread);
+
+                if (syncObjectRole == ResourceType.Write)
+                {
+                    graph.RemoveEdge(thread, ResourceType.Thread, syncObject, ResourceType.Read);
+                    graph.AddEdge(syncObject, syncObjectInfo, ResourceType.Read, thread, null, ResourceType.Thread);
+                }
             }
 
-            RandomSleep();
+            // RandomSleep();
         }
 
         /// <summary>Method to be invoked after a synchronization object has been acquired, typically
@@ -188,14 +144,19 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         ///     <strong>null</strong>
         /// </param>
         [Conditional( "DEBUG" )]
-        public static void EnterAcquired( object syncObject, string syncObjectRole, object syncObjectInfo )
+        public static void EnterAcquired( object syncObject, ResourceType syncObjectRole, object syncObjectInfo )
         {
-            lock ( edges )
+            lock (graph)
             {
-                AddEdge( syncObject, syncObjectRole, syncObjectInfo, Thread.CurrentThread, "", null );
+                graph.AddEdge(syncObject, syncObjectInfo, syncObjectRole, Thread.CurrentThread, null, ResourceType.Thread);
+
+                if (syncObjectRole == ResourceType.Write)
+                {
+                    graph.AddEdge(syncObject, syncObjectInfo, ResourceType.Read, Thread.CurrentThread, null, ResourceType.Thread);
+                }
             }
 
-            RandomSleep();
+            // RandomSleep();
         }
 
         /// <summary>Method to be invoked after a synchronization object has been released.</summary>
@@ -205,11 +166,16 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         ///     <strong>null</strong> if the synchronization object has no role.
         /// </param>
         [Conditional( "DEBUG" )]
-        public static void ExitAcquired( object syncObject, string syncObjectRole )
+        public static void ExitAcquired( object syncObject, ResourceType syncObjectRole )
         {
-            lock ( edges )
+            lock (graph)
             {
-                RemoveEdge( syncObject, syncObjectRole, Thread.CurrentThread, "" );
+                graph.RemoveEdge(syncObject, syncObjectRole, Thread.CurrentThread, ResourceType.Thread);
+                
+                if (syncObjectRole == ResourceType.Write)
+                {
+                    graph.RemoveEdge(syncObject, ResourceType.Read, Thread.CurrentThread, ResourceType.Thread);
+                }
             }
         }
 
@@ -262,220 +228,11 @@ namespace PostSharp.Toolkit.Threading.Deadlock
 
             try
             {
-                int iterations = 0;
+                IList<Edge> cycle;
 
-                detectionLoop:
-                iterations++;
-
-                if ( iterations > 5 )
+                if (graph.DetectCycles(out cycle))
                 {
-                    Debug.Print( "Too many deadlocks detections. Maybe there is no deadlock, after all." );
-                    return;
-                }
-
-                // Take a deep clone of the graph, so we can analyze without blocking other threads.
-                // (It is essential that other threads are not blocking when a cycle is detected,
-                //  because only blocked threads are considered to be deadlocked.)
-                Dictionary<Edge, EdgeInfo> clonedEdges = new Dictionary<Edge, EdgeInfo>( edges.Count );
-                lock ( edges )
-                {
-                    foreach ( KeyValuePair<Edge, EdgeInfo> pair in edges )
-                    {
-                        Edge edge = pair.Key;
-
-
-                        clonedEdges.Add( edge, pair.Value.Clone() );
-                        Debug.Print( "In graph: {0}.", pair.Value );
-                    }
-
-                    // If a thread waits for an object it already owns, ignore this wait.
-                    foreach ( KeyValuePair<Edge, EdgeInfo> pair in edges )
-                    {
-                        Edge edge = pair.Key;
-
-                        if ( edge.Successor.SyncObject is Thread &&
-                             !(edge.Predecessor.SyncObject is Thread) )
-                        {
-                            clonedEdges.Remove( new Edge( edge.Successor, edge.Predecessor ) );
-                        }
-                    }
-                }
-
-                Dictionary<Node, int> nodeIndexes = new Dictionary<Node, int>();
-                List<Node> nodes = new List<Node>();
-
-
-                // Creates a list of node indexes.
-                foreach ( KeyValuePair<Edge, EdgeInfo> edge in clonedEdges )
-                {
-                    if ( !nodeIndexes.ContainsKey( edge.Key.Predecessor ) )
-                    {
-                        nodeIndexes.Add( edge.Key.Predecessor, nodeIndexes.Count );
-                        nodes.Add( edge.Key.Predecessor );
-                    }
-
-                    if ( !nodeIndexes.ContainsKey( edge.Key.Successor ) )
-                    {
-                        nodeIndexes.Add( edge.Key.Successor, nodeIndexes.Count );
-                        nodes.Add( edge.Key.Successor );
-                    }
-                }
-
-                // Create the list of successors.
-                int n = nodes.Count;
-                LinkedList<EdgeInfo>[] successors = new LinkedList<EdgeInfo>[n];
-                bool[] hasPredecessor = new bool[n];
-                foreach ( KeyValuePair<Edge, EdgeInfo> edge in clonedEdges )
-                {
-                    int predecessorIndex = nodeIndexes[edge.Key.Predecessor];
-                    LinkedList<EdgeInfo> mySuccessors = successors[predecessorIndex];
-                    if ( mySuccessors == null )
-                    {
-                        mySuccessors = new LinkedList<EdgeInfo>();
-                        successors[predecessorIndex] = mySuccessors;
-                    }
-                    mySuccessors.AddLast( edge.Value );
-                    hasPredecessor[nodeIndexes[edge.Key.Successor]] = true;
-                }
-
-                // Resolve the graph.
-                Graph graph = new Graph( successors, nodeIndexes );
-                GraphUtil graphUtil = new GraphUtil( graph );
-                int[] distances = graphUtil.GetInitialVector();
-                int[] predecessors = graphUtil.GetInitialVector();
-
-                bool hasNodeWithoutPredecessor = false;
-                for ( int i = 0; i < n; i++ )
-                {
-                    if ( !hasPredecessor[i] )
-                    {
-                        hasNodeWithoutPredecessor = true;
-                        graphUtil.DoBreadthFirstSearch( i, distances, predecessors );
-                    }
-                }
-
-                if ( !hasNodeWithoutPredecessor )
-                    graphUtil.DoBreadthFirstSearch( 0, distances, predecessors );
-
-                // Inspect cycles in the graph.
-                for ( int i = 0; i < n; i++ )
-                {
-                    if ( distances[i] == GraphUtil.Cycle )
-                    {
-                        // We found a cycle. Analyze it to produce a meaningful error message.
-                        Debug.Print( "Found a cycle in thread dependencies." );
-
-                        StringBuilder messageBuilder = new StringBuilder( "Deadlock detected. The following synchronization elements form a cycle: " );
-
-                        List<Thread> threadsInDeadlock = new List<Thread>();
-                        int cursor = i;
-                        int mostRecentEdgeChange = 0;
-                        do
-                        {
-                            int successor = cursor;
-                            int predecessor = predecessors[successor];
-
-                            Edge edge = new Edge( nodes[predecessor], nodes[successor] );
-                            EdgeInfo edgeInfo = clonedEdges[edge];
-
-                            Debug.Print( "In cycle: {0}.", edgeInfo );
-
-                            if ( cursor == i )
-                            {
-                                Thread successorThread = edge.Successor.SyncObject as Thread;
-
-                                if ( successorThread != null )
-                                {
-                                    threadsInDeadlock.Add( successorThread );
-                                }
-                                else
-                                {
-                                }
-
-                                messageBuilder.AppendFormat( "#{1}={{{0}}}", edgeInfo.Edge.Successor.Format( edgeInfo.SuccessorInfo ), successor );
-                            }
-                            messageBuilder.Append( " <- " );
-
-                            Thread predecessorThread = edge.Predecessor.SyncObject as Thread;
-
-                            if ( predecessorThread != null )
-                            {
-                                if ( !threadsInDeadlock.Contains( predecessorThread ) )
-                                {
-                                    threadsInDeadlock.Add( predecessorThread );
-                                }
-                            }
-
-                            messageBuilder.AppendFormat( "#{1}={{{0}}}", edgeInfo.Edge.Predecessor.Format( edgeInfo.PredecessorInfo ), predecessor );
-
-                            if ( mostRecentEdgeChange < edgeInfo.LastChange )
-                                mostRecentEdgeChange = edgeInfo.LastChange;
-
-                            cursor = predecessor;
-                        } while ( cursor != i );
-
-                        mostRecentEdgeChange = Environment.TickCount - mostRecentEdgeChange;
-                        if ( mostRecentEdgeChange < 50 )
-                        {
-                            Debug.Print( "Most recent change to edges in cycle is {0} ms. Wait until all threads reach a stable point.",
-                                         mostRecentEdgeChange );
-                            Thread.Sleep( 50 - mostRecentEdgeChange );
-                            goto detectionLoop;
-                        }
-
-
-                        messageBuilder.Append( "." );
-
-                        foreach ( Thread thread in threadsInDeadlock )
-                        {
-                            if ( thread != Thread.CurrentThread )
-                            {
-                                messageBuilder.AppendFormat(
-                                    Environment.NewLine +
-                                    Environment.NewLine +
-                                    "-- start of stack trace of thread {0} (Name=\"{1}\"):" + Environment.NewLine,
-                                    thread.ManagedThreadId, thread.Name );
-
-                                if ( thread.ThreadState != ThreadState.WaitSleepJoin )
-                                {
-                                    // We have captured a cycle, but not a deadlock since some thread is not in waiting state.
-                                    // This may happen if DetectDeadlocks was invoked when another thread was just between
-                                    // an EnterWaiting and ConvertWaitingToAcquired, and was waiting for a non-blocked lock.
-
-                                    Debug.Print(
-                                        "Deadlock detection aborted. Thread {0} (Name=\"{1}\") is in state {2} (instead of being waiting)." +
-                                        Environment.NewLine,
-                                        thread.ManagedThreadId, thread.Name, thread.ThreadState );
-                                    return;
-                                }
-
-                                try
-                                {
-#pragma warning disable 612,618
-                                    thread.Suspend();
-                                    StackTrace stackTrace = new StackTrace( thread, true );
-                                    messageBuilder.Append( stackTrace.ToString() );
-                                    thread.Resume();
-                                    thread.Interrupt();
-#pragma warning restore 612,618
-                                }
-                                catch ( Exception e )
-                                {
-                                    messageBuilder.Append( "Cannot get a stack trace: " );
-                                    messageBuilder.Append( e.Message );
-                                }
-
-                                messageBuilder.AppendFormat( Environment.NewLine + "-- end of stack trace of thread {0}", thread.ManagedThreadId );
-                            }
-                            else
-                            {
-                                messageBuilder.AppendFormat( Environment.NewLine + Environment.NewLine + "-- current thread is {0} (Name=\"{1}\")",
-                                                             thread.ManagedThreadId, thread.Name );
-                            }
-                        }
-
-                        throw new DeadlockException( messageBuilder.ToString() );
-                    }
+                    ThrowDeadlockException(cycle);
                 }
 
                 Debug.Print( "No cycle detected." );
@@ -486,150 +243,66 @@ namespace PostSharp.Toolkit.Threading.Deadlock
             }
         }
 
-        private struct Node : IEquatable<Node>
+        private static void ThrowDeadlockException(IList<Edge> cycle)
         {
-            public readonly object SyncObject;
-            private readonly string role;
+            // We found a cycle. Analyze it to produce a meaningful error message.
+            Debug.Print("Found a cycle in thread dependencies.");
 
-            public Node( object syncObject, string role )
+            StringBuilder messageBuilder = new StringBuilder("Deadlock detected. The following synchronization elements form a cycle: ");
+
+            int i = 0;
+
+            foreach (var edge in cycle)
             {
-                this.SyncObject = syncObject;
-                this.role = role ?? "";
+                Debug.Print("In cycle: {0}.", edge);
+                messageBuilder.AppendFormat("#{1}={{{0}}}", edge.Successor.Format(edge.SuccessorInfo), i);
             }
 
-            public bool Equals( Node other )
-            {
-                return ReferenceEquals( this.SyncObject, other.SyncObject ) && this.role == other.role;
-            }
 
-            public override bool Equals( object obj )
-            {
-                return this.Equals( (Node) obj );
-            }
+            EmitStackTraces(cycle, messageBuilder);
 
-            public override int GetHashCode()
-            {
-                return (this.SyncObject.GetHashCode() << 16) | this.role.GetHashCode();
-            }
+            throw new DeadlockException(messageBuilder.ToString());
+        }
 
-            public override string ToString()
+        private static void EmitStackTraces(IList<Edge> cycle, StringBuilder messageBuilder)
+        {
+            foreach (var thread in cycle.Where(x => x.Predecessor.Role == ResourceType.Thread).Select(x => x.Predecessor.SyncObject as Thread))
             {
-                return Format( null );
-            }
-
-            public string Format( object objInfo )
-            {
-                Thread thread = this.SyncObject as Thread;
-                if ( thread != null )
+                if (thread != Thread.CurrentThread)
                 {
-                    return string.Format( "{{Thread {0}, Name=\"{1}\"}}", thread.ManagedThreadId, thread.Name );
+                    messageBuilder.AppendFormat(
+                        Environment.NewLine + Environment.NewLine +
+                        "-- start of stack trace of thread {0} (Name=\"{1}\"):" + Environment.NewLine,
+                        thread.ManagedThreadId,
+                        thread.Name);
+                    
+                    try
+                    {
+#pragma warning disable 612,618
+                        thread.Suspend();
+                        StackTrace stackTrace = new StackTrace(thread, true);
+                        messageBuilder.Append(stackTrace.ToString());
+                        thread.Resume();
+                        thread.Interrupt();
+#pragma warning restore 612,618
+                    }
+                    catch (Exception e)
+                    {
+                        messageBuilder.Append("Cannot get a stack trace: ");
+                        messageBuilder.Append(e.Message);
+                    }
+
+                    messageBuilder.AppendFormat(
+                        Environment.NewLine + "-- end of stack trace of thread {0}", thread.ManagedThreadId);
                 }
                 else
                 {
-                    return string.Format( "{{{0}:{1}}}", objInfo ?? this.SyncObject, this.role );
+                    messageBuilder.AppendFormat(
+                        Environment.NewLine + Environment.NewLine + "-- current thread is {0} (Name=\"{1}\")",
+                        thread.ManagedThreadId,
+                        thread.Name);
                 }
             }
-        }
-
-
-        private struct Edge : IEquatable<Edge>
-        {
-            public readonly Node Predecessor;
-            public readonly Node Successor;
-
-            public Edge( Node predecessor, Node successor )
-            {
-                this.Predecessor = predecessor;
-                this.Successor = successor;
-            }
-
-            public Edge( object predecessor, string predecessorRole, object successor, string successorRole )
-            {
-                this.Predecessor = new Node( predecessor, predecessorRole );
-                this.Successor = new Node( successor, successorRole );
-            }
-
-
-            public bool Equals( Edge other )
-            {
-                return this.Predecessor.Equals( other.Predecessor ) &&
-                       this.Successor.Equals( other.Successor );
-            }
-
-            public override int GetHashCode()
-            {
-                return this.Predecessor.GetHashCode() | ~this.Successor.GetHashCode();
-            }
-
-            public override bool Equals( object obj )
-            {
-                return this.Equals( (Edge) obj );
-            }
-
-            public override string ToString()
-            {
-                return string.Format( "{{{0} -> {1}}}", this.Predecessor, this.Successor );
-            }
-        }
-
-        private class EdgeInfo
-        {
-            public Edge Edge;
-            public object PredecessorInfo;
-            public object SuccessorInfo;
-            public int Counter;
-            public int LastChange;
-
-            public EdgeInfo Clone()
-            {
-                return new EdgeInfo
-                           {
-                               Edge = Edge,
-                               Counter = Counter,
-                               LastChange = LastChange,
-                               PredecessorInfo = PredecessorInfo,
-                               SuccessorInfo = SuccessorInfo
-                           };
-            }
-
-            public override string ToString()
-            {
-                return string.Format( "{{{0}}}->{{{1}}}, Counter={2}",
-                                      this.Edge.Predecessor.Format( this.PredecessorInfo ),
-                                      this.Edge.Successor.Format( this.SuccessorInfo ),
-                                      this.Counter );
-            }
-        }
-
-        private class Graph : IGraph
-        {
-            private readonly LinkedList<EdgeInfo>[] successors;
-            private readonly Dictionary<Node, int> nodeIndexes;
-
-            public Graph( LinkedList<EdgeInfo>[] successors, Dictionary<Node, int> nodeIndexes )
-            {
-                this.successors = successors;
-                this.nodeIndexes = nodeIndexes;
-            }
-
-            #region Implementation of IGraph
-
-            public int NodeCount
-            {
-                get { return this.successors.Length; }
-            }
-
-            public IEnumerable<int> GetSuccessors( int predecessor )
-            {
-                LinkedList<EdgeInfo> s = successors[predecessor];
-                if ( s == null ) yield break;
-                foreach ( EdgeInfo edgeInfo in s )
-                {
-                    yield return this.nodeIndexes[edgeInfo.Edge.Successor];
-                }
-            }
-
-            #endregion
         }
     }
 }

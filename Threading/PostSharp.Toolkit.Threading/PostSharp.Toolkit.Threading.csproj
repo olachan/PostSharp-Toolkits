@@ -51,8 +51,7 @@
     <Compile Include="Deadlock\DedlockDetectionAspects.cs" />
     <Compile Include="Dispatch\DispatchEventAttribute.cs" />
     <Compile Include="Dispatch\DispatchMethodAttribute.cs" />
-    <Compile Include="Deadlock\GraphUtil.cs" />
-    <Compile Include="Deadlock\IGraph.cs" />
+    <Compile Include="Deadlock\Graph.cs" />
     <Compile Include="LockInstanceAttributeBase.cs" />
     <Compile Include="LockStaticAttributeBase.cs" />
     <Compile Include="ReaderWriter\IReaderWriterSynchronized.cs" />

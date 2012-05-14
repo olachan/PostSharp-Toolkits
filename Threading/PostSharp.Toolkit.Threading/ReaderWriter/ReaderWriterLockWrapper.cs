@@ -91,7 +91,7 @@ namespace PostSharp.Toolkit.Threading.ReaderWriter
             if ( this.@lock.IsWriteLockHeld )
             {
                 this.@lock.ExitWriteLock();
-                DeadlockMonitor.ExitAcquired( this.@lock, writeLock );
+                DeadlockMonitor.ExitAcquired(this.@lock, ResourceType.Write);
                 return new Cookie( CookieAction.EnterWriteLock, this, GetStackTrace() );
             }
             else
@@ -125,8 +125,8 @@ namespace PostSharp.Toolkit.Threading.ReaderWriter
 
                     action = CookieAction.ExitWriteAndUpgradeableReadLock;
 
-                    DeadlockMonitor.EnterWaiting( @lock, writeLock, this.lockedObject );
-                    DeadlockMonitor.EnterWaiting( @lock, upgradableReadLock, this.lockedObject );
+                    DeadlockMonitor.EnterWaiting(@lock, ResourceType.Write, this.lockedObject);
+                    DeadlockMonitor.EnterWaiting( @lock, ResourceType.UpgradeableRead, this.lockedObject );
 
                     for ( int i = 0; !@lock.TryEnterUpgradeableReadLock( WarningTimeout ); i++ )
                     {
@@ -139,17 +139,17 @@ namespace PostSharp.Toolkit.Threading.ReaderWriter
                         DetectProblems( i );
                     }
 
-                    DeadlockMonitor.ConvertWaitingToAcquired( @lock, upgradableReadLock, this.lockedObject );
-                    DeadlockMonitor.ExitWaiting( @lock, writeLock );
+                    DeadlockMonitor.ConvertWaitingToAcquired( @lock, ResourceType.UpgradeableRead, this.lockedObject );
+                    DeadlockMonitor.ExitWaiting( @lock, ResourceType.Write );
                 }
                 else
                 {
                     action = CookieAction.ExitWriteLock;
                 }
 
-                DeadlockMonitor.EnterWaiting( @lock, writeLock, this.lockedObject );
-                DeadlockMonitor.EnterWaiting( @lock, readLock, this.lockedObject );
-                DeadlockMonitor.EnterWaiting( @lock, upgradableReadLock, this.lockedObject );
+                DeadlockMonitor.EnterWaiting( @lock, ResourceType.Write, this.lockedObject );
+                DeadlockMonitor.EnterWaiting( @lock, ResourceType.Read, this.lockedObject );
+                DeadlockMonitor.EnterWaiting( @lock, ResourceType.UpgradeableRead, this.lockedObject );
                 for ( int i = 0; !@lock.TryEnterWriteLock( WarningTimeout ); i++ )
                 {
                     if ( i == 0 )
@@ -160,9 +160,9 @@ namespace PostSharp.Toolkit.Threading.ReaderWriter
 
                     DetectProblems( i );
                 }
-                DeadlockMonitor.ConvertWaitingToAcquired( @lock, writeLock, this.lockedObject );
-                DeadlockMonitor.ExitWaiting( @lock, readLock );
-                DeadlockMonitor.ExitWaiting( @lock, upgradableReadLock );
+                DeadlockMonitor.ConvertWaitingToAcquired( @lock, ResourceType.Write, this.lockedObject );
+                DeadlockMonitor.ExitWaiting( @lock, ResourceType.Read );
+                DeadlockMonitor.ExitWaiting( @lock, ResourceType.UpgradeableRead );
             }
             else
             {
@@ -188,7 +188,7 @@ namespace PostSharp.Toolkit.Threading.ReaderWriter
             if ( !@lock.IsReadLockHeld && !@lock.IsUpgradeableReadLockHeld && !@lock.IsWriteLockHeld )
             {
                 action = CookieAction.ExitReadLock;
-                DeadlockMonitor.EnterWaiting( @lock, writeLock, lockedObject );
+                DeadlockMonitor.EnterWaiting( @lock, ResourceType.Write, lockedObject );
                 if ( !@lock.TryEnterReadLock( WarningTimeout ) )
                 {
                     Debug.Print( "Acquiring a read lock on {0} from thread {1} ({2}) is taking longer than expected.",
@@ -196,8 +196,8 @@ namespace PostSharp.Toolkit.Threading.ReaderWriter
                     DeadlockMonitor.DetectDeadlocks();
                     @lock.EnterReadLock();
                 }
-                DeadlockMonitor.ExitWaiting( @lock, writeLock );
-                DeadlockMonitor.EnterAcquired( @lock, readLock, lockedObject );
+                DeadlockMonitor.ExitWaiting( @lock, ResourceType.Write );
+                DeadlockMonitor.EnterAcquired( @lock, ResourceType.Read, lockedObject );
             }
             else
             {
@@ -230,8 +230,8 @@ namespace PostSharp.Toolkit.Threading.ReaderWriter
 
                 action = CookieAction.ExitUpgrableReaderLock;
 
-                DeadlockMonitor.EnterWaiting( @lock, upgradableReadLock, lockedObject );
-                DeadlockMonitor.EnterWaiting( @lock, writeLock, lockedObject );
+                DeadlockMonitor.EnterWaiting( @lock, ResourceType.UpgradeableRead, lockedObject );
+                DeadlockMonitor.EnterWaiting( @lock, ResourceType.Write, lockedObject );
 
                 if ( !@lock.TryEnterUpgradeableReadLock( WarningTimeout ) )
                 {
@@ -241,8 +241,8 @@ namespace PostSharp.Toolkit.Threading.ReaderWriter
                     DeadlockMonitor.DetectDeadlocks();
                     @lock.EnterUpgradeableReadLock();
                 }
-                DeadlockMonitor.ConvertWaitingToAcquired( @lock, upgradableReadLock, lockedObject );
-                DeadlockMonitor.ExitWaiting( @lock, writeLock );
+                DeadlockMonitor.ConvertWaitingToAcquired( @lock, ResourceType.UpgradeableRead, lockedObject );
+                DeadlockMonitor.ExitWaiting( @lock, ResourceType.Write );
             }
             else
             {
@@ -290,25 +290,25 @@ namespace PostSharp.Toolkit.Threading.ReaderWriter
 
                     case CookieAction.ExitReadLock:
                         this.parent.@lock.ExitReadLock();
-                        DeadlockMonitor.ExitAcquired( this.parent.@lock, readLock );
+                        DeadlockMonitor.ExitAcquired( this.parent.@lock, ResourceType.Read );
                         break;
 
                     case CookieAction.ExitWriteLock:
                         this.parent.@lock.ExitWriteLock();
-                        DeadlockMonitor.ExitAcquired( this.parent.@lock, writeLock );
+                        DeadlockMonitor.ExitAcquired( this.parent.@lock, ResourceType.Write );
                         break;
 
                     case CookieAction.ExitWriteAndUpgradeableReadLock:
                         this.parent.@lock.ExitWriteLock();
                         this.parent.@lock.ExitUpgradeableReadLock();
-                        DeadlockMonitor.ExitAcquired( this.parent.@lock, writeLock );
-                        DeadlockMonitor.ExitAcquired( this.parent.@lock, upgradableReadLock );
+                        DeadlockMonitor.ExitAcquired( this.parent.@lock, ResourceType.Write );
+                        DeadlockMonitor.ExitAcquired( this.parent.@lock, ResourceType.UpgradeableRead );
                         break;
 
                     case CookieAction.EnterWriteLock:
-                        DeadlockMonitor.EnterWaiting( this.parent.@lock, readLock, this.parent.lockedObject );
-                        DeadlockMonitor.EnterWaiting( this.parent.@lock, writeLock, this.parent.lockedObject );
-                        DeadlockMonitor.EnterWaiting( this.parent.@lock, upgradableReadLock, this.parent.lockedObject );
+                        DeadlockMonitor.EnterWaiting( this.parent.@lock, ResourceType.Read, this.parent.lockedObject );
+                        DeadlockMonitor.EnterWaiting( this.parent.@lock, ResourceType.Write, this.parent.lockedObject );
+                        DeadlockMonitor.EnterWaiting( this.parent.@lock, ResourceType.UpgradeableRead, this.parent.lockedObject );
 
                         if ( !this.parent.@lock.TryEnterWriteLock( WarningTimeout ) )
                         {
@@ -317,15 +317,15 @@ namespace PostSharp.Toolkit.Threading.ReaderWriter
                             DeadlockMonitor.DetectDeadlocks();
                             this.parent.@lock.EnterWriteLock();
                         }
-                        DeadlockMonitor.ConvertWaitingToAcquired( this.parent.@lock, writeLock, this.parent.lockedObject );
-                        DeadlockMonitor.ExitWaiting( this.parent.@lock, readLock );
-                        DeadlockMonitor.ExitWaiting( this.parent.@lock, upgradableReadLock );
+                        DeadlockMonitor.ConvertWaitingToAcquired( this.parent.@lock, ResourceType.Write, this.parent.lockedObject );
+                        DeadlockMonitor.ExitWaiting( this.parent.@lock, ResourceType.Read );
+                        DeadlockMonitor.ExitWaiting( this.parent.@lock, ResourceType.UpgradeableRead );
 
                         break;
 
                     case CookieAction.ExitUpgrableReaderLock:
                         this.parent.@lock.ExitUpgradeableReadLock();
-                        DeadlockMonitor.ExitAcquired( this.parent.@lock, upgradableReadLock );
+                        DeadlockMonitor.ExitAcquired( this.parent.@lock, ResourceType.UpgradeableRead );
                         break;
                 }
 
