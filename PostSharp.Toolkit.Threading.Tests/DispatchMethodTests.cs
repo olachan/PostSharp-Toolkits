@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Windows;
 using System.Windows.Forms;
 
@@ -56,7 +57,7 @@ namespace PostSharp.Toolkit.Threading.Tests
 
             window.AddControl();
 
-            window.Close();
+            window.Invoke((Action)(() => window.Close()));
 
             windowThread.Join();
         }

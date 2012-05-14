@@ -7,7 +7,8 @@ using PostSharp.Aspects;
 namespace PostSharp.Toolkit.Threading.Synchronized
 {
     /// <summary>
-    /// TODO: Description
+    /// Custom attribute when applied on a class, automatically applies <see cref="SynchronizedAttribute"/> to all methods of the class excluding property getters.
+    /// Optionally IgnoreGetters can be set to false, then <see cref="SynchronizedAttribute"/> will be applied to all methods including property getters.
     /// </summary>
     [Serializable]
     [AttributeUsage(AttributeTargets.Class)]

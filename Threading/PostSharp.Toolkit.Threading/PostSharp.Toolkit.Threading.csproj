@@ -48,6 +48,7 @@
     <Compile Include="Async\AsyncAttribute.cs" />
     <Compile Include="Deadlock\DeadlockException.cs" />
     <Compile Include="Deadlock\DeadlockMonitor.cs" />
+    <Compile Include="Deadlock\DedlockDetectionAspects.cs" />
     <Compile Include="Dispatch\DispatchEventAttribute.cs" />
     <Compile Include="Dispatch\DispatchMethodAttribute.cs" />
     <Compile Include="Deadlock\GraphUtil.cs" />

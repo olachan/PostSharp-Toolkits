@@ -150,6 +150,51 @@ namespace PostSharp.Toolkit.Threading.Tests
         }
 
         [Test]
+        public void TwoInstanceIndependentDerivedMethodsInvoked_NoWait()
+        {
+            var o1 = new SynchronizedMethodsDerivedObject();
+            var time = this.InvokeAndTraceTime(() => InvokeSimultaneouslyAndWait(o1.DerivedInstanceIndependentMethod, o1.DerivedInstanceIndependentMethod2));
+
+            Assert.Less(time, 300);
+        }
+
+        [Test]
+        public void InstanceIndependentDerivedAndOntDerivedMethodsInvoked_NoWait()
+        {
+            var o1 = new SynchronizedMethodsDerivedObject();
+            var time = this.InvokeAndTraceTime(() => InvokeSimultaneouslyAndWait(o1.InstanceIndependentMethod, o1.DerivedInstanceIndependentMethod2));
+
+            Assert.Less(time, 300);
+        }
+
+        [Test]
+        public void InstanceDependentAndIndependentDerivedMethodsInvoked_NoWait()
+        {
+            var o1 = new SynchronizedMethodsDerivedObject();
+            var time = this.InvokeAndTraceTime(() => InvokeSimultaneouslyAndWait(o1.InstanceIndependentMethod, o1.DerivedInstanceDependentMethod));
+
+            Assert.Less(time, 300);
+        }
+
+        [Test]
+        public void InstanceIndependentDerivedAndNotDerivedMethodInvoked_NoWait()
+        {
+            var o1 = new SynchronizedMethodsDerivedObject();
+            var time = this.InvokeAndTraceTime(() => InvokeSimultaneouslyAndWait(o1.DerivedInstanceIndependentMethod, o1.InstanceIndependentMethod));
+
+            Assert.Less(time, 300);
+        }
+
+        [Test]
+        public void InstanceDependentDerivedAndNotDerivedMethodInvoked_Waits()
+        {
+            var o1 = new SynchronizedMethodsDerivedObject();
+            var time = this.InvokeAndTraceTime(() => InvokeSimultaneouslyAndWait(o1.DerivedInstanceDependentMethod, o1.InstanceDependentMethod));
+
+            Assert.Greater(time, 400);
+        }
+
+        [Test]
         public void MethodThrowsException_MonitorProperlyReleased()
         {
             var o1 = new SynchronizedEntity();
@@ -250,6 +295,51 @@ namespace PostSharp.Toolkit.Threading.Tests
                     Thread.Sleep(200);
                     _testProperty = value;
                 }
+            }
+        }
+
+        public class SynchronizedMethodsDerivedObject : SynchronizedEntity
+        {
+            [Synchronized(false)]
+            public static void DerivedStaticIndependentMethod()
+            {
+                Thread.Sleep(200);
+            }
+
+            [Synchronized(true)]
+            public static void DerivedStaticTypeDependentMethod()
+            {
+                Thread.Sleep(200);
+            }
+
+            [Synchronized(true)]
+            public static void DerivedStaticTypeDependentMethod2()
+            {
+                Thread.Sleep(200);
+            }
+
+            [Synchronized(false)]
+            public void DerivedInstanceIndependentMethod()
+            {
+                Thread.Sleep(200);
+            }
+
+            [Synchronized(false)]
+            public void DerivedInstanceIndependentMethod2()
+            {
+                Thread.Sleep(200);
+            }
+
+            [Synchronized(true)]
+            public void DerivedInstanceDependentMethod()
+            {
+                Thread.Sleep(200);
+            }
+
+            [Synchronized(true)]
+            public void DerivedInstanceDependentMethod2()
+            {
+                Thread.Sleep(200);
             }
         }
 

@@ -7,7 +7,9 @@ using PostSharp.Aspects;
 namespace PostSharp.Toolkit.Threading.SingleThreaded
 {
     /// <summary>
-    /// TODO: Description
+    /// Custom attribute when applied on a class, automatically applies <see cref="SingleThreadedAttribute"/> to all methods of the class excluding property getters.
+    /// Optionally IgnoreGetters can be set to false, then <see cref="SingleThreadedAttribute"/> will be applied to all methods including property getters.
+    /// Optionally IgnoreSetters can be set to true, then <see cref="SingleThreadedAttribute"/> will NOT be applied on property setters.
     /// </summary>
     [Serializable]
     [AttributeUsage(AttributeTargets.Class)]
