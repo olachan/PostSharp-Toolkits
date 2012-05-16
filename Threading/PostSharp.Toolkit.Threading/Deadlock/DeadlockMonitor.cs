@@ -51,7 +51,7 @@ namespace PostSharp.Toolkit.Threading.Deadlock
     public static class DeadlockMonitor
     {
         private static readonly Graph graph = new Graph();
-        private static bool detectionPending;
+        private static int detectionPending; // 0 - no detection pending, 1 - detection pending, using int to benefit from Interlocked class
 
         /// <summary>Method to be invoked before starting to wait for a synchronization object.</summary>
         /// <param name="syncObject">The synchronization object that will be waited for.</param>
@@ -67,15 +67,7 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         [Conditional("DEBUG")]
         public static void EnterWaiting(object syncObject, ResourceType syncObjectRole, object syncObjectInfo)
         {
-            lock (graph)
-            {
-                graph.AddEdge(Thread.CurrentThread, null, ResourceType.Thread, syncObject, syncObjectInfo, syncObjectRole);
-
-                if (syncObjectRole == ResourceType.Write)
-                {
-                    graph.AddEdge(Thread.CurrentThread, null, ResourceType.Thread, syncObject, syncObjectInfo, ResourceType.Read);
-                }
-            }
+            graph.AddEdge(Thread.CurrentThread, null, ResourceType.Thread, syncObject, syncObjectInfo, syncObjectRole);
         }
 
         /// <summary>Method to be invoked after waiting for a synchronization object, typically when the object
@@ -88,15 +80,7 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         [Conditional("DEBUG")]
         public static void ExitWaiting(object syncObject, ResourceType syncObjectRole)
         {
-            lock (graph)
-            {
-                graph.RemoveEdge(Thread.CurrentThread, ResourceType.Thread, syncObject, syncObjectRole);
-
-                if (syncObjectRole == ResourceType.Write)
-                {
-                    graph.RemoveEdge(Thread.CurrentThread, ResourceType.Thread, syncObject, ResourceType.Read);
-                }
-            }
+            graph.RemoveEdge(Thread.CurrentThread, ResourceType.Thread, syncObject, syncObjectRole);
         }
 
         /// <summary>Method to be invoked after waiting for a synchronization object,
@@ -115,17 +99,8 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         public static void ConvertWaitingToAcquired(object syncObject, ResourceType syncObjectRole, object syncObjectInfo)
         {
             Thread thread = Thread.CurrentThread;
-            lock (graph)
-            {
-                graph.RemoveEdge(thread, ResourceType.Thread, syncObject, syncObjectRole);
-                graph.AddEdge(syncObject, syncObjectInfo, syncObjectRole, thread, null, ResourceType.Thread);
-
-                if (syncObjectRole == ResourceType.Write)
-                {
-                    graph.RemoveEdge(thread, ResourceType.Thread, syncObject, ResourceType.Read);
-                    graph.AddEdge(syncObject, syncObjectInfo, ResourceType.Read, thread, null, ResourceType.Thread);
-                }
-            }
+            graph.RemoveEdge(thread, ResourceType.Thread, syncObject, syncObjectRole);
+            graph.AddEdge(syncObject, syncObjectInfo, syncObjectRole, thread, null, ResourceType.Thread);
 
             // RandomSleep();
         }
@@ -146,15 +121,7 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         [Conditional("DEBUG")]
         public static void EnterAcquired(object syncObject, ResourceType syncObjectRole, object syncObjectInfo)
         {
-            lock (graph)
-            {
-                graph.AddEdge(syncObject, syncObjectInfo, syncObjectRole, Thread.CurrentThread, null, ResourceType.Thread);
-
-                if (syncObjectRole == ResourceType.Write)
-                {
-                    graph.AddEdge(syncObject, syncObjectInfo, ResourceType.Read, Thread.CurrentThread, null, ResourceType.Thread);
-                }
-            }
+            graph.AddEdge(syncObject, syncObjectInfo, syncObjectRole, Thread.CurrentThread, null, ResourceType.Thread);
 
             // RandomSleep();
         }
@@ -168,20 +135,23 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         [Conditional("DEBUG")]
         public static void ExitAcquired(object syncObject, ResourceType syncObjectRole)
         {
-            lock (graph)
-            {
-                graph.RemoveEdge(syncObject, syncObjectRole, Thread.CurrentThread, ResourceType.Thread);
+            graph.RemoveEdge(syncObject, syncObjectRole, Thread.CurrentThread, ResourceType.Thread);
+        }
 
-                if (syncObjectRole == ResourceType.Write)
-                {
-                    graph.RemoveEdge(syncObject, ResourceType.Read, Thread.CurrentThread, ResourceType.Thread);
-                }
-            }
+        /// <summary>
+        /// Adds ignored resource. This resource will not be taken to considiration during deadlock detection.
+        /// </summary>
+        /// <param name="recource"></param>
+        [Conditional("DEBUG")]
+        public static void IgnoreResource(object recource, ResourceType resourceType)
+        {
+            graph.AddIgnoredResource(recource, resourceType);
         }
 
         /// <summary>
         /// Detects deadlocks by analyzing the graph of wait dependencies.
         /// </summary>
+        /// <param name="startThread">When not null deadlock detection starts from given thread and is conducted noly in graph component containing passed thread</param>
         /// <remarks>
         /// 	<para>The algorithm works by analyzing cycles in the dependency graph. Cycles
         ///     indicate potential deadlocks, and their may be situations where a cycle does not
@@ -214,36 +184,23 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         ///     expected to stop, since it may have been left in an inconsistent state.</para>
         /// </remarks>
         [Conditional("DEBUG")]
-        public static void DetectDeadlocks()
+        public static void DetectDeadlocks(Thread startThread = null)
         {
-            if (!detectionPending)
-            {
-                lock (graph)
-                {
-                    if (!detectionPending)
-                    {
-                        detectionPending = true;
-                    }
-                    else
-                    {
-                        Debug.Print("Deadlock detection skipped because another one is pending.");
-                        return;
-                    }
-                }
-            }
-            else
+            if (Interlocked.CompareExchange(ref detectionPending, 1, 0) == 1)
             {
                 Debug.Print("Deadlock detection skipped because another one is pending.");
                 return;
             }
+
             try
             {
-
                 Debug.Print("Deadlock detection started.");
 
-                IList<Edge> cycle;
+                IEnumerable<Edge> cycle;
 
-                if (graph.DetectCycles(out cycle))
+                bool deadlockDetected = startThread != null ? graph.DetectCycles(startThread, ResourceType.Thread, out cycle) : graph.DetectCycles(out cycle);
+
+                if (deadlockDetected)
                 {
                     ThrowDeadlockException(cycle);
                 }
@@ -252,11 +209,11 @@ namespace PostSharp.Toolkit.Threading.Deadlock
             }
             finally
             {
-                detectionPending = false;
+                detectionPending = 0;
             }
         }
 
-        private static void ThrowDeadlockException(IList<Edge> cycle)
+        private static void ThrowDeadlockException(IEnumerable<Edge> cycle)
         {
             // We found a cycle. Analyze it to produce a meaningful error message.
             Debug.Print("Found a cycle in thread dependencies.");
@@ -277,7 +234,7 @@ namespace PostSharp.Toolkit.Threading.Deadlock
             throw new DeadlockException(messageBuilder.ToString());
         }
 
-        private static void EmitStackTraces(IList<Edge> cycle, StringBuilder messageBuilder)
+        private static void EmitStackTraces(IEnumerable<Edge> cycle, StringBuilder messageBuilder)
         {
             foreach (var thread in cycle.Where(x => x.Predecessor.Role == ResourceType.Thread).Select(x => x.Predecessor.SyncObject as Thread))
             {
@@ -296,7 +253,7 @@ namespace PostSharp.Toolkit.Threading.Deadlock
                         StackTrace stackTrace = new StackTrace(thread, true);
                         messageBuilder.Append(stackTrace.ToString());
                         thread.Resume();
-                        // thread.Interrupt();
+                        thread.Interrupt();
 #pragma warning restore 612,618
                     }
                     catch (Exception e)

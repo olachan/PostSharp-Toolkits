@@ -1,27 +1,20 @@
-﻿// -----------------------------------------------------------------------
-// <copyright file="CLRSynchronizationPrymitiveInterceptor.cs" company="">
-// TODO: Update copyright text.
-// </copyright>
-// -----------------------------------------------------------------------
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 
 using PostSharp.Aspects;
-using PostSharp.Toolkit.Threading.Deadlock;
 
 namespace PostSharp.Toolkit.Threading.Deadlock
 {
     [Serializable]
-    public class DetectDeadlocks : MethodLevelAspect, IAspectProvider
+    public class DeadlockDetectionPolicy : MethodLevelAspect, IAspectProvider
     {
         public IEnumerable<AspectInstance> ProvideAspects(object targetElement)
         {
             MethodBase method = (MethodBase)targetElement;
 
-            if (method.DeclaringType == typeof(Mutex))
+            if (method.DeclaringType == typeof(Mutex) || method.DeclaringType == typeof(WaitHandle))
             {
                 switch (method.Name)
                 {
@@ -31,6 +24,13 @@ namespace PostSharp.Toolkit.Threading.Deadlock
                     case "ReleaseMutex":
                         yield return new AspectInstance(targetElement, new MutexReleaseMutexDedlockDetection());
                         break;
+                    case "get_Handle":
+                    case "set_Handle":
+                    case "get_SafeWaitHandle":
+                    case "set_SafeWaitHandle":
+                        yield return new AspectInstance(targetElement, new IgnoreDedlockDetection());
+                        break;
+
                 }
             }
 
@@ -90,127 +90,83 @@ namespace PostSharp.Toolkit.Threading.Deadlock
                 }
             }
         }
-    }
 
-    [Serializable]
-    public class MutexWaitOneDedlockDetection : MethodInterceptionAspect
-    {
-        public override void OnInvoke(MethodInterceptionArgs args)
+        [Serializable]
+        public class MutexWaitOneDedlockDetection : MethodInterceptionAspect
         {
-            if (args.Arguments.Count == 0 || args.Arguments[0] is bool ||
-                (args.Arguments[0] is int && (int)args.Arguments[0] == -1))
+            public override void OnInvoke(MethodInterceptionArgs args)
             {
-                DeadlockMonitor.EnterWaiting(args.Instance, ResourceType.Lock, null);
-
-                try
+                if (args.Arguments.Count == 0 || args.Arguments[0] is bool ||
+                    (args.Arguments[0] is int && (int)args.Arguments[0] == -1))
                 {
-                    bool result = false;
+                    DeadlockMonitor.EnterWaiting(args.Instance, ResourceType.Lock, null);
 
-                    int timeout = 100;
-
-                    Mutex mutex = args.Instance as Mutex;
-
-                    while (!result)
+                    try
                     {
-                        if (timeout > 100)
+                        bool result = false;
+
+                        int timeout = 100;
+
+                        Mutex mutex = args.Instance as Mutex;
+
+                        while (!result)
                         {
-                            DeadlockMonitor.DetectDeadlocks();
+                            if (timeout > 100)
+                            {
+                                DeadlockMonitor.DetectDeadlocks();
+                            }
+
+                            result = args.Arguments.Count > 0 ? mutex.WaitOne(timeout, (bool)args.Arguments[0]) : mutex.WaitOne(timeout);
+
+                            timeout *= 2;
                         }
 
-                        result = args.Arguments.Count > 0 ? mutex.WaitOne(timeout, (bool)args.Arguments[0]) : mutex.WaitOne(timeout);
-
-                        timeout *= 2;
+                        DeadlockMonitor.ConvertWaitingToAcquired(args.Instance, ResourceType.Lock, null);
                     }
-
-                    DeadlockMonitor.ConvertWaitingToAcquired(args.Instance, ResourceType.Lock, null);
+                    catch (Exception)
+                    {
+                        DeadlockMonitor.ExitWaiting(args.Instance, ResourceType.Lock);
+                        throw;
+                    }
                 }
-                catch (Exception)
+                else
                 {
-                    DeadlockMonitor.ExitWaiting(args.Instance, ResourceType.Lock);
-                    throw;
+                    try
+                    {
+                        DeadlockMonitor.EnterAcquired(args.Instance, ResourceType.Lock, null);
+                        args.Proceed();
+                    }
+                    catch (Exception)
+                    {
+                        DeadlockMonitor.ExitWaiting(args.Instance, ResourceType.Lock);
+                        throw;
+                    }
                 }
             }
-            else
+        }
+
+
+        [Serializable]
+        public class MutexReleaseMutexDedlockDetection : OnMethodBoundaryAspect
+        {
+            public override void OnEntry(MethodExecutionArgs args)
             {
+                DeadlockMonitor.ExitAcquired(args.Instance, ResourceType.Lock);
+            }
+        }
+
+        [Serializable]
+        public class MonitorEnterDedlockDetection : MethodInterceptionAspect
+        {
+            public override void OnInvoke(MethodInterceptionArgs args)
+            {
+
+                DeadlockMonitor.EnterWaiting(args.Arguments[0], ResourceType.Lock, null);
+
                 try
                 {
-                    DeadlockMonitor.EnterAcquired(args.Instance, ResourceType.Lock, null);
-                    args.Proceed();
-                }
-                catch (Exception)
-                {
-                    DeadlockMonitor.ExitWaiting(args.Instance, ResourceType.Lock);
-                    throw;
-                }
-            }
-        }
-    }
+                    bool lockTaken = false;
 
-
-    [Serializable]
-    public class MutexReleaseMutexDedlockDetection : OnMethodBoundaryAspect
-    {
-        public override void OnEntry(MethodExecutionArgs args)
-        {
-            DeadlockMonitor.ExitAcquired(args.Instance, ResourceType.Lock);
-        }
-    }
-
-    [Serializable]
-    public class MonitorEnterDedlockDetection : MethodInterceptionAspect
-    {
-        public override void OnInvoke(MethodInterceptionArgs args)
-        {
-
-            DeadlockMonitor.EnterWaiting(args.Arguments[0], ResourceType.Lock, null);
-
-            try
-            {
-                bool lockTaken = false;
-
-                int timeout = 100;
-
-                while (!lockTaken)
-                {
-                    if (timeout > 100)
-                    {
-                        DeadlockMonitor.DetectDeadlocks();
-                    }
-
-                    Monitor.TryEnter(args.Arguments[0], timeout, ref lockTaken);
-
-                    if (args.Arguments.Count > 1)
-                    {
-                        args.Arguments.SetArgument(1, lockTaken);
-                    }
-
-                    timeout *= 2;
-                }
-
-                DeadlockMonitor.ConvertWaitingToAcquired(args.Arguments[0], ResourceType.Lock, null);
-            }
-            catch (Exception)
-            {
-                DeadlockMonitor.ExitWaiting(args.Arguments[0], ResourceType.Lock);
-                throw;
-            }
-
-        }
-    }
-
-    [Serializable]
-    public class MonitorTryEnterDedlockDetection : MethodInterceptionAspect
-    {
-        public override void OnInvoke(MethodInterceptionArgs args)
-        {
-
-            DeadlockMonitor.EnterWaiting(args.Arguments[0], ResourceType.Lock, null);
-
-            try
-            {
-                bool lockTaken = false;
-                if (args.Arguments[1] is int && (int)args.Arguments[1] == -1)
-                {
                     int timeout = 100;
 
                     while (!lockTaken)
@@ -222,108 +178,121 @@ namespace PostSharp.Toolkit.Threading.Deadlock
 
                         Monitor.TryEnter(args.Arguments[0], timeout, ref lockTaken);
 
-                        if ((args.Arguments.Count == 2 && args.Arguments[1] is bool) || (args.Arguments.Count == 3 && args.Arguments[2] is bool))
+                        if (args.Arguments.Count > 1)
                         {
-                            args.Arguments.SetArgument(args.Arguments.Count - 1, lockTaken);
+                            args.Arguments.SetArgument(1, lockTaken);
                         }
 
                         timeout *= 2;
                     }
-                }
-                else
-                {
-                    args.Proceed();
 
-                    if ((args.Arguments.Count == 2 && args.Arguments[1] is bool) || (args.Arguments.Count == 3 && args.Arguments[2] is bool))
+                    DeadlockMonitor.ConvertWaitingToAcquired(args.Arguments[0], ResourceType.Lock, null);
+                }
+                catch (Exception)
+                {
+                    DeadlockMonitor.ExitWaiting(args.Arguments[0], ResourceType.Lock);
+                    throw;
+                }
+
+            }
+        }
+
+        [Serializable]
+        public class MonitorTryEnterDedlockDetection : MethodInterceptionAspect
+        {
+            public override void OnInvoke(MethodInterceptionArgs args)
+            {
+
+                DeadlockMonitor.EnterWaiting(args.Arguments[0], ResourceType.Lock, null);
+
+                try
+                {
+                    bool lockTaken = false;
+                    if (args.Arguments[1] is int && (int)args.Arguments[1] == -1)
                     {
-                        lockTaken = (bool)args.Arguments.GetArgument(args.Arguments.Count - 1);
+                        int timeout = 100;
+
+                        while (!lockTaken)
+                        {
+                            if (timeout > 100)
+                            {
+                                DeadlockMonitor.DetectDeadlocks();
+                            }
+
+                            Monitor.TryEnter(args.Arguments[0], timeout, ref lockTaken);
+
+                            if ((args.Arguments.Count == 2 && args.Arguments[1] is bool) || (args.Arguments.Count == 3 && args.Arguments[2] is bool))
+                            {
+                                args.Arguments.SetArgument(args.Arguments.Count - 1, lockTaken);
+                            }
+
+                            timeout *= 2;
+                        }
                     }
                     else
                     {
-                        lockTaken = (bool)args.ReturnValue;
-                    }
-                }
+                        args.Proceed();
 
-                if (lockTaken)
-                {
-                    DeadlockMonitor.ConvertWaitingToAcquired(args.Arguments[0], ResourceType.Lock, null);
+                        if ((args.Arguments.Count == 2 && args.Arguments[1] is bool) || (args.Arguments.Count == 3 && args.Arguments[2] is bool))
+                        {
+                            lockTaken = (bool)args.Arguments.GetArgument(args.Arguments.Count - 1);
+                        }
+                        else
+                        {
+                            lockTaken = (bool)args.ReturnValue;
+                        }
+                    }
+
+                    if (lockTaken)
+                    {
+                        DeadlockMonitor.ConvertWaitingToAcquired(args.Arguments[0], ResourceType.Lock, null);
+                    }
+                    else
+                    {
+                        DeadlockMonitor.ExitWaiting(args.Arguments[0], ResourceType.Lock);
+                    }
+
                 }
-                else
+                catch (Exception)
                 {
                     DeadlockMonitor.ExitWaiting(args.Arguments[0], ResourceType.Lock);
+                    throw;
                 }
-
-            }
-            catch (Exception)
-            {
-                DeadlockMonitor.ExitWaiting(args.Arguments[0], ResourceType.Lock);
-                throw;
             }
         }
-    }
 
-    [Serializable]
-    public class MonitorExitDedlockDetection : OnMethodBoundaryAspect
-    {
-        public override void OnEntry(MethodExecutionArgs args)
+        [Serializable]
+        public class MonitorExitDedlockDetection : OnMethodBoundaryAspect
         {
-            DeadlockMonitor.ExitAcquired(args.Arguments[0], ResourceType.Lock);
-        }
-    }
-
-    [Serializable]
-    public class ReaderWriterEnterDedlockDetection : MethodInterceptionAspect
-    {
-        private readonly ResourceType type;
-
-        public ReaderWriterEnterDedlockDetection(ResourceType type)
-        {
-            this.type = type;
-        }
-
-        public override void OnInvoke(MethodInterceptionArgs args)
-        {
-            DeadlockMonitor.EnterWaiting(args.Instance, this.type, null);
-
-            try
+            public override void OnEntry(MethodExecutionArgs args)
             {
-                bool lockTaken = false;
+                DeadlockMonitor.ExitAcquired(args.Arguments[0], ResourceType.Lock);
+            }
+        }
 
-                int timeout = 100;
+        [Serializable]
+        public class ReaderWriterEnterDedlockDetection : MethodInterceptionAspect
+        {
+            private readonly ResourceType type;
 
+            public ReaderWriterEnterDedlockDetection(ResourceType type)
+            {
+                this.type = type;
+            }
 
-                // ReaderWriterLockSlim
-                if (args.Arguments.Count == 0)
+            public override void OnInvoke(MethodInterceptionArgs args)
+            {
+                ReaderWriterTypeDeadlockMonitorHelper.EnterWaiting(args.Instance, this.type, null);
+
+                try
                 {
-                    while (!lockTaken)
-                    {
-                        if (timeout > 100)
-                        {
-                            DeadlockMonitor.DetectDeadlocks();
-                        }
+                    bool lockTaken = false;
 
-                        var rwl = args.Instance as ReaderWriterLockSlim;
-                        switch (this.type)
-                        {
-                            case ResourceType.Read:
-                                lockTaken = rwl.TryEnterReadLock(timeout);
-                                break;
-                            case ResourceType.Write:
-                                lockTaken = rwl.TryEnterWriteLock(timeout);
-                                break;
-                            case ResourceType.UpgradeableRead:
-                                lockTaken = rwl.TryEnterUpgradeableReadLock(timeout);
-                                break;
-                            default:
-                                throw new ArgumentOutOfRangeException();
-                        }
+                    int timeout = 100;
 
-                        timeout *= 2;
-                    }
-                }
-                else
-                {
-                    if ((int)args.Arguments[0] == Timeout.Infinite)
+
+                    // ReaderWriterLockSlim
+                    if (args.Arguments.Count == 0)
                     {
                         while (!lockTaken)
                         {
@@ -332,76 +301,169 @@ namespace PostSharp.Toolkit.Threading.Deadlock
                                 DeadlockMonitor.DetectDeadlocks();
                             }
 
-                            args.Arguments.SetArgument(0, timeout);
+                            var rwl = args.Instance as ReaderWriterLockSlim;
+                            switch (this.type)
+                            {
+                                case ResourceType.Read:
+                                    lockTaken = rwl.TryEnterReadLock(timeout);
+                                    break;
+                                case ResourceType.Write:
+                                    lockTaken = rwl.TryEnterWriteLock(timeout);
+                                    break;
+                                case ResourceType.UpgradeableRead:
+                                    lockTaken = rwl.TryEnterUpgradeableReadLock(timeout);
+                                    break;
+                                default:
+                                    throw new ArgumentOutOfRangeException();
+                            }
 
-                            try
-                            {
-                                args.Proceed();
-                                lockTaken = true;
-                            }
-                            catch (ApplicationException)
-                            {
-                                lockTaken = false;
-                            }
-                            
                             timeout *= 2;
                         }
-
                     }
-                    
-                    lockTaken = (bool)args.ReturnValue;
-                }
+                    else
+                    {
+                        if ((int)args.Arguments[0] == Timeout.Infinite)
+                        {
+                            while (!lockTaken)
+                            {
+                                if (timeout > 100)
+                                {
+                                    DeadlockMonitor.DetectDeadlocks();
+                                }
 
-                if (lockTaken)
+                                args.Arguments.SetArgument(0, timeout);
+
+                                try
+                                {
+                                    args.Proceed();
+                                    lockTaken = true;
+                                }
+                                catch (ApplicationException)
+                                {
+                                    lockTaken = false;
+                                }
+
+                                timeout *= 2;
+                            }
+
+                        }
+
+                        lockTaken = (bool)args.ReturnValue;
+                    }
+
+                    if (lockTaken)
+                    {
+                        ReaderWriterTypeDeadlockMonitorHelper.ConvertWaitingToAcquired(args.Instance, this.type, null);
+                    }
+                    else
+                    {
+                        ReaderWriterTypeDeadlockMonitorHelper.ExitWaiting(args.Instance, this.type);
+                    }
+                }
+                catch (Exception)
                 {
-                    DeadlockMonitor.ConvertWaitingToAcquired(args.Instance, this.type, null);
+                    ReaderWriterTypeDeadlockMonitorHelper.ExitWaiting(args.Instance, this.type);
+                    throw;
                 }
-                else
+            }
+        }
+
+        [Serializable]
+        public class ReaderWriterExitDedlockDetection : OnMethodBoundaryAspect
+        {
+            private ResourceType type;
+
+            public ReaderWriterExitDedlockDetection(ResourceType type)
+            {
+                this.type = type;
+            }
+
+            public override void OnEntry(MethodExecutionArgs args)
+            {
+                ReaderWriterTypeDeadlockMonitorHelper.ExitAcquired(args.Instance, this.type);
+            }
+        }
+
+        [Serializable]
+        public class ReaderWriterTryEnterDedlockDetection : OnMethodBoundaryAspect
+        {
+            private readonly ResourceType type;
+
+            public ReaderWriterTryEnterDedlockDetection(ResourceType type)
+            {
+                this.type = type;
+            }
+
+            public override void OnSuccess(MethodExecutionArgs args)
+            {
+                if ((bool)args.ReturnValue)
                 {
-                    DeadlockMonitor.ExitWaiting(args.Instance, this.type);
+                    ReaderWriterTypeDeadlockMonitorHelper.EnterAcquired(args.Arguments[0], this.type, null);
                 }
             }
-            catch (Exception)
+        }
+
+        [Serializable]
+        public class IgnoreDedlockDetection : OnMethodBoundaryAspect
+        {
+            public override void OnEntry(MethodExecutionArgs args)
             {
-                DeadlockMonitor.ExitWaiting(args.Instance, this.type);
-                throw;
+                DeadlockMonitor.IgnoreResource(args.Instance, ResourceType.Lock);
             }
         }
-    }
 
-    [Serializable]
-    public class ReaderWriterExitDedlockDetection : OnMethodBoundaryAspect
-    {
-        private ResourceType type;
-
-        public ReaderWriterExitDedlockDetection(ResourceType type)
+        private static class ReaderWriterTypeDeadlockMonitorHelper
         {
-            this.type = type;
-        }
-
-        public override void OnEntry(MethodExecutionArgs args)
-        {
-            DeadlockMonitor.ExitAcquired(args.Instance, this.type);
-        }
-    }
-
-    [Serializable]
-    public class ReaderWriterTryEnterDedlockDetection : OnMethodBoundaryAspect
-    {
-        private readonly ResourceType type;
-
-        public ReaderWriterTryEnterDedlockDetection(ResourceType type)
-        {
-            this.type = type;
-        }
-
-        public override void OnSuccess(MethodExecutionArgs args)
-        {
-            if ((bool)args.ReturnValue)
+            public static void EnterWaiting(object syncObject, ResourceType syncObjectRole, object syncObjectInfo)
             {
-                DeadlockMonitor.EnterAcquired(args.Arguments[0], this.type, null);
+                DeadlockMonitor.EnterWaiting(syncObject, syncObjectRole, syncObjectInfo);
+
+                if (syncObjectRole == ResourceType.Write)
+                {
+                    DeadlockMonitor.EnterWaiting(syncObject, ResourceType.Read, syncObjectInfo);
+                }
+            }
+
+            public static void ExitWaiting(object syncObject, ResourceType syncObjectRole)
+            {
+                DeadlockMonitor.ExitWaiting(syncObject, syncObjectRole);
+
+                if (syncObjectRole == ResourceType.Write)
+                {
+                    DeadlockMonitor.ExitWaiting(syncObject, ResourceType.Read);
+                }
+            }
+
+            public static void ConvertWaitingToAcquired(object syncObject, ResourceType syncObjectRole, object syncObjectInfo)
+            {
+                DeadlockMonitor.ConvertWaitingToAcquired(syncObject, syncObjectRole, syncObjectInfo);
+
+                if (syncObjectRole == ResourceType.Write)
+                {
+                    DeadlockMonitor.ConvertWaitingToAcquired(syncObject, ResourceType.Read, syncObjectInfo);
+                }
+            }
+
+            public static void EnterAcquired(object syncObject, ResourceType syncObjectRole, object syncObjectInfo)
+            {
+                DeadlockMonitor.EnterAcquired(syncObject, syncObjectRole, syncObjectInfo);
+
+                if (syncObjectRole == ResourceType.Write)
+                {
+                    DeadlockMonitor.EnterAcquired(syncObject, ResourceType.Read, syncObjectInfo);
+                }
+            }
+
+            public static void ExitAcquired(object syncObject, ResourceType syncObjectRole)
+            {
+                DeadlockMonitor.ExitAcquired(syncObject, syncObjectRole);
+
+                if (syncObjectRole == ResourceType.Write)
+                {
+                    DeadlockMonitor.ExitAcquired(syncObject, ResourceType.Read);
+                }
             }
         }
-    }
 
+    }
 }

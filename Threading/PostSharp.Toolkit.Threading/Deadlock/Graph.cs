@@ -17,47 +17,50 @@ namespace PostSharp.Toolkit.Threading.Deadlock
 
     internal class Graph
     {
-        private const int UnvisitedVertex = 0;
+        private readonly ConcurrentDictionary<Node, ConcurrentDictionary<Node, Edge>> adjacencyList;
 
-        private readonly Dictionary<Node, Dictionary<Node, Edge>> adjacencyList;
+        private readonly HashSet<object> ignoredResources;
 
         public Graph()
         {
-            this.adjacencyList = new Dictionary<Node, Dictionary<Node, Edge>>();
+            this.adjacencyList = new ConcurrentDictionary<Node, ConcurrentDictionary<Node, Edge>>();
+            this.ignoredResources = new HashSet<object>();
         }
 
-        public bool AddEdge(object from, object fromObjectInfo, ResourceType fromType, object to, object toObjectInfo, ResourceType toType)
+        public void AddIgnoredResource(object resource, ResourceType resourceType)
         {
-            var fromNode = new Node(from, fromType);
-            Dictionary<Node, Edge> neighbourhood;
-            if (!this.adjacencyList.TryGetValue(fromNode, out neighbourhood))
+            if (this.ignoredResources.Add(resource))
             {
-                neighbourhood = new Dictionary<Node, Edge>();
-                this.adjacencyList.Add(fromNode, neighbourhood);
+                var node = new Node(resource, resourceType);
+                ConcurrentDictionary<Node, Edge> n;
+                this.adjacencyList.TryRemove(node, out n);
             }
+        }
+
+        public void AddEdge(object from, object fromObjectInfo, ResourceType fromType, object to, object toObjectInfo, ResourceType toType)
+        {
+            if (this.ignoredResources.Contains(from) || this.ignoredResources.Contains(to))
+            {
+                return;
+            }
+
+            var fromNode = new Node(from, fromType);
+            var neighbourhood = this.adjacencyList.GetOrAdd(fromNode, n => new ConcurrentDictionary<Node, Edge>());
 
             var toNode = new Node(to, toType);
-            Edge edge;
 
-            if (!neighbourhood.TryGetValue(toNode, out edge))
-            {
-                edge = new Edge(fromNode, toNode, fromObjectInfo, toObjectInfo);
-                neighbourhood.Add(toNode, edge);
-                return true;
-            }
+            Edge edge = neighbourhood.GetOrAdd(toNode, n => new Edge(fromNode, toNode, fromObjectInfo, toObjectInfo));
 
             edge.Counter++;
-
-            return false;
         }
 
-        public bool RemoveEdge(object from, ResourceType fromType, object to, ResourceType toType)
+        public void RemoveEdge(object from, ResourceType fromType, object to, ResourceType toType)
         {
             var fromNode = new Node(from, fromType);
-            Dictionary<Node, Edge> neighbourhood;
+            ConcurrentDictionary<Node, Edge> neighbourhood;
             if (!this.adjacencyList.TryGetValue(fromNode, out neighbourhood))
             {
-                return false;
+                return;
             }
 
             var toNode = new Node(to, toType);
@@ -66,27 +69,27 @@ namespace PostSharp.Toolkit.Threading.Deadlock
 
             if (!neighbourhood.TryGetValue(toNode, out edge))
             {
-                return false;
+                return;
             }
 
             edge.Counter--;
 
             if (edge.Counter == 0)
             {
-                neighbourhood.Remove(toNode);
+                neighbourhood.TryRemove(toNode, out edge);
 
                 if (neighbourhood.Count == 0)
                 {
-                    this.adjacencyList.Remove(fromNode);
+                    this.adjacencyList.TryRemove(fromNode, out neighbourhood);
                 }
             }
 
-            return true;
+            return;
         }
 
-        public bool DetectCycles(out IList<Edge> cycle)
+        public bool DetectCycles(out IEnumerable<Edge> cycle)
         {
-            var gamma = this.adjacencyList.Keys.ToDictionary(v => v, v => 0);
+            var gamma = new Dictionary<Node, int>();
 
             var predecessors = new Dictionary<Node, Edge>();
 
@@ -104,9 +107,9 @@ namespace PostSharp.Toolkit.Threading.Deadlock
             return false;
         }
 
-        public bool DetectCycles(object startingVertex, ResourceType startingVertexType, out IList<Edge> cycle)
+        public bool DetectCycles(object startingVertex, ResourceType startingVertexType, out IEnumerable<Edge> cycle)
         {
-            var gamma = this.adjacencyList.Keys.ToDictionary(v => v, v => 0);
+            var gamma = new Dictionary<Node, int>();
 
             var predecessors = new Dictionary<Node, Edge>();
 
@@ -117,36 +120,37 @@ namespace PostSharp.Toolkit.Threading.Deadlock
             return this.DetectCycleInStronglyConnectedComponent(gamma, root, ref currentGamma, predecessors, out cycle);
         }
 
-        private bool DetectCycleInStronglyConnectedComponent(Dictionary<Node, int> gamma, Node r, ref int currentGamma, Dictionary<Node, Edge> predecessors, out IList<Edge> cycle)
+        private bool DetectCycleInStronglyConnectedComponent(Dictionary<Node, int> gamma, Node r, ref int currentGamma, Dictionary<Node, Edge> predecessors, out IEnumerable<Edge> cycle)
         {
-            if (gamma[r] != UnvisitedVertex)
+
+            if (gamma.ContainsKey(r))
             {
                 cycle = null;
                 return false;
             }
 
-            gamma[r] = currentGamma++;
+            gamma.Add(r, currentGamma++);
 
             var edgeStack = new Stack<Edge>();
 
-            this.AddAdjecentEdgesToStack(r, edgeStack, gamma);
+            this.AddAdjecentEdgesToStack(r, edgeStack);
 
             while (edgeStack.Count > 0)
             {
                 var e = edgeStack.Pop();
 
-                if (gamma[e.Successor] == UnvisitedVertex)
+                if (!gamma.ContainsKey(e.Successor))
                 {
-                    gamma[e.Successor] = currentGamma++;
+                    gamma.Add(e.Successor, currentGamma++);
                     predecessors.Add(e.Successor, e);
-                    this.AddAdjecentEdgesToStack(e.Successor, edgeStack, gamma);
+                    this.AddAdjecentEdgesToStack(e.Successor, edgeStack);
                 }
                 else
                 {
-                    if (gamma[e.Predecessor] > gamma[e.Successor] && // is not a forward back edge
+                    if (gamma[e.Predecessor] > gamma[e.Successor] && // is not a forward edge
                         gamma[r] <= gamma[e.Successor]) // is not a cross edge
                     {
-                        cycle = this.GetCycle(e, predecessors).Reverse().ToList();
+                        cycle = this.GetCycle(e, predecessors);
 
                         return true;
                     }
@@ -157,23 +161,21 @@ namespace PostSharp.Toolkit.Threading.Deadlock
             return false;
         }
 
-        private IList<Edge> GetCycle(Edge e, Dictionary<Node, Edge> predecessors)
+        private IEnumerable<Edge> GetCycle(Edge e, Dictionary<Node, Edge> predecessors)
         {
-            IList<Edge> cycle = new List<Edge> { e };
-
             Edge cerrentEdge;
             Node currentNode = e.Predecessor;
 
+            yield return e;
+
             while (predecessors.TryGetValue(currentNode, out cerrentEdge))
             {
-                cycle.Add(cerrentEdge);
+                yield return cerrentEdge;
                 currentNode = cerrentEdge.Predecessor;
             }
-
-            return cycle;
         }
 
-        private void AddAdjecentEdgesToStack(Node v, Stack<Edge> edgeStack, Dictionary<Node, int> color)
+        private void AddAdjecentEdgesToStack(Node v, Stack<Edge> edgeStack)
         {
             if (!this.adjacencyList.ContainsKey(v))
             {
@@ -182,13 +184,6 @@ namespace PostSharp.Toolkit.Threading.Deadlock
 
             foreach (var e in this.adjacencyList[v].Where(x => Environment.TickCount - x.Value.LastChange > 50)) // ignore young edges
             {
-                int c;
-                if (!color.TryGetValue(e.Value.Successor, out c))
-                {
-                    c = UnvisitedVertex;
-                    color.Add(e.Value.Successor, c);
-                }
-
                 edgeStack.Push(e.Value);
             }
         }
@@ -258,7 +253,7 @@ namespace PostSharp.Toolkit.Threading.Deadlock
             this.Successor = successor;
             this.PredecessorInfo = predecessorInfo;
             this.SuccessorInfo = successorInfo;
-            this.Counter = 1;
+            this.Counter = 0;
             this.LastChange = Environment.TickCount;
         }
 

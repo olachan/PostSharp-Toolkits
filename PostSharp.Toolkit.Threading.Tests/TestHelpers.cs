@@ -1,34 +1,21 @@
-﻿// -----------------------------------------------------------------------
-// <copyright file="TestHelpers.cs" company="">
-// TODO: Update copyright text.
-// </copyright>
-// -----------------------------------------------------------------------
-
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-
-    /// <summary>
-    /// TODO: Update summary.
-    /// </summary>
     public static class TestHelpers
     {
-        public static void InvokeSimultaneouslyAndWait(Action action1, Action action2)
+        public static void InvokeSimultaneouslyAndWait(Action action1, Action action2, int timeout = Timeout.Infinite)
         {
             try
             {
-                var t1 = new Task(action1);
-                var t2 = new Task(action2);
+                var t1 = new Task(() => Swallow<ThreadInterruptedException>(action1));
+                var t2 = new Task(() => Swallow<ThreadInterruptedException>(action2));
                 t1.Start();
                 t2.Start();
-                t1.Wait();
-                t2.Wait();
+                t1.Wait(timeout);
+                t2.Wait(timeout);
             }
             catch (AggregateException aggregateException)
             {

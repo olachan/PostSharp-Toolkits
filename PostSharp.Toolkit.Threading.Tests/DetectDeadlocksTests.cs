@@ -6,8 +6,8 @@ using NUnit.Framework;
 
 using PostSharp.Toolkit.Threading.Deadlock;
 
-[assembly: DetectDeadlocks(AttributeTargetAssemblies = "mscorlib", AttributeTargetTypes = "System.Threading.*")]
-[assembly: DetectDeadlocks(AttributeTargetAssemblies = "System.Core", AttributeTargetTypes = "System.Threading.*")]
+[assembly: DeadlockDetectionPolicy(AttributeTargetAssemblies = "mscorlib", AttributeTargetTypes = "System.Threading.*")]
+[assembly: DeadlockDetectionPolicy(AttributeTargetAssemblies = "System.Core", AttributeTargetTypes = "System.Threading.*")]
 
 namespace PostSharp.Toolkit.Threading.Tests
 {
@@ -33,49 +33,118 @@ namespace PostSharp.Toolkit.Threading.Tests
                     }
                 };
 
-            Action t2 =() =>
-            {
-                lock (lock2)
+            Action t2 = () =>
                 {
-                    barrier.SignalAndWait();
-                    lock (lock1)
+                    lock (lock2)
                     {
-                        Thread.Sleep(100);
+                        barrier.SignalAndWait();
+                        lock (lock1)
+                        {
+                            Thread.Sleep(100);
+                        }
                     }
-                }
-            };
+                };
 
             TestHelpers.InvokeSimultaneouslyAndWait(t1, t2);
         }
 
         [Test]
-        public void SimpleLock_WhenNoDeadlocked_DoesNotThrows()
+        public void SimpleLock_WhenNoDeadlocked_DoesNotThrow()
         {
             var lock1 = new object();
             var lock2 = new object();
-            
+
             Action t1 = () =>
-            {
-                lock (lock1)
                 {
-                    Thread.Sleep(500);
-                    lock (lock2)
+                    lock (lock1)
                     {
                         Thread.Sleep(500);
+                        lock (lock2)
+                        {
+                            Thread.Sleep(500);
+                        }
                     }
-                }
+                };
+
+            Action t2 = () =>
+                {
+                    lock (lock1)
+                    {
+                        Thread.Sleep(500);
+                        lock (lock2)
+                        {
+                            Thread.Sleep(500);
+                        }
+                    }
+                };
+
+            TestHelpers.InvokeSimultaneouslyAndWait(t1, t2);
+        }
+
+        [Test]
+        public void Mutex_WhenHandleManipulatedAndDeadlocked_DoesNotThrow()
+        {
+            var barrier = new Barrier(3);
+            Mutex mutex1 = new Mutex();
+            Mutex mutex2 = new Mutex();
+
+            Action t1 = () =>
+                {
+                    mutex1.WaitOne();
+                    barrier.SignalAndWait();
+                    mutex2.WaitOne();
+                    Thread.Sleep(100);
+                    mutex2.ReleaseMutex();
+                    mutex1.ReleaseMutex();
+                };
+
+            Action t2 = () =>
+            {
+                mutex2.WaitOne();
+                barrier.SignalAndWait();
+                mutex1.WaitOne();
+                Thread.Sleep(100);
+                mutex1.ReleaseMutex();
+                mutex2.ReleaseMutex();
+            };
+
+
+            Task.Factory.StartNew(
+                () =>
+                    {
+                        barrier.SignalAndWait();
+                        var handle = mutex1.SafeWaitHandle;
+                    });
+
+            TestHelpers.InvokeSimultaneouslyAndWait(t1, t2, 500);
+            
+        }
+
+        [Test]
+        [ExpectedException(typeof(DeadlockException))]
+        public void Mutex_WhenDeadlocked_Throws()
+        {
+            var barrier = new Barrier(2);
+            Mutex mutex1 = new Mutex();
+            Mutex mutex2 = new Mutex();
+            Action t1 = () =>
+            {
+                mutex1.WaitOne();
+                barrier.SignalAndWait();
+                mutex2.WaitOne();
+                Thread.Sleep(100);
+                mutex2.ReleaseMutex();
+                mutex1.ReleaseMutex();
             };
 
             Action t2 = () =>
             {
-                lock (lock1)
-                {
-                    Thread.Sleep(500);
-                    lock (lock2)
-                    {
-                        Thread.Sleep(500);
-                    }
-                }
+                mutex2.WaitOne();
+                barrier.SignalAndWait();
+                mutex1.WaitOne();
+                Thread.Sleep(100);
+                mutex1.ReleaseMutex();
+                mutex2.ReleaseMutex();
             };
 
             TestHelpers.InvokeSimultaneouslyAndWait(t1, t2);
@@ -99,13 +168,13 @@ namespace PostSharp.Toolkit.Threading.Tests
                 });
 
             Action t2 = () =>
-            {
-                lock (rw)
                 {
-                    barrier.SignalAndWait();
-                    rw.Write(i, () => { });
-                }
-            };
+                    lock (rw)
+                    {
+                        barrier.SignalAndWait();
+                        rw.Write(i, () => { });
+                    }
+                };
 
             TestHelpers.InvokeSimultaneouslyAndWait(t1, t2);
         }
