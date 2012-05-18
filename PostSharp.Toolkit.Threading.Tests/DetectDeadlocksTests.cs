@@ -5,9 +5,8 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 
 using PostSharp.Toolkit.Threading.Deadlock;
-
-[assembly: DeadlockDetectionPolicy(AttributeTargetAssemblies = "mscorlib", AttributeTargetTypes = "System.Threading.*")]
-[assembly: DeadlockDetectionPolicy(AttributeTargetAssemblies = "System.Core", AttributeTargetTypes = "System.Threading.*")]
+using PostSharp.Toolkit.Threading.ReaderWriter;
+using PostSharp.Toolkit.Threading.Synchronized;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {
@@ -178,7 +177,107 @@ namespace PostSharp.Toolkit.Threading.Tests
 
             TestHelpers.InvokeSimultaneouslyAndWait(t1, t2);
         }
+
+        [Test]
+        [ExpectedException(typeof(DeadlockException))]
+        public void ReaderWriterAttribute_WhenDeadlocked_Throws()
+        {
+            var rw = new ReaderWriterAttributeClass();
+            var barrier = new Barrier(2);
+            int i = 0;
+
+            Action t1 = () => rw.Read(() =>
+            {
+                barrier.SignalAndWait();
+                lock (rw)
+                {
+                    i = 1;
+                }
+            });
+
+            Action t2 = () =>
+            {
+                lock (rw)
+                {
+                    barrier.SignalAndWait();
+                    rw.Write(i, () => { });
+                }
+            };
+
+            TestHelpers.InvokeSimultaneouslyAndWait(t1, t2);
+        }
+
+        [Test]
+        [ExpectedException(typeof(DeadlockException))]
+        public void SynchronizedAttribute_WhenDeadlocked_Throws()
+        {
+            var rw = new SynchronizedAttributeClass();
+            var barrier = new Barrier(2);
+            int i = 0;
+
+            Action t1 = () => rw.Read(() =>
+            {
+                barrier.SignalAndWait();
+                lock (rw)
+                {
+                    i = 1;
+                }
+            });
+
+            Action t2 = () =>
+            {
+                lock (rw)
+                {
+                    barrier.SignalAndWait();
+                    rw.Write(i, () => { });
+                }
+            };
+
+            TestHelpers.InvokeSimultaneouslyAndWait(t1, t2);
+        }
     }
+
+    public class SynchronizedAttributeClass
+    {
+        private int field;
+
+        [Synchronized]
+        public int Read(Action action)
+        {
+            action();
+            var value = this.field;
+            return value;
+        }
+
+        [Synchronized]
+        public void Write(int value, Action action)
+        {
+            action();
+            this.field = value;
+        }
+    }
+
+    [ReaderWriterSynchronized]
+    public class ReaderWriterAttributeClass
+    {
+        private int field;
+
+        [ReadLock]
+        public int Read(Action action)
+        {
+            action();
+            var value = this.field;
+            return value;
+        }
+
+        [WriteLock]
+        public void Write(int value, Action action)
+        {
+            action();
+            this.field = value;
+        }
+    }
+
 
     public class ReaderWriterClass
     {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -52,6 +53,9 @@ namespace PostSharp.Toolkit.Threading.Deadlock
     {
         private static readonly Graph graph = new Graph();
         private static int detectionPending; // 0 - no detection pending, 1 - detection pending, using int to benefit from Interlocked class
+        private static readonly WeakHashSet ignoredResources = new WeakHashSet();
+        private static readonly ReaderWriterLockSlim ignoredResourcesReaderWriterLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+        private static bool disableDeadlockDetection = false;
 
         /// <summary>Method to be invoked before starting to wait for a synchronization object.</summary>
         /// <param name="syncObject">The synchronization object that will be waited for.</param>
@@ -67,7 +71,7 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         [Conditional("DEBUG")]
         public static void EnterWaiting(object syncObject, ResourceType syncObjectRole, object syncObjectInfo)
         {
-            graph.AddEdge(Thread.CurrentThread, null, ResourceType.Thread, syncObject, syncObjectInfo, syncObjectRole);
+            AddEdge(Thread.CurrentThread, null, ResourceType.Thread, syncObject, syncObjectInfo, syncObjectRole);
         }
 
         /// <summary>Method to be invoked after waiting for a synchronization object, typically when the object
@@ -100,7 +104,7 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         {
             Thread thread = Thread.CurrentThread;
             graph.RemoveEdge(thread, ResourceType.Thread, syncObject, syncObjectRole);
-            graph.AddEdge(syncObject, syncObjectInfo, syncObjectRole, thread, null, ResourceType.Thread);
+            AddEdge(syncObject, syncObjectInfo, syncObjectRole, thread, null, ResourceType.Thread);
 
             // RandomSleep();
         }
@@ -121,7 +125,7 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         [Conditional("DEBUG")]
         public static void EnterAcquired(object syncObject, ResourceType syncObjectRole, object syncObjectInfo)
         {
-            graph.AddEdge(syncObject, syncObjectInfo, syncObjectRole, Thread.CurrentThread, null, ResourceType.Thread);
+            AddEdge(syncObject, syncObjectInfo, syncObjectRole, Thread.CurrentThread, null, ResourceType.Thread);
 
             // RandomSleep();
         }
@@ -141,12 +145,43 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         /// <summary>
         /// Adds ignored resource. This resource will not be taken to considiration during deadlock detection.
         /// </summary>
-        /// <param name="recource"></param>
+        /// <param name="resource"></param>
         [Conditional("DEBUG")]
-        public static void IgnoreResource(object recource, ResourceType resourceType)
+        public static void IgnoreResource(object resource, ResourceType resourceType)
         {
-            graph.AddIgnoredResource(recource, resourceType);
+            ignoredResourcesReaderWriterLock.EnterWriteLock();
+
+            if (ignoredResources.Add(resource))
+            {
+                graph.RemoveAdjecentEdges(resource, resourceType);
+            }
+
+            if (ignoredResources.Count > 50)
+            {
+                ignoredResources.ClearNotAlive();
+                if (ignoredResources.Count > 50)
+                {
+                    disableDeadlockDetection = true;
+                }
+            }
+
+            ignoredResourcesReaderWriterLock.ExitWriteLock();
         }
+
+        private static void AddEdge(object from, object fromObjectInfo, ResourceType fromType, object to, object toObjectInfo, ResourceType toType)
+        {
+            ignoredResourcesReaderWriterLock.EnterReadLock();
+
+            if (ignoredResources.Contains(from) || ignoredResources.Contains(to))
+            {
+                return;
+            }
+
+            graph.AddEdge(from, fromObjectInfo, fromType, to, toObjectInfo, toType);
+
+            ignoredResourcesReaderWriterLock.ExitReadLock();
+        }
+
 
         /// <summary>
         /// Detects deadlocks by analyzing the graph of wait dependencies.
@@ -186,6 +221,12 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         [Conditional("DEBUG")]
         public static void DetectDeadlocks(Thread startThread = null)
         {
+            if (disableDeadlockDetection)
+            {
+                Debug.Print("Deadlock detection canceled because there are too many ignored resources");
+                return;
+            }
+
             if (Interlocked.CompareExchange(ref detectionPending, 1, 0) == 1)
             {
                 Debug.Print("Deadlock detection skipped because another one is pending.");

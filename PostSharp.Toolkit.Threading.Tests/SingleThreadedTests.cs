@@ -18,7 +18,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                 var t2 = new Task(action2);
                 t1.Start();
                 t2.Start();
-                Task.WaitAll(new[] {t1, t2});
+                Task.WaitAll(new[] { t1, t2 });
             }
             catch (AggregateException aggregateException)
             {

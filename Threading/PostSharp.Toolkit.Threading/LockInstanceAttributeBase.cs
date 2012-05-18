@@ -7,6 +7,8 @@
 using System;
 
 using PostSharp.Aspects;
+using PostSharp.Reflection;
+using PostSharp.Toolkit.Threading.Deadlock;
 
 namespace PostSharp.Toolkit.Threading
 {
@@ -19,11 +21,21 @@ namespace PostSharp.Toolkit.Threading
         [NonSerialized]
         protected object attributeLock;
 
+        protected bool useDeadlockDetection;
+
         protected bool instanceLocked;
 
         public LockInstanceAttributeBase(bool isInstanceLocked = true)
         {
             this.instanceLocked = isInstanceLocked;
+        }
+
+        public override void CompileTimeInitialize(System.Reflection.MethodBase method, AspectInfo aspectInfo)
+        {
+            base.CompileTimeInitialize(method, aspectInfo);
+
+            var attributes = Attribute.GetCustomAttributes(method.DeclaringType.Assembly, typeof(DeadlockDetectionPolicy));
+            this.useDeadlockDetection = attributes.Length > 0;
         }
 
         public void RuntimeInitializeInstance()

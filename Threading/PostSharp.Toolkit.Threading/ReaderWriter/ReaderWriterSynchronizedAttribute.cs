@@ -6,6 +6,7 @@ using PostSharp.Aspects.Advices;
 using PostSharp.Aspects.Configuration;
 using PostSharp.Aspects.Dependencies;
 using PostSharp.Aspects.Serialization;
+using PostSharp.Toolkit.Threading.Deadlock;
 
 namespace PostSharp.Toolkit.Threading.ReaderWriter
 {
@@ -15,18 +16,26 @@ namespace PostSharp.Toolkit.Threading.ReaderWriter
     /// object is created upon each instantiation of the target class.
     /// </summary>
     [Serializable]
-    [CompositionAspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
-    [IntroduceInterface( typeof(IReaderWriterSynchronized) )]
-    [ProvideAspectRole( StandardRoles.Threading )]
+    [CompositionAspectConfiguration(SerializerType = typeof(MsilAspectSerializer))]
+    [IntroduceInterface(typeof(IReaderWriterSynchronized))]
+    [ProvideAspectRole(StandardRoles.Threading)]
     public sealed class ReaderWriterSynchronizedAttribute : InstanceLevelAspect, IReaderWriterSynchronized
     {
-        [NonSerialized] private ReaderWriterLockWrapper @lock;
+        [NonSerialized]
+        private ReaderWriterLockWrapper @lock;
 
-        public override object CreateInstance( AdviceArgs aspectArgs )
+        public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
+        {
+            var attributes = Attribute.GetCustomAttributes(type.Assembly, typeof(DeadlockDetectionPolicy));
+            this.useDeadlockDetection = attributes.Length > 0;
+            base.CompileTimeInitialize(type, aspectInfo);
+        }
+
+        public override object CreateInstance(AdviceArgs aspectArgs)
         {
             ReaderWriterSynchronizedAttribute instance = new ReaderWriterSynchronizedAttribute
                                                              {
-                                                                 @lock = new ReaderWriterLockWrapper( aspectArgs.Instance )
+                                                                 @lock = this.useDeadlockDetection ? new ReaderWriterLockInstrumentedWrapper() : new ReaderWriterLockWrapper(),
                                                              };
             return instance;
         }
@@ -35,5 +44,7 @@ namespace PostSharp.Toolkit.Threading.ReaderWriter
         {
             get { return this.@lock; }
         }
+
+        private bool useDeadlockDetection;
     }
 }

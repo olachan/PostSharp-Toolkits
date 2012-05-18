@@ -1,5 +1,7 @@
 using System.Threading;
 
+using PostSharp.Toolkit.Threading.Deadlock;
+
 namespace PostSharp.Toolkit.Threading.ReaderWriter
 {
     /// <summary>

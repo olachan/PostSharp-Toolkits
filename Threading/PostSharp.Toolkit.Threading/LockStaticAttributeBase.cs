@@ -2,13 +2,13 @@
 using System.Collections.Concurrent;
 
 using PostSharp.Aspects;
+using PostSharp.Toolkit.Threading.Deadlock;
 
 namespace PostSharp.Toolkit.Threading
 {
     [Serializable]
     public class LockStaticAttributeBase : MethodInterceptionAspect
     {
-        // TODO Replace with something .NET 3.5 compatibile
         protected static ConcurrentDictionary<Type, object> typeLocks = new ConcurrentDictionary<Type, object>();
 
         [NonSerialized]
@@ -16,9 +16,20 @@ namespace PostSharp.Toolkit.Threading
 
         protected bool instanceLocked;
 
+        protected bool useDeadlockDetection;
+
+
         public LockStaticAttributeBase(bool isInstanceLocked = true)
         {
             this.instanceLocked = isInstanceLocked;
+        }
+
+        public override void CompileTimeInitialize(System.Reflection.MethodBase method, AspectInfo aspectInfo)
+        {
+            base.CompileTimeInitialize(method, aspectInfo);
+
+            var attributes = Attribute.GetCustomAttributes(method.DeclaringType.Assembly, typeof(DeadlockDetectionPolicy));
+            this.useDeadlockDetection = attributes.Length > 0;
         }
 
         public override void RuntimeInitialize(System.Reflection.MethodBase method)

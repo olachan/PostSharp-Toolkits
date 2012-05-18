@@ -4,7 +4,9 @@ using System.Threading;
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 using PostSharp.Aspects.Dependencies;
+using PostSharp.Extensibility;
 using PostSharp.Toolkit.Threading.Deadlock;
+using PostSharp.Toolkit.Threading.SingleThreaded;
 
 namespace PostSharp.Toolkit.Threading.Synchronized
 {
@@ -15,6 +17,8 @@ namespace PostSharp.Toolkit.Threading.Synchronized
     /// Implements synchronizatian for instance methods.
     /// </remarks>
     [Serializable]
+    [AspectTypeDependency(AspectDependencyAction.Commute, typeof(SingleThreadedInstanceAttribute))]
+    [AspectTypeDependency(AspectDependencyAction.Commute, typeof(SynchronizedInstanceAttribute))]
     [IntroduceInterface(typeof(ISynchronized), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
     [ProvideAspectRole(StandardRoles.Threading)]
     public class SynchronizedInstanceAttribute : LockInstanceAttributeBase, IInstanceScopedAspect, ISynchronized
@@ -30,7 +34,8 @@ namespace PostSharp.Toolkit.Threading.Synchronized
 
         public object CreateInstance(AdviceArgs aspectArgs)
         {
-            var instance = new SynchronizedInstanceAttribute(this.instanceLocked);
+            var instance = new SynchronizedInstanceAttribute(this.instanceLocked)
+                { useDeadlockDetection = this.useDeadlockDetection };
             return instance;
         }
 
@@ -46,8 +51,15 @@ namespace PostSharp.Toolkit.Threading.Synchronized
         {
             object l = this.instanceLocked ? ((ISynchronized)args.Instance).Lock : this.attributeLock;
 
+            if (useDeadlockDetection)
+            {
+                MonitorWrapper.Enter(l);
+            }
+            else
+            {
+                Monitor.Enter(l);
+            }
 
-            Monitor.Enter(l);
 
             try
             {
@@ -55,7 +67,15 @@ namespace PostSharp.Toolkit.Threading.Synchronized
             }
             finally
             {
-                Monitor.Exit(l);
+                if (useDeadlockDetection)
+                {
+                    MonitorWrapper.Exit(l);
+                }
+                else
+                {
+                    Monitor.Exit(l);
+                }
+
             }
         }
     }

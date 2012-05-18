@@ -4,6 +4,7 @@ using System.Threading;
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 using PostSharp.Aspects.Dependencies;
+using PostSharp.Toolkit.Threading.Synchronized;
 
 namespace PostSharp.Toolkit.Threading.SingleThreaded
 {
@@ -11,6 +12,8 @@ namespace PostSharp.Toolkit.Threading.SingleThreaded
     /// TODO: Update summary.
     /// </summary>
     [Serializable]
+    [AspectTypeDependency(AspectDependencyAction.Commute, typeof(SingleThreadedInstanceAttribute))]
+    [AspectTypeDependency(AspectDependencyAction.Commute, typeof(SynchronizedInstanceAttribute))]
     [IntroduceInterface(typeof(ISingleThreaded), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
     [ProvideAspectRole(StandardRoles.Threading)]
     [Conditional("DEBUG")]

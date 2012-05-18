@@ -35,7 +35,14 @@ namespace PostSharp.Toolkit.Threading.Synchronized
                 l = this.attributeLock;
             }
 
-            Monitor.Enter(l);
+            if (useDeadlockDetection)
+            {
+                MonitorWrapper.Enter(l);
+            }
+            else
+            {
+                Monitor.Enter(l);
+            }
 
             try
             {
@@ -43,7 +50,14 @@ namespace PostSharp.Toolkit.Threading.Synchronized
             }
             finally
             {
-                Monitor.Exit(l);
+                if (useDeadlockDetection)
+                {
+                    MonitorWrapper.Exit(l);
+                }
+                else
+                {
+                    Monitor.Exit(l);
+                }
             }
         }
     }

@@ -19,31 +19,20 @@ namespace PostSharp.Toolkit.Threading.Deadlock
     {
         private readonly ConcurrentDictionary<Node, ConcurrentDictionary<Node, Edge>> adjacencyList;
 
-        private readonly HashSet<object> ignoredResources;
-
         public Graph()
         {
             this.adjacencyList = new ConcurrentDictionary<Node, ConcurrentDictionary<Node, Edge>>();
-            this.ignoredResources = new HashSet<object>();
         }
 
-        public void AddIgnoredResource(object resource, ResourceType resourceType)
+        public void RemoveAdjecentEdges(object resource, ResourceType resourceType)
         {
-            if (this.ignoredResources.Add(resource))
-            {
-                var node = new Node(resource, resourceType);
-                ConcurrentDictionary<Node, Edge> n;
-                this.adjacencyList.TryRemove(node, out n);
-            }
+            var node = new Node(resource, resourceType);
+            ConcurrentDictionary<Node, Edge> n;
+            this.adjacencyList.TryRemove(node, out n);
         }
 
         public void AddEdge(object from, object fromObjectInfo, ResourceType fromType, object to, object toObjectInfo, ResourceType toType)
         {
-            if (this.ignoredResources.Contains(from) || this.ignoredResources.Contains(to))
-            {
-                return;
-            }
-
             var fromNode = new Node(from, fromType);
             var neighbourhood = this.adjacencyList.GetOrAdd(fromNode, n => new ConcurrentDictionary<Node, Edge>());
 
@@ -182,7 +171,7 @@ namespace PostSharp.Toolkit.Threading.Deadlock
                 return;
             }
 
-            foreach (var e in this.adjacencyList[v].Where(x => Environment.TickCount - x.Value.LastChange > 50)) // ignore young edges
+            foreach (var e in this.adjacencyList[v].Where(x => Environment.TickCount - x.Value.LastChange > 100)) // ignore young edges
             {
                 edgeStack.Push(e.Value);
             }

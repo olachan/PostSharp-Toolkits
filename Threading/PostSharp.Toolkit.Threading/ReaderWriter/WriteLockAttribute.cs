@@ -37,7 +37,7 @@ namespace PostSharp.Toolkit.Threading.ReaderWriter
         /// <param name="eventArgs"></param>
         public override void OnEntry( MethodExecutionArgs eventArgs )
         {
-            eventArgs.MethodExecutionTag = ((IReaderWriterSynchronized) eventArgs.Instance).AcquireWriteLock();
+            ((IReaderWriterSynchronized) eventArgs.Instance).Lock.EnterWriteLock();
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace PostSharp.Toolkit.Threading.ReaderWriter
         /// <param name="eventArgs"></param>
         public override void OnExit( MethodExecutionArgs eventArgs )
         {
-            ((ReaderWriterLockWrapper.Cookie) eventArgs.MethodExecutionTag).Dispose();
+            ((IReaderWriterSynchronized)eventArgs.Instance).Lock.ExitWriteLock();
         }
     }
 }

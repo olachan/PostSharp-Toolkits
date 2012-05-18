@@ -49,6 +49,9 @@
     <Compile Include="Deadlock\DeadlockException.cs" />
     <Compile Include="Deadlock\DeadlockMonitor.cs" />
     <Compile Include="Deadlock\DedlockDetectionAspects.cs" />
+    <Compile Include="Deadlock\MonitorWrapper.cs" />
+    <Compile Include="Deadlock\ReaderWriterLockWrapper.cs" />
+    <Compile Include="Deadlock\WeakHashSet.cs" />
     <Compile Include="Dispatch\DispatchEventAttribute.cs" />
     <Compile Include="Dispatch\DispatchMethodAttribute.cs" />
     <Compile Include="Deadlock\Graph.cs" />
@@ -57,14 +60,9 @@
     <Compile Include="ReaderWriter\IReaderWriterSynchronized.cs" />
     <Compile Include="SingleThreaded\ISingleThreaded.cs" />
     <Compile Include="LockNotDisposedException.cs" />
-    <Compile Include="Collections\ObservableKeyedCollection.cs" />
-    <Compile Include="Collections\ObservableSynchronizedDictionary.cs" />
-    <Compile Include="Collections\ObserverLockAttribute.cs" />
     <Compile Include="Parallel\Parallel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ReaderWriter\ReaderWriterLockWrapper.cs" />
     <Compile Include="ReaderWriter\ReaderWriterSynchronizedAttribute.cs" />
-    <Compile Include="ReaderWriter\ReaderWriterSynchronizedExtensions.cs" />
     <Compile Include="ReaderWriter\ReadLockAttribute.cs" />
     <Compile Include="SingleThreaded\SingleThreadedAttribute.cs" />
     <Compile Include="Synchronized\SynchronizedClassAttribute.cs" />
