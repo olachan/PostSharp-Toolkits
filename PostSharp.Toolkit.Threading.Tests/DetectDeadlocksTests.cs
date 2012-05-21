@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -175,6 +176,34 @@ namespace PostSharp.Toolkit.Threading.Tests
                     }
                 };
 
+            //Action t1 = () => rw.Read(() =>
+            //{
+            //    barrier.SignalAndWait();
+            //    Monitor.Enter(rw);
+            //    try
+            //    {
+            //        i = 1;
+            //    }
+            //    finally
+            //    {
+            //        Monitor.Exit(rw);
+            //    }
+            //});
+
+            //Action t2 = () =>
+            //{
+            //    Monitor.Enter(rw);
+            //    try
+            //    {
+            //        barrier.SignalAndWait();
+            //        rw.Write(i, () => { });
+            //    }
+            //    finally
+            //    {
+            //        Monitor.Exit(rw);
+            //    }
+            //};
+
             TestHelpers.InvokeSimultaneouslyAndWait(t1, t2);
         }
 
@@ -220,6 +249,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                 barrier.SignalAndWait();
                 lock (rw)
                 {
+                    Debug.Print("lock acquired by thread {0}", Thread.CurrentThread.ManagedThreadId);
                     i = 1;
                 }
             });
@@ -231,6 +261,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                     barrier.SignalAndWait();
                     rw.Write(i, () => { });
                 }
+                Debug.Print("lock released by thread {0}", Thread.CurrentThread.ManagedThreadId);
             };
 
             TestHelpers.InvokeSimultaneouslyAndWait(t1, t2);

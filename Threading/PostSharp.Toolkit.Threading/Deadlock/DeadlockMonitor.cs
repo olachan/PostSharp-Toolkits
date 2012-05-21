@@ -63,15 +63,10 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         ///     Role (or name) of the lock, inside <paramref name="syncObject"/>, or
         ///     <strong>null</strong> if the synchronization object has no role.
         /// </param>
-        /// <param name="syncObjectInfo">
-        ///     Object representing <paramref name="syncObject"/> when human-readable information
-        ///     is displayed (the <see cref="object.ToString"/> method of this object is used), or
-        ///     <strong>null</strong>
-        /// </param>
         [Conditional("DEBUG")]
-        public static void EnterWaiting(object syncObject, ResourceType syncObjectRole, object syncObjectInfo)
+        public static void EnterWaiting(object syncObject, ResourceType syncObjectRole)
         {
-            AddEdge(Thread.CurrentThread, null, ResourceType.Thread, syncObject, syncObjectInfo, syncObjectRole);
+            AddEdge(Thread.CurrentThread, ResourceType.Thread, syncObject, syncObjectRole);
         }
 
         /// <summary>Method to be invoked after waiting for a synchronization object, typically when the object
@@ -94,17 +89,12 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         ///     Role (or name) of the lock, inside <paramref name="syncObject"/>, or
         ///     <strong>null</strong> if the synchronization object has no role.
         /// </param>
-        /// <param name="syncObjectInfo">
-        ///     Object representing <paramref name="syncObject"/> when human-readable information
-        ///     is displayed (the <see cref="object.ToString"/> method of this object is used), or
-        ///     <strong>null</strong>
-        /// </param>
         [Conditional("DEBUG")]
-        public static void ConvertWaitingToAcquired(object syncObject, ResourceType syncObjectRole, object syncObjectInfo)
+        public static void ConvertWaitingToAcquired(object syncObject, ResourceType syncObjectRole)
         {
             Thread thread = Thread.CurrentThread;
             graph.RemoveEdge(thread, ResourceType.Thread, syncObject, syncObjectRole);
-            AddEdge(syncObject, syncObjectInfo, syncObjectRole, thread, null, ResourceType.Thread);
+            AddEdge(syncObject, syncObjectRole, thread, ResourceType.Thread);
 
             // RandomSleep();
         }
@@ -117,15 +107,10 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         ///     Role (or name) of the lock, inside <paramref name="syncObject"/>, or
         ///     <strong>null</strong> if the synchronization object has no role.
         /// </param>
-        /// <param name="syncObjectInfo">
-        ///     Object representing <paramref name="syncObject"/> when human-readable information
-        ///     is displayed (the <see cref="object.ToString"/> method of this object is used), or
-        ///     <strong>null</strong>
-        /// </param>
         [Conditional("DEBUG")]
-        public static void EnterAcquired(object syncObject, ResourceType syncObjectRole, object syncObjectInfo)
+        public static void EnterAcquired(object syncObject, ResourceType syncObjectRole)
         {
-            AddEdge(syncObject, syncObjectInfo, syncObjectRole, Thread.CurrentThread, null, ResourceType.Thread);
+            AddEdge(syncObject, syncObjectRole, Thread.CurrentThread, ResourceType.Thread);
 
             // RandomSleep();
         }
@@ -168,7 +153,7 @@ namespace PostSharp.Toolkit.Threading.Deadlock
             ignoredResourcesReaderWriterLock.ExitWriteLock();
         }
 
-        private static void AddEdge(object from, object fromObjectInfo, ResourceType fromType, object to, object toObjectInfo, ResourceType toType)
+        private static void AddEdge(object from, ResourceType fromType, object to, ResourceType toType)
         {
             ignoredResourcesReaderWriterLock.EnterReadLock();
 
@@ -177,7 +162,7 @@ namespace PostSharp.Toolkit.Threading.Deadlock
                 return;
             }
 
-            graph.AddEdge(from, fromObjectInfo, fromType, to, toObjectInfo, toType);
+            graph.AddEdge(from, fromType, to, toType);
 
             ignoredResourcesReaderWriterLock.ExitReadLock();
         }
@@ -235,7 +220,7 @@ namespace PostSharp.Toolkit.Threading.Deadlock
 
             try
             {
-                Debug.Print("Deadlock detection started.");
+                Debug.Print("Deadlock detection started in thread {0}.", Thread.CurrentThread.ManagedThreadId);
 
                 IEnumerable<Edge> cycle;
 
@@ -266,7 +251,7 @@ namespace PostSharp.Toolkit.Threading.Deadlock
             foreach (var edge in cycle)
             {
                 Debug.Print("In cycle: {0}.", edge);
-                messageBuilder.AppendFormat("#{1}={{{0}}}", edge.Successor.Format(edge.SuccessorInfo), i);
+                messageBuilder.AppendFormat("#{1}={{{0}}}", edge.Successor, i);
             }
 
 
@@ -277,41 +262,71 @@ namespace PostSharp.Toolkit.Threading.Deadlock
 
         private static void EmitStackTraces(IEnumerable<Edge> cycle, StringBuilder messageBuilder)
         {
-            foreach (var thread in cycle.Where(x => x.Predecessor.Role == ResourceType.Thread).Select(x => x.Predecessor.SyncObject as Thread))
+            var threadsInDeadlock = cycle.Where(x => x.Predecessor.Role == ResourceType.Thread).Select(x => x.Predecessor.SyncObject as Thread);
+            var suspendedThreads = new List<Thread>();
+
+            foreach (var thread in threadsInDeadlock)
             {
                 if (thread != Thread.CurrentThread)
                 {
-                    messageBuilder.AppendFormat(
-                        Environment.NewLine + Environment.NewLine +
-                        "-- start of stack trace of thread {0} (Name=\"{1}\"):" + Environment.NewLine,
-                        thread.ManagedThreadId,
-                        thread.Name);
-
                     try
                     {
 #pragma warning disable 612,618
                         thread.Suspend();
-                        StackTrace stackTrace = new StackTrace(thread, true);
-                        messageBuilder.Append(stackTrace.ToString());
-                        thread.Resume();
-                        thread.Interrupt();
 #pragma warning restore 612,618
+                        suspendedThreads.Add(thread);
                     }
                     catch (Exception e)
                     {
-                        messageBuilder.Append("Cannot get a stack trace: ");
-                        messageBuilder.Append(e.Message);
+                        Debug.Print("Suspend thrown an exception: {0}", e.Message);
                     }
-
-                    messageBuilder.AppendFormat(
-                        Environment.NewLine + "-- end of stack trace of thread {0}", thread.ManagedThreadId);
                 }
-                else
+            }
+
+            foreach (var thread in suspendedThreads)
+            {
+                messageBuilder.AppendFormat(
+                    Environment.NewLine + Environment.NewLine +
+                    "-- start of stack trace of thread {0} (Name=\"{1}\"):" + Environment.NewLine,
+                    thread.ManagedThreadId,
+                    thread.Name);
+                try
                 {
-                    messageBuilder.AppendFormat(
-                        Environment.NewLine + Environment.NewLine + "-- current thread is {0} (Name=\"{1}\")",
-                        thread.ManagedThreadId,
-                        thread.Name);
+                    StackTrace stackTrace = new StackTrace(thread, true);
+                    messageBuilder.Append(stackTrace.ToString());
+                }
+                catch (Exception e)
+                {
+                    messageBuilder.Append("Cannot get a stack trace: ");
+                    messageBuilder.Append(e.Message);
+                }
+
+                messageBuilder.AppendFormat(
+                    Environment.NewLine + "-- end of stack trace of thread {0}", thread.ManagedThreadId);
+            }
+
+            messageBuilder.AppendFormat(
+                Environment.NewLine + Environment.NewLine + "-- current thread is {0} (Name=\"{1}\")",
+                Thread.CurrentThread.ManagedThreadId,
+                Thread.CurrentThread.Name);
+
+            string message = messageBuilder.ToString();
+
+            foreach (var thread in threadsInDeadlock)
+            {
+                if (thread != Thread.CurrentThread)
+                {
+                    try
+                    {
+                        thread.Abort(message);
+                    }
+                    catch (Exception)
+                    {
+                        
+                    }
+#pragma warning disable 612,618
+                    thread.Resume();
+#pragma warning disable 612,618
                 }
             }
         }

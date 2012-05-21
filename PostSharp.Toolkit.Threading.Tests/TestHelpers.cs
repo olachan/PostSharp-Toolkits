@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+
+using PostSharp.Toolkit.Threading.Deadlock;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {
@@ -8,23 +11,39 @@ namespace PostSharp.Toolkit.Threading.Tests
     {
         public static void InvokeSimultaneouslyAndWait(Action action1, Action action2, int timeout = Timeout.Infinite)
         {
+            Exception firstException = null;
+            var t1 = new Task(action1);
+            var t2 = new Task(action2);
+            t1.Start();
+            t2.Start();
             try
             {
-                var t1 = new Task(() => Swallow<ThreadInterruptedException>(action1));
-                var t2 = new Task(() => Swallow<ThreadInterruptedException>(action2));
-                t1.Start();
-                t2.Start();
                 t1.Wait(timeout);
+            }
+            catch (AggregateException aggregateException)
+            {
+                if (!(aggregateException.InnerExceptions.Count == 1 && aggregateException.InnerException is DeadlockException))
+                {
+                    throw;
+                }
+                firstException = aggregateException.InnerException;
+            }
+
+            try
+            {
                 t2.Wait(timeout);
             }
             catch (AggregateException aggregateException)
             {
-                Thread.Sleep(200); //Make sure the second running task is over as well
-                if (aggregateException.InnerExceptions.Count == 1)
+                if (!(aggregateException.InnerExceptions.Count == 1 && aggregateException.InnerException is DeadlockException))
                 {
-                    throw aggregateException.InnerException;
+                    throw;
                 }
-                throw;
+            }
+
+            if (firstException != null)
+            {
+                throw firstException;
             }
         }
 
@@ -37,6 +56,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             }
             catch (TException exc)
             {
+                Debug.Print("Exception {0} swallowed from thread {1}", exc.Message, Thread.CurrentThread.ManagedThreadId);
                 //Swallow
             }
         }

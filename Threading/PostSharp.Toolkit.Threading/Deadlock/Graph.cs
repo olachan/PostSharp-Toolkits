@@ -31,14 +31,14 @@ namespace PostSharp.Toolkit.Threading.Deadlock
             this.adjacencyList.TryRemove(node, out n);
         }
 
-        public void AddEdge(object from, object fromObjectInfo, ResourceType fromType, object to, object toObjectInfo, ResourceType toType)
+        public void AddEdge(object from, ResourceType fromType, object to, ResourceType toType)
         {
             var fromNode = new Node(from, fromType);
             var neighbourhood = this.adjacencyList.GetOrAdd(fromNode, n => new ConcurrentDictionary<Node, Edge>());
 
             var toNode = new Node(to, toType);
 
-            Edge edge = neighbourhood.GetOrAdd(toNode, n => new Edge(fromNode, toNode, fromObjectInfo, toObjectInfo));
+            Edge edge = neighbourhood.GetOrAdd(toNode, n => new Edge(fromNode, toNode));
 
             edge.Counter++;
         }
@@ -207,20 +207,10 @@ namespace PostSharp.Toolkit.Threading.Deadlock
 
         public override string ToString()
         {
-            return Format(null);
-        }
-
-        public string Format(object objInfo)
-        {
             Thread thread = this.SyncObject as Thread;
-            if (thread != null)
-            {
-                return string.Format("{{Thread {0}, Name=\"{1}\"}}", thread.ManagedThreadId, thread.Name);
-            }
-            else
-            {
-                return string.Format("{{{0}:{1}}}", objInfo ?? this.SyncObject, this.Role);
-            }
+            return thread != null ? 
+                string.Format("{{Thread {0}, Name=\"{1}\"}}", thread.ManagedThreadId, thread.Name) : 
+                string.Format("{{{0}:{1}}}", this.SyncObject, this.Role);
         }
     }
 
@@ -230,18 +220,13 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         public readonly Node Predecessor;
         public readonly Node Successor;
 
-        public readonly object PredecessorInfo;
-        public readonly object SuccessorInfo;
-
         public int Counter;
         public int LastChange;
 
-        public Edge(Node predecessor, Node successor, object predecessorInfo, object successorInfo)
+        public Edge(Node predecessor, Node successor)
         {
             this.Predecessor = predecessor;
             this.Successor = successor;
-            this.PredecessorInfo = predecessorInfo;
-            this.SuccessorInfo = successorInfo;
             this.Counter = 0;
             this.LastChange = Environment.TickCount;
         }
@@ -265,8 +250,8 @@ namespace PostSharp.Toolkit.Threading.Deadlock
         public override string ToString()
         {
             return string.Format("{{{0}}}->{{{1}}}, Counter={2}",
-                                  this.Predecessor.Format(this.PredecessorInfo),
-                                  this.Successor.Format(this.SuccessorInfo),
+                                  this.Predecessor,
+                                  this.Successor,
                                   this.Counter);
         }
     }
