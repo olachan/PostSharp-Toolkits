@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
-using PostSharp.Toolkit.Threading.Deadlock;
+using PostSharp.Toolkit.Threading.DeadlockDetection;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {

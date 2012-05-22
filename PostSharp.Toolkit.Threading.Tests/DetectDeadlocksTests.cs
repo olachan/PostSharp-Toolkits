@@ -5,9 +5,8 @@ using System.Threading.Tasks;
 
 using NUnit.Framework;
 
-using PostSharp.Toolkit.Threading.Deadlock;
-using PostSharp.Toolkit.Threading.ReaderWriter;
-using PostSharp.Toolkit.Threading.Synchronized;
+using PostSharp.Toolkit.Threading.DeadlockDetection;
+using PostSharp.Toolkit.Threading.Synchronization;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {

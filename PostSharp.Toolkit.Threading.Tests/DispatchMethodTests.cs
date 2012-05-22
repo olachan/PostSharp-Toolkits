@@ -5,8 +5,7 @@ using System.Windows.Forms;
 using System.Windows.Threading;
 using NUnit.Framework;
 
-using PostSharp.Toolkit.Threading.Dispatch;
-
+using PostSharp.Toolkit.Threading.Dispatching;
 using FormsApplication = System.Windows.Forms.Application;
 using WpfApplication = System.Windows.Application;
 

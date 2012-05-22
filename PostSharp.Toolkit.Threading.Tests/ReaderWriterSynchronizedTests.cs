@@ -5,8 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using NUnit.Framework;
-
-using PostSharp.Toolkit.Threading.ReaderWriter;
+using PostSharp.Toolkit.Threading.Synchronization;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {

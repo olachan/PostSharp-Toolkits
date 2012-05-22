@@ -8,8 +8,7 @@ using System.Diagnostics;
 using System.Threading;
 
 using NUnit.Framework;
-
-using PostSharp.Toolkit.Threading.Async;
+using PostSharp.Toolkit.Threading.Dispatching;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {
