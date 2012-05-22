@@ -173,7 +173,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         [Test]
         public void SingleThreadedClassGetter_MultipleAccessesDoNotThrow()
         {
-            var o = new SingleThreadedClassObject();
+            var o = new NonAffinedSingleThreadedClassObject();
             int x;
             InvokeSimultaneouslyAndWait(() => { x = o.TestProperty; },
                                         () => { x = o.TestProperty; });
@@ -183,7 +183,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         [ExpectedException(typeof(SingleThreadedException))]
         public void SingleThreadedClassSetter_MultipleAccessesThrow()
         {
-            var o = new SingleThreadedClassObject();
+            var o = new NonAffinedSingleThreadedClassObject();
             InvokeSimultaneouslyAndWait(() => { o.TestProperty = 3; },
                                         () => { o.TestProperty = 3; });
         }
@@ -191,9 +191,39 @@ namespace PostSharp.Toolkit.Threading.Tests
         [Test]
         public void SingleThreadedClassWithIgnoredSetters_MultipleSetterAccessesDoNotThrow()
         {
-            var o = new SingleThreadedClassIngoreSettersObject();
+            var o = new NonAffinedSingleThreadedClassIngoreSettersObject();
             InvokeSimultaneouslyAndWait(() => { o.TestProperty = 3; },
                                         () => { o.TestProperty = 3; });
+        }
+
+        [Test]
+        public void AffinedSingleThreadedObject_CallingMethodsFromItsThreadDoesNotThrow()
+        {
+            var o = new AffinedSingleThreadedObject();
+            o.DoNothing1();
+            o.DoNothing2();
+        }
+
+        [Test]
+        [ExpectedException(typeof(SingleThreadedException))]
+        public void AffinedSingleThreadedObject_CallingMethodsFromOtherThreadThrows()
+        {
+            var o = new AffinedSingleThreadedObject();
+            try
+            {
+                Task.Factory.StartNew(o.DoNothing1).Wait();
+            }
+            catch (AggregateException exc)
+            {
+                if (exc.InnerExceptions.Count == 1)
+                {
+                    throw exc.InnerException;
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         protected void Swallow<TException>(Action action)
@@ -210,8 +240,8 @@ namespace PostSharp.Toolkit.Threading.Tests
         }
 
 
-        [SingleThreadedClass]
-        public class SingleThreadedClassObject
+        [SingleThreadedClass(SingleThreadedClassPolicy.NonThreadAffined)]
+        public class NonAffinedSingleThreadedClassObject
         {
             private int _testProperty;
             public int TestProperty
@@ -229,8 +259,8 @@ namespace PostSharp.Toolkit.Threading.Tests
             }
         }
 
-        [SingleThreadedClass(IgnoreSetters = true)]
-        public class SingleThreadedClassIngoreSettersObject
+        [SingleThreadedClass(SingleThreadedClassPolicy.NonThreadAffined, IgnoreSetters = true)]
+        public class NonAffinedSingleThreadedClassIngoreSettersObject
         {
             private int _testProperty;
             public int TestProperty
@@ -250,55 +280,55 @@ namespace PostSharp.Toolkit.Threading.Tests
 
         public class SingleThreadedMethodsObject
         {
-            [SingleThreaded(false)]
+            [SingleThreaded(SingleThreadPolicy.MethodLevel)]
             public static void StaticIndependentMethod()
             {
                 Thread.Sleep(200);
             }
 
-            [SingleThreaded(true)]
+            [SingleThreaded(SingleThreadPolicy.ClassLevel)]
             public static void StaticTypeDependentMethod()
             {
                 Thread.Sleep(200);
             }
 
-            [SingleThreaded(true)]
+            [SingleThreaded(SingleThreadPolicy.ClassLevel)]
             public static void StaticTypeDependentMethod2()
             {
                 Thread.Sleep(200);
             }
 
-            [SingleThreaded(false)]
+            [SingleThreaded(SingleThreadPolicy.MethodLevel)]
             public void InstanceIndependentMethod()
             {
                 Thread.Sleep(200);
             }
 
-            [SingleThreaded(false)]
+            [SingleThreaded(SingleThreadPolicy.MethodLevel)]
             public void InstanceIndependentMethod2()
             {
                 Thread.Sleep(200);
             }
 
-            [SingleThreaded(true)]
+            [SingleThreaded(SingleThreadPolicy.NonThreadAffinedInstance)]
             public void InstanceDependentMethod()
             {
                 Thread.Sleep(200);
             }
 
-            [SingleThreaded(true)]
+            [SingleThreaded(SingleThreadPolicy.NonThreadAffinedInstance)]
             public void InstanceDependentMethod2()
             {
                 Thread.Sleep(200);
             }
 
-            [SingleThreaded]
+            [SingleThreaded(SingleThreadPolicy.NonThreadAffinedInstance)]
             public void Exception()
             {
                 throw new NotSupportedException();
             }
 
-            [SingleThreaded]
+            [SingleThreaded(SingleThreadPolicy.ClassLevel)]
             public static void StaticException()
             {
                 throw new NotSupportedException();
@@ -307,46 +337,68 @@ namespace PostSharp.Toolkit.Threading.Tests
 
         public class SingleThreadedMethodsDerivedObject : SingleThreadedMethodsObject
         {
-            [SingleThreaded(false)]
+            [SingleThreaded(SingleThreadPolicy.MethodLevel)]
             public static void DerivedStaticIndependentMethod()
             {
                 Thread.Sleep(200);
             }
 
-            [SingleThreaded(true)]
+            [SingleThreaded(SingleThreadPolicy.ClassLevel)]
             public static void DerivedStaticTypeDependentMethod()
             {
                 Thread.Sleep(200);
             }
 
-            [SingleThreaded(true)]
+            [SingleThreaded(SingleThreadPolicy.ClassLevel)]
             public static void DerivedStaticTypeDependentMethod2()
             {
                 Thread.Sleep(200);
             }
 
-            [SingleThreaded(false)]
+            [SingleThreaded(SingleThreadPolicy.MethodLevel)]
             public void DerivedInstanceIndependentMethod()
             {
                 Thread.Sleep(200);
             }
 
-            [SingleThreaded(false)]
+            [SingleThreaded(SingleThreadPolicy.MethodLevel)]
             public void DerivedInstanceIndependentMethod2()
             {
                 Thread.Sleep(200);
             }
 
-            [SingleThreaded(true)]
+            [SingleThreaded(SingleThreadPolicy.NonThreadAffinedInstance)]
             public void DerivedInstanceDependentMethod()
             {
                 Thread.Sleep(200);
             }
 
-            [SingleThreaded(true)]
+            [SingleThreaded(SingleThreadPolicy.NonThreadAffinedInstance)]
             public void DerivedInstanceDependentMethod2()
             {
                 Thread.Sleep(200);
+            }
+        }
+
+        [SingleThreadedClass(SingleThreadedClassPolicy.ThreadAffined)]
+        public class AffinedSingleThreadedObject
+        {
+            public void Sleep1()
+            {
+                Thread.Sleep(200);
+            }
+
+            public void Sleep2()
+            {
+                Thread.Sleep(200);
+            }
+
+            public void DoNothing1()
+            {
+            }
+
+            public void DoNothing2()
+            {
             }
         }
     }

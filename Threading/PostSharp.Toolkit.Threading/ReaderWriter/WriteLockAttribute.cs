@@ -27,9 +27,7 @@ namespace PostSharp.Toolkit.Threading.ReaderWriter
         /// that write locks will be able to be downgraded to observer locks.
         /// </summary>
         public WriteLockAttribute()
-        {
-            this.AspectPriority = 2;
-        }
+        { }
 
         /// <summary>
         /// Handler executed before execution of the method to which the current custom attribute is applied.

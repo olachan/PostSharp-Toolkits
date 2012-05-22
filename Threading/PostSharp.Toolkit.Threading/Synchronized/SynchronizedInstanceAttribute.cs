@@ -17,7 +17,7 @@ namespace PostSharp.Toolkit.Threading.Synchronized
     /// Implements synchronizatian for instance methods.
     /// </remarks>
     [Serializable]
-    [AspectTypeDependency(AspectDependencyAction.Commute, typeof(SingleThreadedInstanceAttribute))]
+    [AspectTypeDependency(AspectDependencyAction.Commute, typeof(SingleThreadedAttribute.SingleThreadedInstanceAttribute))]
     [AspectTypeDependency(AspectDependencyAction.Commute, typeof(SynchronizedInstanceAttribute))]
     [IntroduceInterface(typeof(ISynchronized), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
     [ProvideAspectRole(StandardRoles.Threading)]
