@@ -1,5 +1,13 @@
+#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
 using System.Threading;
-using PostSharp.Toolkit.Threading.DeadlockDetection;
 
 namespace PostSharp.Toolkit.Threading.Synchronization
 {
@@ -10,9 +18,9 @@ namespace PostSharp.Toolkit.Threading.Synchronization
     public interface IReaderWriterSynchronized
     {
         /// <summary>
-        /// Gets the <see cref="ReaderWriterLockWrapper"/> that has to be used
+        /// Gets the <see cref="ReaderWriterLockSlim"/> that has to be used
         /// to synchronize access to the current instance.
         /// </summary>
-        ReaderWriterLockWrapper Lock { get; }
+        ReaderWriterLockSlim Lock { get; }
     }
 }

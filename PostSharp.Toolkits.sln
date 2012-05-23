@@ -30,7 +30,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Tests.Tra
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Threading", "Threading\PostSharp.Toolkit.Threading\PostSharp.Toolkit.Threading.csproj", "{A3338835-6A17-442C-A7B2-C4F2BDDC06F3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Threading.Tests", "PostSharp.Toolkit.Threading.Tests\PostSharp.Toolkit.Threading.Tests.csproj", "{24509C87-563B-4256-9326-7595AA6C55D4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Threading.Tests", "Tests\PostSharp.Toolkit.Threading.Tests\PostSharp.Toolkit.Threading.Tests.csproj", "{24509C87-563B-4256-9326-7595AA6C55D4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
