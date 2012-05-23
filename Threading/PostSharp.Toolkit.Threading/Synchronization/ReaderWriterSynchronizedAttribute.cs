@@ -35,7 +35,8 @@ namespace PostSharp.Toolkit.Threading.Synchronization
     {
         [NonSerialized] private ReaderWriterLockSlim @lock;
 
-        [ThreadStatic] private static HashSet<object> pendingConstructors;
+        [ThreadStatic] private static HashSet<object> runningConstructors;
+        [ThreadStatic] private static Dictionary<ReaderWriterLockSlim, ReadCheckNode> runningMethods;
 
 
         public override object CreateInstance( AdviceArgs aspectArgs )
@@ -55,15 +56,73 @@ namespace PostSharp.Toolkit.Threading.Synchronization
         [OnMethodEntryAdvice, MethodPointcut( "SelectConstructors" )]
         public void OnEnterConstructor( MethodExecutionArgs args )
         {
-            HashSet<object> myPendingConstructors = pendingConstructors;
-            if ( pendingConstructors == null ) pendingConstructors = myPendingConstructors = new HashSet<object>();
+            HashSet<object> myPendingConstructors = runningConstructors;
+            if ( runningConstructors == null ) runningConstructors = myPendingConstructors = new HashSet<object>();
             myPendingConstructors.Add( args.Instance );
         }
 
         [OnMethodExitAdvice( Master = "OnEnterConstructor" )]
         public void OnExitConstructor( MethodExecutionArgs args )
         {
-            pendingConstructors.Remove( args.Instance );
+            runningConstructors.Remove( args.Instance );
+        }
+
+        [OnLocationSetValueAdvice, MethodPointcut("SelectFields")]
+        public void OnFieldSet(LocationInterceptionArgs args)
+        {
+            if (runningConstructors != null && runningConstructors.Contains(args.Instance)) return;
+
+            if (!((IReaderWriterSynchronized)args.Instance).Lock.IsWriteLockHeld)
+                throw new LockNotHeldException(string.Format("A writer lock is necessary to access field '{0}'.", args.Location.Name));
+        }
+
+        [OnLocationGetValueAdvice(Master = "OnFieldSet")]
+        public void OnFieldGet(LocationInterceptionArgs args)
+        {
+            if (runningConstructors != null && runningConstructors.Contains(args.Instance)) return;
+
+            ReaderWriterLockSlim myLock = ((IReaderWriterSynchronized)args.Instance).Lock;
+            if (myLock.IsReadLockHeld) return;
+
+            Dictionary<ReaderWriterLockSlim, ReadCheckNode> myRunningMethods = runningMethods;
+            ReadCheckNode node;
+            if (myRunningMethods == null || !myRunningMethods.TryGetValue( myLock, out node ))
+            {
+                // The field is read from outside an instance method of the current instance.
+                // This can happen. This would not be a good practice, but this should be checked using an architectural constraint.
+
+                // TODO: Verify with architectural constraint.
+                return;
+            }
+
+            if ( node.Count > 0 )
+                throw new LockNotHeldException("A reader lock is necessary to access more than one field.");
+
+            node.Count = 1;
+        }
+
+        [OnMethodEntryAdvice, MethodPointcut("SelectMethods")]
+        public void OnEnterMethod( MethodExecutionArgs args )
+        {
+            ReaderWriterLockSlim myLock = ((IReaderWriterSynchronized)args.Instance).Lock;
+
+            Dictionary<ReaderWriterLockSlim, ReadCheckNode> myRunningMethods = runningMethods ??
+                                                                               (runningMethods = new Dictionary<ReaderWriterLockSlim, ReadCheckNode>());
+            if ( !myRunningMethods.ContainsKey( myLock ))
+            {
+                myRunningMethods.Add( myLock, new ReadCheckNode() );
+                args.MethodExecutionTag = myLock;
+            }
+
+        }
+
+        [OnMethodExitAdvice(Master = "OnEnterMethod")]
+        public void OnExitMethod(MethodExecutionArgs args)
+        {
+            if ( args.MethodExecutionTag != null )
+            {
+                runningMethods.Remove((ReaderWriterLockSlim) args.MethodExecutionTag);
+            }
         }
 
         public IEnumerable<MethodBase> SelectConstructors( Type type )
@@ -92,13 +151,24 @@ namespace PostSharp.Toolkit.Threading.Synchronization
             }
         }
 
-        [OnLocationSetValueAdvice, MethodPointcut( "SelectFields" )]
-        public void OnFieldSet( LocationInterceptionArgs args )
+        public IEnumerable<MethodInfo> SelectMethods(Type type)
         {
-            if ( pendingConstructors != null && pendingConstructors.Contains( args.Instance ) ) return;
+            if (this.CheckFieldAccess)
+            {
+                return
+                    type.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(
+                        f => f.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0);
+            }
+            else
+            {
+                return null;
+            }
+        }
 
-            if ( !((IReaderWriterSynchronized) args.Instance).Lock.IsWriteLockHeld )
-                throw new LockNotHeldException( string.Format( "A writer lock is necessary to access field '{0}'.", args.Location.Name ) );
+       
+        class ReadCheckNode
+        {
+            public int Count;
         }
     }
 }

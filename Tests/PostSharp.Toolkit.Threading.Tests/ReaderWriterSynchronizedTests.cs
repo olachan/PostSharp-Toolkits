@@ -122,12 +122,38 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             new ReaderWriterEntityDerived( 4 );
         }
+
+        [Test]
+        [ExpectedException(typeof(LockNotHeldException))]
+        public void TestReadTwoFields()
+        {
+            new ReaderWriterEntity().ReadTwoFields();
+        }
+
+        [Test]
+        [ExpectedException(typeof(LockNotHeldException))]
+        public void TestReadTwoFieldsIndirectly()
+        {
+            new ReaderWriterEntity().ReadTwoFieldsIndirecly();
+        }
+
+        [Test]
+        public void TestReadTwoFieldsOneIsSafe()
+        {
+            new ReaderWriterEntity().ReadTwoFieldsOneIsSafe();
+        }
+
+        [Test]
+        public void TestReadOneField()
+        {
+            new ReaderWriterEntity().ReadOneField();
+        }
     }
 
     [ReaderWriterSynchronized( CheckFieldAccess = true )]
     public class ReaderWriterEntity
     {
-        protected int field;
+        protected int field, field2;
         [ThreadSafe] public int ThreadSafeField;
 
         public ReaderWriterEntity()
@@ -156,6 +182,26 @@ namespace PostSharp.Toolkit.Threading.Tests
         public void WriteWithoutLock()
         {
             this.field = 0;
+        }
+
+        public int ReadTwoFields()
+        {
+            return field + field2;
+        }
+
+        public int ReadOneField()
+        {
+            return field;
+        }
+
+        public int ReadTwoFieldsIndirecly()
+        {
+            return this.ReadOneField() + this.ReadOneField();
+        }
+
+        public int ReadTwoFieldsOneIsSafe()
+        {
+            return field + ThreadSafeField;
         }
     }
 

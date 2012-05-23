@@ -49,10 +49,13 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
         /// </summary>
         /// <param name="info"></param>
         /// <param name="context"></param>
+#pragma warning disable 628
         protected DeadlockException(
             SerializationInfo info,
             StreamingContext context ) : base( info, context )
         {
         }
     }
+#pragma warning restore 628
+
 }

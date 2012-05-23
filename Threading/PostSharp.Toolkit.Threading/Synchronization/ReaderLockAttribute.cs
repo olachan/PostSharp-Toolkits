@@ -26,6 +26,7 @@ namespace PostSharp.Toolkit.Threading.Synchronization
     /// </remarks>
     [Serializable]
     [ProvideAspectRole( StandardRoles.Threading )]
+    [AspectTypeDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute))]
     public sealed class ReaderLockAttribute : ReaderWriterLockAttribute
     {
         /// <summary>
