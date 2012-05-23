@@ -34,7 +34,7 @@ namespace PostSharp.Toolkit.Threading.Dispatching
 
         public void Invoke()
         {
-            this.binding.Invoke( ref instance, arguments );
+            this.binding.Invoke( ref this.instance, this.arguments );
         }
 
         public static readonly SendOrPostCallback SendOrPostCallbackDelegate = SendOrPostCallback;

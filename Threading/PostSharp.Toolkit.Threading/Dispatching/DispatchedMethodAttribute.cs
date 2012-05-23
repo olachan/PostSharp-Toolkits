@@ -42,7 +42,7 @@ namespace PostSharp.Toolkit.Threading.Dispatching
 
         public DispatchedMethodAttribute( bool isAsync = false )
         {
-            IsAsync = isAsync;
+            this.IsAsync = isAsync;
         }
 
         public override bool CompileTimeValidate( MethodBase method )
@@ -121,7 +121,7 @@ namespace PostSharp.Toolkit.Threading.Dispatching
 
             IDispatcher IDispatcherObject.Dispatcher
             {
-                get { return dispatcher; }
+                get { return this.dispatcher; }
             }
 
             public object CreateInstance( AdviceArgs adviceArgs )

@@ -30,7 +30,7 @@ namespace PostSharp.Toolkit.Threading
                 else break;
             }
 
-            if ( !aspects.Contains( rootType ) )
+            if ( !this.aspects.Contains( rootType ) )
             {
                 this.aspects.Add( rootType );
 

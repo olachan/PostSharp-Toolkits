@@ -23,7 +23,7 @@ namespace PostSharp.Toolkit.Threading.Synchronization
 
         internal bool UseDeadlockDetection
         {
-            get { return useDeadlockDetection; }
+            get { return this.useDeadlockDetection; }
         }
 
         public override void CompileTimeInitialize( MethodBase method, AspectInfo aspectInfo )

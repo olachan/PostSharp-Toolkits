@@ -20,21 +20,38 @@ namespace PostSharp.Toolkit.Threading.Dispatching
     {
         // TODO: Compatibility with async/await: methods returning a Task should be handled properly.
 
-        private readonly ConcurrentQueue<IAction> workItems = new ConcurrentQueue<IAction>();
+        private readonly ConcurrentQueue<IAction> workItems;
         private volatile Thread currentThread;
         private int workItemsCount;
+        private readonly Actor master;
 
+        protected Actor() : this( null )
+        {
+        }
+
+        protected Actor( Actor master )
+        {
+            if ( master == null )
+            {
+                this.master = this;
+                this.workItems = new ConcurrentQueue<IAction>();
+            }
+            else
+            {
+                this.master = master;
+            }
+        }
 
         private void ProcessQueue()
         {
             // Avoid concurrent execution.
-            if ( Interlocked.CompareExchange( ref currentThread, Thread.CurrentThread, null ) != null )
+            if ( Interlocked.CompareExchange( ref this.currentThread, Thread.CurrentThread, null ) != null )
                 return;
 
             try
             {
                 IAction action;
-                while ( workItems.TryDequeue( out action ) )
+                while ( this.workItems.TryDequeue( out action ) )
                 {
                     // TODO: Cooperative multitasking: Avoid processing the whole queue if it's very long.
                     // Rather interrupt and requeue a ProcessQueue task.
@@ -52,19 +69,19 @@ namespace PostSharp.Toolkit.Threading.Dispatching
                     }
                     finally
                     {
-                        Interlocked.Decrement( ref workItemsCount );
+                        Interlocked.Decrement( ref this.workItemsCount );
                     }
                 }
             }
             finally
             {
-                currentThread = null;
+                this.currentThread = null;
             }
         }
 
         IDispatcher IDispatcherObject.Dispatcher
         {
-            get { return this; }
+            get { return this.master; }
         }
 
         bool IDispatcher.CheckAccess()
@@ -80,10 +97,12 @@ namespace PostSharp.Toolkit.Threading.Dispatching
         void IDispatcher.BeginInvoke( IAction action )
         {
             if ( this.IsDisposed ) throw new ObjectDisposedException( this.ToString() );
-            workItems.Enqueue( action );
+            if ( this.master != this ) throw new InvalidOperationException();
+
+            this.workItems.Enqueue( action );
 
             if ( Interlocked.Increment( ref this.workItemsCount ) == 1 )
-                new Task( ProcessQueue ).Start();
+                new Task( this.ProcessQueue ).Start();
         }
 
         protected virtual void OnException( Exception exception, ref bool handled )

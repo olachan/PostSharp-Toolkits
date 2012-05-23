@@ -22,6 +22,5 @@
   </metadata>
   <files>
     <file src="Release\PostSharp.Toolkit.Threading.dll" target="lib"/>
-    <file src="_SRC_\Tools\*.ps1" target="tools"/>
   </files>
 </package>

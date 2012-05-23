@@ -46,7 +46,7 @@ namespace PostSharp.Toolkit.Threading.Synchronization
 
         public ReaderWriterLockSlim Lock
         {
-            get { return LazyInitializer.EnsureInitialized( ref @lock, () => new ReaderWriterLockSlim( LockRecursionPolicy.NoRecursion ) ); }
+            get { return LazyInitializer.EnsureInitialized( ref this.@lock, () => new ReaderWriterLockSlim( LockRecursionPolicy.NoRecursion ) ); }
         }
 
 
