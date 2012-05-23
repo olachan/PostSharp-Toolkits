@@ -172,7 +172,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
                             WaitHandle[] waitHandles = args.Arguments[0] as WaitHandle[];
 
                             if ( args.Arguments.Count == 1 ||
-                                 (args.Arguments[1] is int && (int) args.Arguments[0] == Timeout.Infinite) )
+                                 (args.Arguments[0] is int && (int) args.Arguments[0] == Timeout.Infinite) )
                             {
                                 bool? exitContext = args.Arguments.Count > 2 ? (bool?) args.Arguments[2] : null;
 

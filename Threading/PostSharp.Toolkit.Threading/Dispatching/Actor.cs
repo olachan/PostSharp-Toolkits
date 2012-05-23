@@ -13,25 +13,28 @@ using System.Threading;
 using System.Threading.Tasks;
 using PostSharp.Extensibility;
 
+#pragma warning disable 420
+
 namespace PostSharp.Toolkit.Threading.Dispatching
 {
-    [Actor( AttributeInheritance = MulticastInheritance.Strict )]
+    [Actor(AttributeInheritance = MulticastInheritance.Strict)]
     public abstract class Actor : IDispatcherObject, IDispatcher
     {
         // TODO: Compatibility with async/await: methods returning a Task should be handled properly.
 
         private readonly ConcurrentQueue<IAction> workItems;
         private volatile Thread currentThread;
-        private int workItemsCount;
+        private volatile int workItemsCount;
         private readonly Actor master;
 
-        protected Actor() : this( null )
+        protected Actor()
+            : this(null)
         {
         }
 
-        protected Actor( Actor master )
+        protected Actor(Actor master)
         {
-            if ( master == null )
+            if (master == null)
             {
                 this.master = this;
                 this.workItems = new ConcurrentQueue<IAction>();
@@ -44,15 +47,23 @@ namespace PostSharp.Toolkit.Threading.Dispatching
 
         private void ProcessQueue()
         {
-            // Avoid concurrent execution.
-            if ( Interlocked.CompareExchange( ref this.currentThread, Thread.CurrentThread, null ) != null )
-                return;
+            // We cannot do a CAS and exit the method is this.currentThread is not null, because this field is set
+            // after the this.workItemsCount field is decremented. Field this.workItemsCount, and not this.currentThread,
+            // guarantees there is a single running thread.
+            this.currentThread = Thread.CurrentThread;
+            
 
             try
             {
-                IAction action;
-                while ( this.workItems.TryDequeue( out action ) )
+                SpinWait spinWait = new SpinWait();
+                do
                 {
+                    IAction action;
+                    while (!this.workItems.TryDequeue(out action))
+                    {
+                        spinWait.SpinOnce();
+                    }
+
                     // TODO: Cooperative multitasking: Avoid processing the whole queue if it's very long.
                     // Rather interrupt and requeue a ProcessQueue task.
 
@@ -60,18 +71,15 @@ namespace PostSharp.Toolkit.Threading.Dispatching
                     {
                         action.Invoke();
                     }
-                    catch ( Exception e )
+                    catch (Exception e)
                     {
                         bool handled = false;
-                        this.OnException( e, ref handled );
-                        if ( !handled )
+                        this.OnException(e, ref handled);
+                        if (!handled)
                             throw;
                     }
-                    finally
-                    {
-                        Interlocked.Decrement( ref this.workItemsCount );
-                    }
-                }
+
+                } while (Interlocked.Decrement(ref this.workItemsCount) > 0);
             }
             finally
             {
@@ -89,29 +97,37 @@ namespace PostSharp.Toolkit.Threading.Dispatching
             return this.currentThread == Thread.CurrentThread;
         }
 
-        void IDispatcher.Invoke( IAction action )
+        void IDispatcher.Invoke(IAction action)
         {
             throw new NotSupportedException();
         }
 
-        void IDispatcher.BeginInvoke( IAction action )
+        void IDispatcher.BeginInvoke(IAction action)
         {
-            if ( this.IsDisposed ) throw new ObjectDisposedException( this.ToString() );
-            if ( this.master != this ) throw new InvalidOperationException();
+            if (this.IsDisposed) throw new ObjectDisposedException(this.ToString());
+            if (this.master != this) throw new InvalidOperationException();
 
-            this.workItems.Enqueue( action );
-
-            if ( Interlocked.Increment( ref this.workItemsCount ) == 1 )
+            if (Interlocked.Increment(ref this.workItemsCount) == 1)
+            {
                 new Task( this.ProcessQueue ).Start();
+            }
+
+            this.workItems.Enqueue(action);
+
+           
         }
 
-        protected virtual void OnException( Exception exception, ref bool handled )
+        protected virtual void OnException(Exception exception, ref bool handled)
         {
         }
 
 
-        public bool IsDisposed { [ThreadSafe]
-        get; private set; }
+        public bool IsDisposed
+        {
+            [ThreadSafe]
+            get;
+            private set;
+        }
 
         [ThreadSafe]
         public virtual void Dispose()

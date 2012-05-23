@@ -7,6 +7,7 @@
 
 #endregion
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -33,6 +34,36 @@ namespace PostSharp.Toolkit.Threading.Tests
 
             Assert.AreEqual( 10, actorClass.Count );
         }
+
+        [Test]
+        public void TestFast()
+        {
+            const int n = 1000000;
+            ActorClass[] actors = new ActorClass[Environment.ProcessorCount - 1];
+
+            for (int i = 0; i < actors.Length; i++)
+            {
+                actors[i] = new ActorClass();
+            }
+
+
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = 0; j < actors.Length; j++)
+                {
+                    actors[j].Fast();
+                }
+            }
+
+            ManualResetEvent[] readyHandles = new ManualResetEvent[actors.Length];
+            for (int i = 0; i < actors.Length; i++)
+            {
+                actors[i].Set(readyHandles[i] = new ManualResetEvent(false));
+            }
+
+            if ( !WaitHandle.WaitAll(readyHandles, 20000) )
+                throw new TimeoutException();
+        }
     }
 
     internal class ActorClass : Actor
@@ -54,6 +85,21 @@ namespace PostSharp.Toolkit.Threading.Tests
             Thread.Sleep( 100 );
             CountdownEvent.Signal();
             Monitor.Exit( this );
+        }
+
+        public void Fast()
+        {
+            this.Count++;
+        }
+
+        public void Set(ManualResetEvent waitHandle)
+        {
+            waitHandle.Set();
+        }
+
+        public override string ToString()
+        {
+            return string.Format( "Actor Count={0}", this.Count );
         }
     }
 }
