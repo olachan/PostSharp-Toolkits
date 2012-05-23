@@ -1,5 +1,13 @@
+#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
 using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -10,26 +18,27 @@ namespace PostSharp.Toolkit.Threading.Tests
     [TestFixture]
     public class SingleThreadedTests
     {
-        protected void InvokeSimultaneouslyAndWait(Action action1, Action action2)
+        protected void InvokeSimultaneouslyAndWait( Action action1, Action action2 )
         {
             try
             {
-                var t1 = new Task(action1);
-                var t2 = new Task(action2);
+                Task t1 = new Task( action1 );
+                Task t2 = new Task( action2 );
                 t1.Start();
                 t2.Start();
-                Task.WaitAll(new[] { t1, t2 });
+                Task.WaitAll( new[] {t1, t2} );
             }
-            catch (AggregateException aggregateException)
+            catch ( AggregateException aggregateException )
             {
-                Thread.Sleep(200); //Make sure the second running task is over as well
-                if (aggregateException.InnerExceptions.Count == 1)
+                Thread.Sleep( 200 ); //Make sure the second running task is over as well
+                if ( aggregateException.InnerExceptions.Count == 1 )
                 {
                     throw aggregateException.InnerException;
                 }
                 throw;
             }
         }
+
 //
 //        [Test]
 //        public void TwoInstanceIndependentMethodsInvoked_NoException()
@@ -69,9 +78,9 @@ namespace PostSharp.Toolkit.Threading.Tests
         [Test]
         public void MethodsInvokedOnSeparateObjects_NoException()
         {
-            var o1 = new SingleThreadedMethodsObject();
-            var o2 = new SingleThreadedMethodsObject();
-            InvokeSimultaneouslyAndWait(o1.InstanceDependentMethod, o2.InstanceDependentMethod);
+            SingleThreadedMethodsObject o1 = new SingleThreadedMethodsObject();
+            SingleThreadedMethodsObject o2 = new SingleThreadedMethodsObject();
+            InvokeSimultaneouslyAndWait( o1.InstanceDependentMethod, o2.InstanceDependentMethod );
         }
 
 //        [Test]
@@ -90,27 +99,27 @@ namespace PostSharp.Toolkit.Threading.Tests
 //        }
 
         [Test]
-        [ExpectedException(typeof(ThreadUnsafeException))]
+        [ExpectedException( typeof(ThreadUnsafeException) )]
         public void InstanceDependentDerivedAndNotDerivedMethodInvoked_Exception()
         {
-            var o1 = new SingleThreadedMethodsDerivedObject();
-            InvokeSimultaneouslyAndWait(o1.DerivedInstanceDependentMethod, o1.InstanceDependentMethod);
+            SingleThreadedMethodsDerivedObject o1 = new SingleThreadedMethodsDerivedObject();
+            InvokeSimultaneouslyAndWait( o1.DerivedInstanceDependentMethod, o1.InstanceDependentMethod );
         }
 
         [Test]
-        [ExpectedException(typeof(ThreadUnsafeException))]
+        [ExpectedException( typeof(ThreadUnsafeException) )]
         public void SameInstanceDependentMethodInvokedTwice_Exception()
         {
-            var o1 = new SingleThreadedMethodsObject();
-            InvokeSimultaneouslyAndWait(o1.InstanceDependentMethod, o1.InstanceDependentMethod);
+            SingleThreadedMethodsObject o1 = new SingleThreadedMethodsObject();
+            InvokeSimultaneouslyAndWait( o1.InstanceDependentMethod, o1.InstanceDependentMethod );
         }
 
         [Test]
-        [ExpectedException(typeof(ThreadUnsafeException))]
+        [ExpectedException( typeof(ThreadUnsafeException) )]
         public void TwoInstanceDependentMethodsInvoked_Exception()
         {
-            var o1 = new SingleThreadedMethodsObject();
-            InvokeSimultaneouslyAndWait(o1.InstanceDependentMethod, o1.InstanceDependentMethod2);
+            SingleThreadedMethodsObject o1 = new SingleThreadedMethodsObject();
+            InvokeSimultaneouslyAndWait( o1.InstanceDependentMethod, o1.InstanceDependentMethod2 );
         }
 
 //        [Test]
@@ -136,38 +145,54 @@ namespace PostSharp.Toolkit.Threading.Tests
 //        }
 
         [Test]
-        [ExpectedException(typeof(ThreadUnsafeException))]
+        [ExpectedException( typeof(ThreadUnsafeException) )]
         public void TypeDependentStaticMethodInvokedTwice_Exception()
         {
-            InvokeSimultaneouslyAndWait(SingleThreadedStaticMethodsObject.StaticTypeDependentMethod,
-                                        SingleThreadedStaticMethodsObject.StaticTypeDependentMethod);
+            InvokeSimultaneouslyAndWait( SingleThreadedStaticMethodsObject.StaticTypeDependentMethod,
+                                         SingleThreadedStaticMethodsObject.StaticTypeDependentMethod );
         }
 
         [Test]
-        [ExpectedException(typeof(ThreadUnsafeException))]
+        [ExpectedException( typeof(ThreadUnsafeException) )]
         public void TwoTypeDependentStaticMethodInvoked_Exception()
         {
-            InvokeSimultaneouslyAndWait(SingleThreadedStaticMethodsObject.StaticTypeDependentMethod,
-                                        SingleThreadedStaticMethodsObject.StaticTypeDependentMethod2);
+            InvokeSimultaneouslyAndWait( SingleThreadedStaticMethodsObject.StaticTypeDependentMethod,
+                                         SingleThreadedStaticMethodsObject.StaticTypeDependentMethod2 );
         }
 
         [Test]
         public void MethodThrowsException_MonitorProperlyReleased()
         {
-            var o1 = new SingleThreadedMethodsObject();
-            InvokeSimultaneouslyAndWait(() => Swallow<NotSupportedException>(o1.Exception),
-                                        () => { Thread.Sleep(200); Swallow<NotSupportedException>(o1.Exception); });
-            InvokeSimultaneouslyAndWait(() => Swallow<NotSupportedException>(o1.Exception),
-                                        () => { Thread.Sleep(200); Swallow<NotSupportedException>(o1.InstanceDependentMethod); });
+            SingleThreadedMethodsObject o1 = new SingleThreadedMethodsObject();
+            InvokeSimultaneouslyAndWait( () => Swallow<NotSupportedException>( o1.Exception ),
+                                         () =>
+                                             {
+                                                 Thread.Sleep( 200 );
+                                                 Swallow<NotSupportedException>( o1.Exception );
+                                             } );
+            InvokeSimultaneouslyAndWait( () => Swallow<NotSupportedException>( o1.Exception ),
+                                         () =>
+                                             {
+                                                 Thread.Sleep( 200 );
+                                                 Swallow<NotSupportedException>( o1.InstanceDependentMethod );
+                                             } );
         }
 
         [Test]
         public void StaticMethodThrowsException_MonitorProperlyReleased()
         {
-            InvokeSimultaneouslyAndWait(() => Swallow<NotSupportedException>(SingleThreadedMethodsObject.StaticException),
-                                        () => { Thread.Sleep(200); Swallow<NotSupportedException>(SingleThreadedMethodsObject.StaticException); });
-            InvokeSimultaneouslyAndWait(() => Swallow<NotSupportedException>(SingleThreadedMethodsObject.StaticException),
-                                        () => { Thread.Sleep(200); Swallow<NotSupportedException>(SingleThreadedStaticMethodsObject.StaticTypeDependentMethod); });
+            InvokeSimultaneouslyAndWait( () => Swallow<NotSupportedException>( SingleThreadedMethodsObject.StaticException ),
+                                         () =>
+                                             {
+                                                 Thread.Sleep( 200 );
+                                                 Swallow<NotSupportedException>( SingleThreadedMethodsObject.StaticException );
+                                             } );
+            InvokeSimultaneouslyAndWait( () => Swallow<NotSupportedException>( SingleThreadedMethodsObject.StaticException ),
+                                         () =>
+                                             {
+                                                 Thread.Sleep( 200 );
+                                                 Swallow<NotSupportedException>( SingleThreadedStaticMethodsObject.StaticTypeDependentMethod );
+                                             } );
         }
 
 //        [Test]
@@ -180,12 +205,12 @@ namespace PostSharp.Toolkit.Threading.Tests
 //        }
 
         [Test]
-        [ExpectedException(typeof(ThreadUnsafeException))]
+        [ExpectedException( typeof(ThreadUnsafeException) )]
         public void SingleThreadedClassSetter_MultipleAccessesThrow()
         {
-            var o = new SingleThreadedClassObject();
-            InvokeSimultaneouslyAndWait(() => { o.TestProperty = 3; },
-                                        () => { o.TestProperty = 3; });
+            SingleThreadedClassObject o = new SingleThreadedClassObject();
+            InvokeSimultaneouslyAndWait( () => { o.TestProperty = 3; },
+                                         () => { o.TestProperty = 3; } );
         }
 
 //        [Test]
@@ -196,14 +221,14 @@ namespace PostSharp.Toolkit.Threading.Tests
 //                                        () => { o.TestProperty = 3; });
 //        }
 
-        protected void Swallow<TException>(Action action)
+        protected void Swallow<TException>( Action action )
             where TException : Exception
         {
             try
             {
                 action();
             }
-            catch (TException exc)
+            catch ( TException exc )
             {
                 //Swallow
             }
@@ -214,16 +239,17 @@ namespace PostSharp.Toolkit.Threading.Tests
         public class SingleThreadedClassObject
         {
             private int _testProperty;
+
             public int TestProperty
             {
                 get
                 {
-                    Thread.Sleep(200);
+                    Thread.Sleep( 200 );
                     return _testProperty;
                 }
                 set
                 {
-                    Thread.Sleep(200);
+                    Thread.Sleep( 200 );
                     _testProperty = value;
                 }
             }
@@ -251,7 +277,6 @@ namespace PostSharp.Toolkit.Threading.Tests
         [ThreadUnsafeClass( ThreadUnsafePolicy.Static )]
         public class SingleThreadedStaticMethodsObject
         {
-
             public static void StaticTypeDependentMethod()
             {
                 Thread.Sleep( 200 );
@@ -266,17 +291,14 @@ namespace PostSharp.Toolkit.Threading.Tests
         [ThreadUnsafeClass]
         public class SingleThreadedMethodsObject
         {
-           
-          
-
             public void InstanceDependentMethod()
             {
-                Thread.Sleep(200);
+                Thread.Sleep( 200 );
             }
 
             public void InstanceDependentMethod2()
             {
-                Thread.Sleep(200);
+                Thread.Sleep( 200 );
             }
 
             public void Exception()
@@ -294,7 +316,6 @@ namespace PostSharp.Toolkit.Threading.Tests
         [ThreadUnsafeClass( ThreadUnsafePolicy.Static )]
         public class SingleThreadedStaticMethodsDerivedObject : SingleThreadedStaticMethodsObject
         {
-
             public static void DerivedStaticTypeDependentMethod()
             {
                 Thread.Sleep( 200 );
@@ -309,18 +330,14 @@ namespace PostSharp.Toolkit.Threading.Tests
         [ThreadUnsafeClass]
         public class SingleThreadedMethodsDerivedObject : SingleThreadedMethodsObject
         {
-            
-          
-
-            
             public void DerivedInstanceDependentMethod()
             {
-                Thread.Sleep(200);
+                Thread.Sleep( 200 );
             }
 
             public void DerivedInstanceDependentMethod2()
             {
-                Thread.Sleep(200);
+                Thread.Sleep( 200 );
             }
         }
     }

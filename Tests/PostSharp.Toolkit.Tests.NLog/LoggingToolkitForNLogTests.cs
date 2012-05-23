@@ -1,7 +1,13 @@
-﻿using System;
-using NLog;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
 using NUnit.Framework;
-using PostSharp.Toolkit.Diagnostics;
 using TestAssembly;
 
 namespace PostSharp.Toolkit.Tests.NLog
@@ -16,7 +22,7 @@ namespace PostSharp.Toolkit.Tests.NLog
             s.Method1();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("TRACE|TestAssembly.SimpleClass|Entering: TestAssembly.SimpleClass.Method1()", output);
+            StringAssert.Contains( "TRACE|TestAssembly.SimpleClass|Entering: TestAssembly.SimpleClass.Method1()", output );
         }
 
         [Test]
@@ -26,7 +32,7 @@ namespace PostSharp.Toolkit.Tests.NLog
             string value = s.Property1;
 
             string output = OutputString.ToString();
-            StringAssert.Contains("TRACE|TestAssembly.SimpleClass|Entering: TestAssembly.SimpleClass.get_Property1()", output);
+            StringAssert.Contains( "TRACE|TestAssembly.SimpleClass|Entering: TestAssembly.SimpleClass.get_Property1()", output );
         }
 
         [Test]
@@ -37,7 +43,7 @@ namespace PostSharp.Toolkit.Tests.NLog
 
             string output = OutputString.ToString();
             StringAssert.Contains(
-                "TRACE|TestAssembly.SimpleClass|Entering: TestAssembly.SimpleClass.set_Property1(string value = \"Test\")", output);
+                "TRACE|TestAssembly.SimpleClass|Entering: TestAssembly.SimpleClass.set_Property1(string value = \"Test\")", output );
         }
 
         [Test]
@@ -53,21 +59,23 @@ namespace PostSharp.Toolkit.Tests.NLog
             }
 
             string output = OutputString.ToString();
-            StringAssert.Contains("System.Exception", output);
+            StringAssert.Contains( "System.Exception", output );
         }
 
         [Test]
         public void NLog_UserDefinedType_DoesNotLogMethodCallsRecursively()
         {
             Person person = new Person
-            {
-                FirstName = "John",
-                LastName = "Smith"
-            };
+                                {
+                                    FirstName = "John",
+                                    LastName = "Smith"
+                                };
 
             string s = person.ToString();
             string output = OutputString.ToString();
-            StringAssert.Contains("PostSharp.Toolkit.Tests.NLog.Person|Entering: PostSharp.Toolkit.Tests.NLog.Person.GetFirstName(PostSharp.Toolkit.Tests.NLog.Person person = {John Smith})", output);
+            StringAssert.Contains(
+                "PostSharp.Toolkit.Tests.NLog.Person|Entering: PostSharp.Toolkit.Tests.NLog.Person.GetFirstName(PostSharp.Toolkit.Tests.NLog.Person person = {John Smith})",
+                output );
         }
 
         [Test]
@@ -77,8 +85,8 @@ namespace PostSharp.Toolkit.Tests.NLog
             s.ErrorMethod();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("ERROR|TestAssembly.LogLevelTestClass|Entering: TestAssembly.LogLevelTestClass.ErrorMethod()", output);
-            StringAssert.Contains("ERROR|TestAssembly.LogLevelTestClass|Leaving: TestAssembly.LogLevelTestClass.ErrorMethod()", output);
+            StringAssert.Contains( "ERROR|TestAssembly.LogLevelTestClass|Entering: TestAssembly.LogLevelTestClass.ErrorMethod()", output );
+            StringAssert.Contains( "ERROR|TestAssembly.LogLevelTestClass|Leaving: TestAssembly.LogLevelTestClass.ErrorMethod()", output );
         }
 
         [Test]
@@ -88,7 +96,7 @@ namespace PostSharp.Toolkit.Tests.NLog
             s.LogThisArgument();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("TestAssembly.ThisArgumentTestClass.LogThisArgument(this = {TestAssembly.ThisArgumentTestClass})", output);
+            StringAssert.Contains( "TestAssembly.ThisArgumentTestClass.LogThisArgument(this = {TestAssembly.ThisArgumentTestClass})", output );
         }
     }
 }

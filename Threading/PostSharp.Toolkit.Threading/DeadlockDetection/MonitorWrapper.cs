@@ -9,7 +9,7 @@
 
 using System.Threading;
 
-namespace PostSharp.Toolkit.Threading.Deadlock
+namespace PostSharp.Toolkit.Threading.DeadlockDetection
 {
     [DeadlockDetectionPolicy.MonitorEnhancements]
     internal static class MonitorWrapper

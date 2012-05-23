@@ -1,4 +1,12 @@
-﻿using System.Diagnostics;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
 using NUnit.Framework;
 using TestAssembly;
 
@@ -23,7 +31,7 @@ namespace PostSharp.Toolkit.Tests
             underTest.VoidMethod();
 
             string output = OutputString.ToString();
-            StringAssert.DoesNotContain(" : void", output);
+            StringAssert.DoesNotContain( " : void", output );
         }
 
         [Test]
@@ -32,7 +40,7 @@ namespace PostSharp.Toolkit.Tests
             underTest.ReturnsHelloString();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("ReturnValueTestClass.ReturnsHelloString() : \"Hello\"", output);
+            StringAssert.Contains( "ReturnValueTestClass.ReturnsHelloString() : \"Hello\"", output );
         }
 
         [Test]
@@ -41,7 +49,7 @@ namespace PostSharp.Toolkit.Tests
             underTest.ReturnsIntValue42();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("ReturnValueTestClass.ReturnsIntValue42() : 42", output);
+            StringAssert.Contains( "ReturnValueTestClass.ReturnsIntValue42() : 42", output );
         }
 
         [Test]
@@ -50,7 +58,7 @@ namespace PostSharp.Toolkit.Tests
             underTest.ReturnsProduct();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("ReturnValueTestClass.ReturnsProduct() : {TestAssembly.Product}", output);
+            StringAssert.Contains( "ReturnValueTestClass.ReturnsProduct() : {TestAssembly.Product}", output );
         }
 
         [Test]
@@ -59,7 +67,7 @@ namespace PostSharp.Toolkit.Tests
             underTest.ReturnsProductAsObject();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("ReturnValueTestClass.ReturnsProductAsObject() : {TestAssembly.Product}", output);
+            StringAssert.Contains( "ReturnValueTestClass.ReturnsProductAsObject() : {TestAssembly.Product}", output );
         }
 
         [Test]
@@ -68,7 +76,7 @@ namespace PostSharp.Toolkit.Tests
             underTest.ReturnsBoxedInt();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("ReturnValueTestClass.ReturnsBoxedInt() : {42}", output);
+            StringAssert.Contains( "ReturnValueTestClass.ReturnsBoxedInt() : {42}", output );
         }
 
         [Test]
@@ -77,8 +85,8 @@ namespace PostSharp.Toolkit.Tests
             MyStruct result = underTest.ReturnsStruct();
 
             string output = OutputString.ToString();
-            Assert.AreEqual(result.Value, "MyValue");
-            StringAssert.Contains("ReturnValueTestClass.ReturnsStruct() : {MyValue}", output);
+            Assert.AreEqual( result.Value, "MyValue" );
+            StringAssert.Contains( "ReturnValueTestClass.ReturnsStruct() : {MyValue}", output );
         }
     }
 }

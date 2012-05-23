@@ -1,4 +1,13 @@
-﻿using NUnit.Framework;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
+using NUnit.Framework;
 using TestAssembly;
 using log4net.Config;
 
@@ -20,7 +29,7 @@ namespace PostSharp.Toolkit.Tests.Log4Net
             s.Method1();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("DEBUG TestAssembly.SimpleClass (null) - Entering: TestAssembly.SimpleClass.Method1()", output);
+            StringAssert.Contains( "DEBUG TestAssembly.SimpleClass (null) - Entering: TestAssembly.SimpleClass.Method1()", output );
         }
 
         [Test]
@@ -30,7 +39,7 @@ namespace PostSharp.Toolkit.Tests.Log4Net
             string value = s.Property1;
 
             string output = OutputString.ToString();
-            StringAssert.Contains("DEBUG TestAssembly.SimpleClass (null) - Entering: TestAssembly.SimpleClass.get_Property1()", output);
+            StringAssert.Contains( "DEBUG TestAssembly.SimpleClass (null) - Entering: TestAssembly.SimpleClass.get_Property1()", output );
         }
 
         [Test]
@@ -40,7 +49,7 @@ namespace PostSharp.Toolkit.Tests.Log4Net
             s.Property1 = "Test";
 
             string output = OutputString.ToString();
-            StringAssert.Contains("DEBUG TestAssembly.SimpleClass (null) - Entering: TestAssembly.SimpleClass.set_Property1(string value = \"Test\")", output);
+            StringAssert.Contains( "DEBUG TestAssembly.SimpleClass (null) - Entering: TestAssembly.SimpleClass.set_Property1(string value = \"Test\")", output );
         }
 
         [Test]
@@ -51,24 +60,27 @@ namespace PostSharp.Toolkit.Tests.Log4Net
             {
                 s.MethodThrowsException();
             }
-            catch { }
+            catch
+            {
+            }
 
             string output = OutputString.ToString();
-            StringAssert.Contains("An exception occurred:\nSystem.Exception", output);
+            StringAssert.Contains( "An exception occurred:\nSystem.Exception", output );
         }
 
         [Test]
         public void Log4net_UserDefinedType_DoesNotLogMethodCallsRecursively()
         {
             Person person = new Person
-            {
-                FirstName = "John",
-                LastName = "Smith"
-            };
+                                {
+                                    FirstName = "John",
+                                    LastName = "Smith"
+                                };
 
             string s = person.ToString();
             string output = OutputString.ToString();
-            StringAssert.Contains("Entering: PostSharp.Toolkit.Tests.Log4Net.Person.GetFirstName(PostSharp.Toolkit.Tests.Log4Net.Person person = {John Smith})", output);
+            StringAssert.Contains(
+                "Entering: PostSharp.Toolkit.Tests.Log4Net.Person.GetFirstName(PostSharp.Toolkit.Tests.Log4Net.Person person = {John Smith})", output );
         }
 
         [Test]
@@ -78,8 +90,8 @@ namespace PostSharp.Toolkit.Tests.Log4Net
             s.ErrorMethod();
 
             string output = OutputString.ToString();
-            StringAssert.Contains(" ERROR TestAssembly.LogLevelTestClass (null) - Entering: TestAssembly.LogLevelTestClass.ErrorMethod()", output);
-            StringAssert.Contains(" ERROR TestAssembly.LogLevelTestClass (null) - Leaving: TestAssembly.LogLevelTestClass.ErrorMethod()", output);
+            StringAssert.Contains( " ERROR TestAssembly.LogLevelTestClass (null) - Entering: TestAssembly.LogLevelTestClass.ErrorMethod()", output );
+            StringAssert.Contains( " ERROR TestAssembly.LogLevelTestClass (null) - Leaving: TestAssembly.LogLevelTestClass.ErrorMethod()", output );
         }
 
         [Test]
@@ -89,7 +101,7 @@ namespace PostSharp.Toolkit.Tests.Log4Net
             s.LogThisArgument();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("TestAssembly.ThisArgumentTestClass.LogThisArgument(this = {TestAssembly.ThisArgumentTestClass})", output);
+            StringAssert.Contains( "TestAssembly.ThisArgumentTestClass.LogThisArgument(this = {TestAssembly.ThisArgumentTestClass})", output );
         }
     }
 }

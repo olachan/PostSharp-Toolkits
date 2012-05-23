@@ -1,12 +1,14 @@
-﻿// -----------------------------------------------------------------------
-// <copyright file="AsyncTests.cs" company="">
-// TODO: Update copyright text.
-// </copyright>
-// -----------------------------------------------------------------------
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
 
 using System.Diagnostics;
 using System.Threading;
-using System.Threading.Tasks;
 using NUnit.Framework;
 using PostSharp.Toolkit.Threading.Dispatching;
 
@@ -18,22 +20,21 @@ namespace PostSharp.Toolkit.Threading.Tests
         [Test]
         public void WhenAsyncCalledInvokesAsynchronously()
         {
-            
-            var a = new AsyncEntity();
-            var stopwatch = new Stopwatch();
+            AsyncEntity a = new AsyncEntity();
+            Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
-            a.Async(100);
+            a.Async( 100 );
             stopwatch.Stop();
-            Assert.Less(stopwatch.ElapsedMilliseconds, 50);
+            Assert.Less( stopwatch.ElapsedMilliseconds, 50 );
         }
     }
 
     public class AsyncEntity
     {
         [BackgroundMethod]
-        public void Async(int timespan)
+        public void Async( int timespan )
         {
-            Thread.Sleep(timespan);
+            Thread.Sleep( timespan );
         }
     }
 }

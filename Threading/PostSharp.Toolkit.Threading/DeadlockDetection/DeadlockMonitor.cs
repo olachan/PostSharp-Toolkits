@@ -14,7 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace PostSharp.Toolkit.Threading.Deadlock
+namespace PostSharp.Toolkit.Threading.DeadlockDetection
 {
     /// <summary>
     /// Detects deadlocks occurring because of circular wait conditions.

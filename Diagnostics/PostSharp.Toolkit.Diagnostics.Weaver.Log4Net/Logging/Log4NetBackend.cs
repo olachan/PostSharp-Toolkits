@@ -1,4 +1,13 @@
-﻿using System;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
+using System;
 using System.Collections.Generic;
 using PostSharp.Sdk.AspectWeaver;
 using PostSharp.Sdk.CodeModel;
@@ -16,34 +25,34 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Log4Net.Logging
         private IMethod categoryInitializerMethod;
 
         private readonly Dictionary<LogLevel, LoggerMethods> loggerMethods = new Dictionary<LogLevel, LoggerMethods>();
-        
+
         private ITypeSignature loggerType;
-        
-        public void Initialize(ModuleDeclaration module)
+
+        public void Initialize( ModuleDeclaration module )
         {
             this.module = module;
-            this.loggingImplementation = new LoggingImplementationTypeBuilder(module);
-            
-            this.loggerType = module.FindType(typeof(ILog));
-            LoggerMethodsBuilder builder = new LoggerMethodsBuilder(module, this.loggerType);
+            this.loggingImplementation = new LoggingImplementationTypeBuilder( module );
 
-            this.categoryInitializerMethod = module.FindMethod(module.FindType(typeof(LogManager)), "GetLogger",
-                method => method.Parameters.Count == 1 &&
-                          IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String));
+            this.loggerType = module.FindType( typeof(ILog) );
+            LoggerMethodsBuilder builder = new LoggerMethodsBuilder( module, this.loggerType );
 
-            this.loggerMethods[LogLevel.Debug] = builder.CreateLoggerMethods("Debug");
-            this.loggerMethods[LogLevel.Info] = builder.CreateLoggerMethods("Info");
-            this.loggerMethods[LogLevel.Warning] = builder.CreateLoggerMethods("Warn");
-            this.loggerMethods[LogLevel.Error] = builder.CreateLoggerMethods("Error");
-            this.loggerMethods[LogLevel.Fatal] = builder.CreateLoggerMethods("Fatal");
+            this.categoryInitializerMethod = module.FindMethod( module.FindType( typeof(LogManager) ), "GetLogger",
+                                                                method => method.Parameters.Count == 1 &&
+                                                                          IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) );
+
+            this.loggerMethods[LogLevel.Debug] = builder.CreateLoggerMethods( "Debug" );
+            this.loggerMethods[LogLevel.Info] = builder.CreateLoggerMethods( "Info" );
+            this.loggerMethods[LogLevel.Warning] = builder.CreateLoggerMethods( "Warn" );
+            this.loggerMethods[LogLevel.Error] = builder.CreateLoggerMethods( "Error" );
+            this.loggerMethods[LogLevel.Fatal] = builder.CreateLoggerMethods( "Fatal" );
         }
 
-        public ILoggingBackendInstance CreateInstance(AspectWeaverInstance aspectWeaverInstance)
+        public ILoggingBackendInstance CreateInstance( AspectWeaverInstance aspectWeaverInstance )
         {
-            return new Log4NetBackendInstance(this);
+            return new Log4NetBackendInstance( this );
         }
 
-        private LoggerMethods GetLoggerMethods(LogLevel logLevel)
+        private LoggerMethods GetLoggerMethods( LogLevel logLevel )
         {
             return this.loggerMethods[logLevel];
         }
@@ -52,14 +61,14 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Log4Net.Logging
         {
             private readonly Log4NetBackend parent;
 
-            public Log4NetBackendInstance(Log4NetBackend parent)
+            public Log4NetBackendInstance( Log4NetBackend parent )
             {
                 this.parent = parent;
             }
 
-            public ILoggingCategoryBuilder GetCategoryBuilder(string categoryName)
+            public ILoggingCategoryBuilder GetCategoryBuilder( string categoryName )
             {
-                return new Log4NetCategoryBuilder(this.parent, categoryName);
+                return new Log4NetCategoryBuilder( this.parent, categoryName );
             }
         }
 
@@ -68,15 +77,22 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Log4Net.Logging
             private readonly Log4NetBackend parent;
             private readonly FieldDefDeclaration loggerField;
 
-            public Log4NetCategoryBuilder(Log4NetBackend parent, string categoryName)
+            public Log4NetCategoryBuilder( Log4NetBackend parent, string categoryName )
             {
                 this.parent = parent;
 
-                this.loggerField = this.parent.loggingImplementation.GetCategoryField(categoryName, this.parent.loggerType, writer =>
-                {
-                    writer.EmitInstructionString(OpCodeNumber.Ldstr, categoryName);
-                    writer.EmitInstructionMethod(OpCodeNumber.Call, this.parent.categoryInitializerMethod);
-                });
+                this.loggerField = this.parent.loggingImplementation.GetCategoryField( categoryName, this.parent.loggerType, writer =>
+                                                                                                                                 {
+                                                                                                                                     writer.
+                                                                                                                                         EmitInstructionString(
+                                                                                                                                             OpCodeNumber.Ldstr,
+                                                                                                                                             categoryName );
+                                                                                                                                     writer.
+                                                                                                                                         EmitInstructionMethod(
+                                                                                                                                             OpCodeNumber.Call,
+                                                                                                                                             this.parent.
+                                                                                                                                                 categoryInitializerMethod );
+                                                                                                                                 } );
             }
 
             public bool SupportsIsEnabled
@@ -84,66 +100,67 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Log4Net.Logging
                 get { return true; }
             }
 
-            public void EmitGetIsEnabled(InstructionWriter writer, LogLevel logLevel)
+            public void EmitGetIsEnabled( InstructionWriter writer, LogLevel logLevel )
             {
-                writer.EmitInstructionField(OpCodeNumber.Ldsfld, this.loggerField);
-                LoggerMethods loggerMethods = this.parent.GetLoggerMethods(logLevel);
-                writer.EmitInstructionMethod(OpCodeNumber.Callvirt, loggerMethods.IsLoggingEnabledMethod);
+                writer.EmitInstructionField( OpCodeNumber.Ldsfld, this.loggerField );
+                LoggerMethods loggerMethods = this.parent.GetLoggerMethods( logLevel );
+                writer.EmitInstructionMethod( OpCodeNumber.Callvirt, loggerMethods.IsLoggingEnabledMethod );
             }
 
-            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogLevel logLevel, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
+            public void EmitWrite( InstructionWriter writer, string messageFormattingString, int argumentsCount, LogLevel logLevel,
+                                   Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper )
             {
                 bool createArgsArray;
-                IMethod method = this.GetLoggerMethod(logLevel, argumentsCount, out createArgsArray);
+                IMethod method = this.GetLoggerMethod( logLevel, argumentsCount, out createArgsArray );
 
-                if (getExceptionAction != null)
+                if ( getExceptionAction != null )
                 {
-                    getExceptionAction(writer);
+                    getExceptionAction( writer );
                 }
 
-                writer.EmitInstructionField(OpCodeNumber.Ldsfld, this.loggerField);
-                writer.EmitInstructionString(OpCodeNumber.Ldstr, messageFormattingString);
+                writer.EmitInstructionField( OpCodeNumber.Ldsfld, this.loggerField );
+                writer.EmitInstructionString( OpCodeNumber.Ldstr, messageFormattingString );
 
-                if (createArgsArray)
+                if ( createArgsArray )
                 {
-                    writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, argumentsCount);
-                    writer.EmitInstructionType(OpCodeNumber.Newarr,
-                                               this.parent.module.Cache.GetIntrinsicBoxedType(IntrinsicType.Object));
+                    writer.EmitInstructionInt32( OpCodeNumber.Ldc_I4, argumentsCount );
+                    writer.EmitInstructionType( OpCodeNumber.Newarr,
+                                                this.parent.module.Cache.GetIntrinsicBoxedType( IntrinsicType.Object ) );
                 }
 
-                for (int i = 0; i < argumentsCount; i++)
+                for ( int i = 0; i < argumentsCount; i++ )
                 {
-                    if (createArgsArray)
+                    if ( createArgsArray )
                     {
-                        writer.EmitInstruction(OpCodeNumber.Dup);
-                        writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, i);
+                        writer.EmitInstruction( OpCodeNumber.Dup );
+                        writer.EmitInstructionInt32( OpCodeNumber.Ldc_I4, i );
                     }
 
-                    if (loadArgumentAction != null)
+                    if ( loadArgumentAction != null )
                     {
-                        loadArgumentAction(i, writer);
+                        loadArgumentAction( i, writer );
                     }
 
-                    if (createArgsArray)
+                    if ( createArgsArray )
                     {
-                        writer.EmitInstruction(OpCodeNumber.Stelem_Ref);
+                        writer.EmitInstruction( OpCodeNumber.Stelem_Ref );
                     }
                 }
 
-                if (useWrapper)
+                if ( useWrapper )
                 {
-                    method = this.parent.loggingImplementation.GetWriteWrapperMethod(method);
+                    method = this.parent.loggingImplementation.GetWriteWrapperMethod( method );
                 }
 
-                writer.EmitInstructionMethod(method.IsVirtual ? OpCodeNumber.Callvirt : OpCodeNumber.Call, method);
+                writer.EmitInstructionMethod( method.IsVirtual ? OpCodeNumber.Callvirt : OpCodeNumber.Call, method );
             }
 
-            private IMethod GetLoggerMethod(LogLevel logLevel, int argumentsCount, out bool createArgsArray)
+            private IMethod GetLoggerMethod( LogLevel logLevel, int argumentsCount, out bool createArgsArray )
             {
-                LoggerMethods loggerMethods = this.parent.GetLoggerMethods(logLevel);
+                LoggerMethods loggerMethods = this.parent.GetLoggerMethods( logLevel );
                 createArgsArray = false;
 
-                switch (argumentsCount)
+                switch ( argumentsCount )
                 {
                     case 0:
                         return loggerMethods.WriteStringMethod;

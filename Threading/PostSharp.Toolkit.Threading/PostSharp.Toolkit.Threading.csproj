@@ -46,18 +46,18 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Deadlock\Edge.cs" />
-    <Compile Include="Deadlock\Node.cs" />
-    <Compile Include="Deadlock\ResourceType.cs" />
+    <Compile Include="DeadlockDetection\Edge.cs" />
+    <Compile Include="DeadlockDetection\Node.cs" />
+    <Compile Include="DeadlockDetection\ResourceType.cs" />
     <Compile Include="Dispatching\Actor.cs" />
     <Compile Include="Dispatching\ActorAttribute.cs" />
     <Compile Include="Dispatching\BackgroundMethodAttribute.cs" />
-    <Compile Include="Deadlock\DeadlockException.cs" />
-    <Compile Include="Deadlock\DeadlockMonitor.cs" />
-    <Compile Include="Deadlock\DeadlockDetectionPolicy.cs" />
-    <Compile Include="Deadlock\MonitorWrapper.cs" />
-    <Compile Include="Deadlock\WeakHashSet.cs" />
-    <Compile Include="Deadlock\Graph.cs" />
+    <Compile Include="DeadlockDetection\DeadlockException.cs" />
+    <Compile Include="DeadlockDetection\DeadlockMonitor.cs" />
+    <Compile Include="DeadlockDetection\DeadlockDetectionPolicy.cs" />
+    <Compile Include="DeadlockDetection\MonitorWrapper.cs" />
+    <Compile Include="DeadlockDetection\WeakHashSet.cs" />
+    <Compile Include="DeadlockDetection\Graph.cs" />
     <Compile Include="Dispatching\DispatcherWrapper.cs" />
     <Compile Include="Dispatching\IDispatcher.cs" />
     <Compile Include="Dispatching\ReflectionHelper.cs" />

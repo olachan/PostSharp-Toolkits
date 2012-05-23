@@ -1,4 +1,13 @@
-﻿namespace TestAssembly
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
+namespace TestAssembly
 {
     public class ReturnValueTestClass
     {
@@ -19,10 +28,10 @@
         public Product ReturnsProduct()
         {
             return new Product
-            {
-                Id = 1,
-                Name = "Test"
-            };
+                       {
+                           Id = 1,
+                           Name = "Test"
+                       };
         }
 
         public object ReturnsProductAsObject()
@@ -37,7 +46,7 @@
 
         public MyStruct ReturnsStruct()
         {
-            return new MyStruct("MyValue");
+            return new MyStruct( "MyValue" );
         }
     }
 
@@ -51,7 +60,7 @@
     {
         public readonly string Value;
 
-        public MyStruct(string value)
+        public MyStruct( string value )
         {
             Value = value;
         }

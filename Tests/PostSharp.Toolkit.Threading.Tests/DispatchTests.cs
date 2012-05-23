@@ -29,10 +29,10 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             DispatchWpfObject window = null;
 
-            ManualResetEventSlim ready = new ManualResetEventSlim(false);
+            ManualResetEventSlim ready = new ManualResetEventSlim( false );
             Thread windowThread = new Thread( () =>
                                                   {
-                                                      window = new DispatchWpfObject(ready);
+                                                      window = new DispatchWpfObject( ready );
                                                       window.Show();
                                                       Dispatcher.Run();
                                                   } );
@@ -55,7 +55,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         public void WinFormsMethods_AreDispatchedCorrectly()
         {
             form = null;
-            ManualResetEventSlim ready = new ManualResetEventSlim(false);
+            ManualResetEventSlim ready = new ManualResetEventSlim( false );
             Thread windowThread = new Thread( () =>
                                                   {
                                                       form = new DispatchWinFormsObject( ready );

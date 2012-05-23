@@ -1,4 +1,13 @@
-﻿using System;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
+using System;
 
 namespace TestAssembly
 {
@@ -8,12 +17,12 @@ namespace TestAssembly
         {
         }
 
-        public static int GetNumber(int number)
+        public static int GetNumber( int number )
         {
             return number;
         }
 
-        public static DateTime GetDate(DateTime dt)
+        public static DateTime GetDate( DateTime dt )
         {
             return dt;
         }

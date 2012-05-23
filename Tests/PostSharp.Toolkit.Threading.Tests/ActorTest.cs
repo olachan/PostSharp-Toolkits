@@ -1,7 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -18,7 +23,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             ActorClass actorClass = new ActorClass();
             Task[] tasks = new Task[10];
 
-            for ( int i = 0; i < tasks.Length; i++)
+            for ( int i = 0; i < tasks.Length; i++ )
             {
                 tasks[i] = new Task( actorClass.Foo );
                 tasks[i].Start();
@@ -26,30 +31,29 @@ namespace PostSharp.Toolkit.Threading.Tests
 
             actorClass.CountdownEvent.Wait();
 
-            Assert.AreEqual( 10,actorClass.Count );
+            Assert.AreEqual( 10, actorClass.Count );
         }
     }
 
-    class ActorClass : Actor
+    internal class ActorClass : Actor
     {
-        public CountdownEvent CountdownEvent = new CountdownEvent(10);
-            
-           
+        public CountdownEvent CountdownEvent = new CountdownEvent( 10 );
+
+
         public int Count;
+
         public void Foo()
         {
-            if ( !Monitor.TryEnter( this ))
+            if ( !Monitor.TryEnter( this ) )
             {
                 throw new ThreadingException();
             }
 
             this.Count++;
-            
+
             Thread.Sleep( 100 );
             CountdownEvent.Signal();
             Monitor.Exit( this );
-
         }
-        
     }
 }

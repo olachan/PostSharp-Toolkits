@@ -1,3 +1,12 @@
+#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
 using System;
 using PostSharp.Sdk.AspectWeaver;
 using PostSharp.Sdk.CodeModel;
@@ -9,14 +18,14 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Console
     {
         private LoggingImplementationTypeBuilder loggingImplementation;
 
-        public void Initialize(ModuleDeclaration module)
+        public void Initialize( ModuleDeclaration module )
         {
-            this.loggingImplementation = new LoggingImplementationTypeBuilder(module);
+            this.loggingImplementation = new LoggingImplementationTypeBuilder( module );
         }
 
-        public ILoggingBackendInstance CreateInstance(AspectWeaverInstance aspectWeaverInstance)
+        public ILoggingBackendInstance CreateInstance( AspectWeaverInstance aspectWeaverInstance )
         {
-            return new ConsoleBackendInstance(this, aspectWeaverInstance.AspectType.Module);
+            return new ConsoleBackendInstance( this, aspectWeaverInstance.AspectType.Module );
         }
 
         private class ConsoleBackendInstance : ILoggingBackendInstance
@@ -24,15 +33,15 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Console
             private readonly ConsoleBackend parent;
             private readonly ModuleDeclaration module;
 
-            public ConsoleBackendInstance(ConsoleBackend parent, ModuleDeclaration module)
+            public ConsoleBackendInstance( ConsoleBackend parent, ModuleDeclaration module )
             {
                 this.parent = parent;
                 this.module = module;
             }
 
-            public ILoggingCategoryBuilder GetCategoryBuilder(string categoryName)
+            public ILoggingCategoryBuilder GetCategoryBuilder( string categoryName )
             {
-                return new ConsoleCategoryBuilder(this.parent, this.module);
+                return new ConsoleCategoryBuilder( this.parent, this.module );
             }
         }
 
@@ -48,51 +57,51 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Console
             private readonly IMethod writeLineFormat4;
             private readonly IMethod writeLineFormatArray;
 
-            public ConsoleCategoryBuilder(ConsoleBackend parent, ModuleDeclaration module)
+            public ConsoleCategoryBuilder( ConsoleBackend parent, ModuleDeclaration module )
             {
                 this.parent = parent;
                 this.module = module;
 
                 this.writeLineMessage = module.FindMethod(
-                    module.Cache.GetType(typeof(System.Console)), "WriteLine",
+                    module.Cache.GetType( typeof(System.Console) ), "WriteLine",
                     method => method.Parameters.Count == 1 &&
-                              IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String));
+                              IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) );
 
                 this.writeLineFormat1 = module.FindMethod(
-                    module.Cache.GetType(typeof(System.Console)), "WriteLine",
+                    module.Cache.GetType( typeof(System.Console) ), "WriteLine",
                     method => method.Parameters.Count == 2 &&
-                              IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String) &&
-                              IntrinsicTypeSignature.Is(method.Parameters[1].ParameterType, IntrinsicType.Object));
+                              IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) &&
+                              IntrinsicTypeSignature.Is( method.Parameters[1].ParameterType, IntrinsicType.Object ) );
 
                 this.writeLineFormat2 = module.FindMethod(
-                    module.Cache.GetType(typeof(System.Console)), "WriteLine",
+                    module.Cache.GetType( typeof(System.Console) ), "WriteLine",
                     method => method.Parameters.Count == 3 &&
-                              IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String) &&
-                              IntrinsicTypeSignature.Is(method.Parameters[1].ParameterType, IntrinsicType.Object) &&
-                              IntrinsicTypeSignature.Is(method.Parameters[2].ParameterType, IntrinsicType.Object));
+                              IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) &&
+                              IntrinsicTypeSignature.Is( method.Parameters[1].ParameterType, IntrinsicType.Object ) &&
+                              IntrinsicTypeSignature.Is( method.Parameters[2].ParameterType, IntrinsicType.Object ) );
 
                 this.writeLineFormat3 = module.FindMethod(
-                    module.Cache.GetType(typeof(System.Console)), "WriteLine",
+                    module.Cache.GetType( typeof(System.Console) ), "WriteLine",
                     method => method.Parameters.Count == 4 &&
-                              IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String) &&
-                              IntrinsicTypeSignature.Is(method.Parameters[1].ParameterType, IntrinsicType.Object) &&
-                              IntrinsicTypeSignature.Is(method.Parameters[2].ParameterType, IntrinsicType.Object) &&
-                              IntrinsicTypeSignature.Is(method.Parameters[3].ParameterType, IntrinsicType.Object));
+                              IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) &&
+                              IntrinsicTypeSignature.Is( method.Parameters[1].ParameterType, IntrinsicType.Object ) &&
+                              IntrinsicTypeSignature.Is( method.Parameters[2].ParameterType, IntrinsicType.Object ) &&
+                              IntrinsicTypeSignature.Is( method.Parameters[3].ParameterType, IntrinsicType.Object ) );
 
                 this.writeLineFormat4 = module.FindMethod(
-                    module.Cache.GetType(typeof(System.Console)), "WriteLine",
+                    module.Cache.GetType( typeof(System.Console) ), "WriteLine",
                     method => method.Parameters.Count == 5 &&
-                              IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String) &&
-                              IntrinsicTypeSignature.Is(method.Parameters[1].ParameterType, IntrinsicType.Object) &&
-                              IntrinsicTypeSignature.Is(method.Parameters[2].ParameterType, IntrinsicType.Object) &&
-                              IntrinsicTypeSignature.Is(method.Parameters[3].ParameterType, IntrinsicType.Object) &&
-                              IntrinsicTypeSignature.Is(method.Parameters[4].ParameterType, IntrinsicType.Object));
+                              IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) &&
+                              IntrinsicTypeSignature.Is( method.Parameters[1].ParameterType, IntrinsicType.Object ) &&
+                              IntrinsicTypeSignature.Is( method.Parameters[2].ParameterType, IntrinsicType.Object ) &&
+                              IntrinsicTypeSignature.Is( method.Parameters[3].ParameterType, IntrinsicType.Object ) &&
+                              IntrinsicTypeSignature.Is( method.Parameters[4].ParameterType, IntrinsicType.Object ) );
 
                 this.writeLineFormatArray = module.FindMethod(
-                    module.Cache.GetType(typeof(System.Console)), "WriteLine",
+                    module.Cache.GetType( typeof(System.Console) ), "WriteLine",
                     method => method.Parameters.Count == 2 &&
-                              IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String) &&
-                              method.Parameters[1].ParameterType.BelongsToClassification(TypeClassifications.Array));
+                              IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) &&
+                              method.Parameters[1].ParameterType.BelongsToClassification( TypeClassifications.Array ) );
             }
 
             public bool SupportsIsEnabled
@@ -100,16 +109,17 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Console
                 get { return false; }
             }
 
-            public void EmitGetIsEnabled(InstructionWriter writer, LogLevel logLevel)
+            public void EmitGetIsEnabled( InstructionWriter writer, LogLevel logLevel )
             {
             }
 
-            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogLevel logLevel, Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
+            public void EmitWrite( InstructionWriter writer, string messageFormattingString, int argumentsCount, LogLevel logLevel,
+                                   Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper )
             {
                 IMethod method;
                 bool createArgsArray = false;
 
-                switch (argumentsCount)
+                switch ( argumentsCount )
                 {
                     case 0:
                         method = this.writeLineMessage;
@@ -132,46 +142,46 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Console
                         break;
                 }
 
-                if (getExceptionAction != null)
+                if ( getExceptionAction != null )
                 {
-                    getExceptionAction(writer);
+                    getExceptionAction( writer );
                 }
 
-                messageFormattingString = string.Format("{0}|{1}", logLevel, messageFormattingString);
-                writer.EmitInstructionString(OpCodeNumber.Ldstr, messageFormattingString);
+                messageFormattingString = string.Format( "{0}|{1}", logLevel, messageFormattingString );
+                writer.EmitInstructionString( OpCodeNumber.Ldstr, messageFormattingString );
 
-                if (createArgsArray)
+                if ( createArgsArray )
                 {
-                    writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, argumentsCount);
-                    writer.EmitInstructionType(OpCodeNumber.Newarr,
-                                               this.module.Cache.GetIntrinsicBoxedType(IntrinsicType.Object));
+                    writer.EmitInstructionInt32( OpCodeNumber.Ldc_I4, argumentsCount );
+                    writer.EmitInstructionType( OpCodeNumber.Newarr,
+                                                this.module.Cache.GetIntrinsicBoxedType( IntrinsicType.Object ) );
                 }
 
-                for (int i = 0; i < argumentsCount; i++)
+                for ( int i = 0; i < argumentsCount; i++ )
                 {
-                    if (createArgsArray)
+                    if ( createArgsArray )
                     {
-                        writer.EmitInstruction(OpCodeNumber.Dup);
-                        writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, i);
+                        writer.EmitInstruction( OpCodeNumber.Dup );
+                        writer.EmitInstructionInt32( OpCodeNumber.Ldc_I4, i );
                     }
 
-                    if (loadArgumentAction != null)
+                    if ( loadArgumentAction != null )
                     {
-                        loadArgumentAction(i, writer);
+                        loadArgumentAction( i, writer );
                     }
 
-                    if (createArgsArray)
+                    if ( createArgsArray )
                     {
-                        writer.EmitInstruction(OpCodeNumber.Stelem_Ref);
+                        writer.EmitInstruction( OpCodeNumber.Stelem_Ref );
                     }
                 }
 
-                if (useWrapper)
+                if ( useWrapper )
                 {
-                    method = this.parent.loggingImplementation.GetWriteWrapperMethod(method);
+                    method = this.parent.loggingImplementation.GetWriteWrapperMethod( method );
                 }
 
-                writer.EmitInstructionMethod(OpCodeNumber.Call, method);
+                writer.EmitInstructionMethod( OpCodeNumber.Call, method );
             }
         }
     }

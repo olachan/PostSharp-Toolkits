@@ -1,3 +1,12 @@
+#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -23,39 +32,39 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
         private readonly IMethod stringFormatArrayMethod;
         private readonly IMethod traceWriteLineMethod;
-        
+
         private MethodDefDeclaration traceWriteLineWrapperMethod;
         private InstructionSequence returnSequence;
         private InstructionBlock constructorBlock;
 
         private IGenericMethodDefinition threadStaticAttributeConstructor;
 
-        public LoggingImplementationTypeBuilder(ModuleDeclaration module)
+        public LoggingImplementationTypeBuilder( ModuleDeclaration module )
         {
             this.module = module;
             this.categoryFields = new Dictionary<string, FieldDefDeclaration>();
             this.wrapperMethods = new Dictionary<IMethod, MethodDefDeclaration>();
 
-            this.stringFormatArrayMethod = module.FindMethod(module.Cache.GetIntrinsic(IntrinsicType.String), "Format",
-                method => method.Parameters.Count == 2 &&
-                          IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String) &&
-                          method.Parameters[1].ParameterType.BelongsToClassification(TypeClassifications.Array));
+            this.stringFormatArrayMethod = module.FindMethod( module.Cache.GetIntrinsic( IntrinsicType.String ), "Format",
+                                                              method => method.Parameters.Count == 2 &&
+                                                                        IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) &&
+                                                                        method.Parameters[1].ParameterType.BelongsToClassification( TypeClassifications.Array ) );
 
-            this.traceWriteLineMethod = module.FindMethod(module.Cache.GetType(typeof(System.Diagnostics.Trace)), "WriteLine",
-                method => method.Parameters.Count == 1 &&
-                          IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String));
+            this.traceWriteLineMethod = module.FindMethod( module.Cache.GetType( typeof(System.Diagnostics.Trace) ), "WriteLine",
+                                                           method => method.Parameters.Count == 1 &&
+                                                                     IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) );
 
-            this.weavingHelper = new WeavingHelper(module);
+            this.weavingHelper = new WeavingHelper( module );
             this.implementationType = this.CreateContainingType();
             this.isLoggingField = this.CreateIsLoggingField();
         }
 
-        public FieldDefDeclaration GetCategoryField(string category, ITypeSignature fieldType, Action<InstructionWriter> initializeFieldAction)
+        public FieldDefDeclaration GetCategoryField( string category, ITypeSignature fieldType, Action<InstructionWriter> initializeFieldAction )
         {
             FieldDefDeclaration categoryField;
-            if (!this.categoryFields.TryGetValue(category, out categoryField))
+            if ( !this.categoryFields.TryGetValue( category, out categoryField ) )
             {
-                categoryField = this.CreateCategoryField(fieldType, initializeFieldAction);
+                categoryField = this.CreateCategoryField( fieldType, initializeFieldAction );
                 this.categoryFields[category] = categoryField;
             }
 
@@ -65,178 +74,179 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
         public MethodDefDeclaration GetTraceStringFormatMethod()
         {
             return this.traceWriteLineWrapperMethod ??
-                   (this.traceWriteLineWrapperMethod = this.CreateTraceStringFormatWrapper("TraceWriteLineFormat"));
+                   (this.traceWriteLineWrapperMethod = this.CreateTraceStringFormatWrapper( "TraceWriteLineFormat" ));
         }
 
-        private MethodDefDeclaration CreateTraceStringFormatWrapper(string name)
+        private MethodDefDeclaration CreateTraceStringFormatWrapper( string name )
         {
             MethodDefDeclaration formatWrapperMethod = new MethodDefDeclaration
-            {
-                Name = name,
-                Attributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
-            };
-            this.implementationType.Methods.Add(formatWrapperMethod);
+                                                           {
+                                                               Name = name,
+                                                               Attributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
+                                                           };
+            this.implementationType.Methods.Add( formatWrapperMethod );
 
-            formatWrapperMethod.Parameters.Add(new ParameterDeclaration(0, "format", this.module.Cache.GetIntrinsic(IntrinsicType.String)));
-            formatWrapperMethod.Parameters.Add(new ParameterDeclaration(1, "args", this.module.Cache.GetType(typeof(object[]))));
+            formatWrapperMethod.Parameters.Add( new ParameterDeclaration( 0, "format", this.module.Cache.GetIntrinsic( IntrinsicType.String ) ) );
+            formatWrapperMethod.Parameters.Add( new ParameterDeclaration( 1, "args", this.module.Cache.GetType( typeof(object[]) ) ) );
 
             InstructionBlock block = formatWrapperMethod.MethodBody.CreateInstructionBlock();
             formatWrapperMethod.MethodBody.RootInstructionBlock = block;
-            InstructionSequence sequence = block.AddInstructionSequence(null, NodePosition.After, null);
-            this.writer.AttachInstructionSequence(sequence);
-            
-            for (int i = 0; i < formatWrapperMethod.Parameters.Count; i++)
-            {
-                this.writer.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)i);
-            }
-            
-            this.writer.EmitInstructionMethod(OpCodeNumber.Call, this.stringFormatArrayMethod);
+            InstructionSequence sequence = block.AddInstructionSequence( null, NodePosition.After, null );
+            this.writer.AttachInstructionSequence( sequence );
 
-            this.EmitCallHandler(this.traceWriteLineMethod);
-            this.writer.EmitInstruction(OpCodeNumber.Ret);
+            for ( int i = 0; i < formatWrapperMethod.Parameters.Count; i++ )
+            {
+                this.writer.EmitInstructionInt16( OpCodeNumber.Ldarg, (short) i );
+            }
+
+            this.writer.EmitInstructionMethod( OpCodeNumber.Call, this.stringFormatArrayMethod );
+
+            this.EmitCallHandler( this.traceWriteLineMethod );
+            this.writer.EmitInstruction( OpCodeNumber.Ret );
             this.writer.DetachInstructionSequence();
 
             return formatWrapperMethod;
         }
 
-        private void EmitCallHandler(IMethod loggerMethod)
+        private void EmitCallHandler( IMethod loggerMethod )
         {
             this.writer.EmitInstructionMethod(
                 !loggerMethod.IsVirtual || (loggerMethod.IsSealed || loggerMethod.DeclaringType.IsSealed)
                     ? OpCodeNumber.Call
                     : OpCodeNumber.Callvirt,
-                loggerMethod.TranslateMethod(this.module));
+                loggerMethod.TranslateMethod( this.module ) );
         }
 
-        public MethodDefDeclaration GetWriteWrapperMethod(IMethod loggerMethod)
+        public MethodDefDeclaration GetWriteWrapperMethod( IMethod loggerMethod )
         {
             MethodDefDeclaration wrapperMethod;
-            if (!this.wrapperMethods.TryGetValue(loggerMethod, out wrapperMethod))
+            if ( !this.wrapperMethods.TryGetValue( loggerMethod, out wrapperMethod ) )
             {
                 IMethod targetMethod = loggerMethod;
-                
-                wrapperMethod = this.CreateWrapperMethod(targetMethod);
+
+                wrapperMethod = this.CreateWrapperMethod( targetMethod );
                 this.wrapperMethods[loggerMethod] = wrapperMethod;
             }
 
             return wrapperMethod;
         }
 
-        private MethodDefDeclaration CreateWrapperMethod(IMethod loggerMethod)
+        private MethodDefDeclaration CreateWrapperMethod( IMethod loggerMethod )
         {
             MethodDefDeclaration wrapperMethod = new MethodDefDeclaration
-            {
-                Name = this.implementationType.Methods.GetUniqueName(loggerMethod.Name + "{0}"),
-                Attributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
-            };
-            this.implementationType.Methods.Add(wrapperMethod);
+                                                     {
+                                                         Name = this.implementationType.Methods.GetUniqueName( loggerMethod.Name + "{0}" ),
+                                                         Attributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
+                                                     };
+            this.implementationType.Methods.Add( wrapperMethod );
 
             wrapperMethod.ReturnParameter = new ParameterDeclaration
-            {
-                Attributes = ParameterAttributes.Retval,
-                ParameterType = this.module.Cache.GetIntrinsic(IntrinsicType.Void)
-            };
+                                                {
+                                                    Attributes = ParameterAttributes.Retval,
+                                                    ParameterType = this.module.Cache.GetIntrinsic( IntrinsicType.Void )
+                                                };
 
             ITypeSignature loggerFieldType = loggerMethod.DeclaringType.GetNakedType();
             MethodDefDeclaration loggerMethodDefinition = loggerMethod.GetMethodDefinition();
-            if (!loggerMethodDefinition.IsStatic)
+            if ( !loggerMethodDefinition.IsStatic )
             {
-                wrapperMethod.Parameters.Add(new ParameterDeclaration(0, "logger", loggerFieldType));
+                wrapperMethod.Parameters.Add( new ParameterDeclaration( 0, "logger", loggerFieldType ) );
             }
 
-            for (int i = 0; i < loggerMethodDefinition.Parameters.Count; i++)
+            for ( int i = 0; i < loggerMethodDefinition.Parameters.Count; i++ )
             {
                 ParameterDeclaration parameter = loggerMethodDefinition.Parameters[i];
-                wrapperMethod.Parameters.Add(new ParameterDeclaration(wrapperMethod.Parameters.Count, parameter.Name, parameter.ParameterType.TranslateType(this.module)));
+                wrapperMethod.Parameters.Add( new ParameterDeclaration( wrapperMethod.Parameters.Count, parameter.Name,
+                                                                        parameter.ParameterType.TranslateType( this.module ) ) );
             }
 
-            this.EmitWrapperCallBody(wrapperMethod, loggerMethod);
+            this.EmitWrapperCallBody( wrapperMethod, loggerMethod );
 
             return wrapperMethod;
         }
 
-        private void EmitWrapperCallBody(MethodDefDeclaration wrapperMethod, IMethod loggerMethod)
+        private void EmitWrapperCallBody( MethodDefDeclaration wrapperMethod, IMethod loggerMethod )
         {
             InstructionBlock rootBlock = wrapperMethod.MethodBody.CreateInstructionBlock();
             wrapperMethod.MethodBody.RootInstructionBlock = rootBlock;
 
-            InstructionBlock parentBlock = rootBlock.AddChildBlock(null, NodePosition.After, null);
-            InstructionBlock tryBlock = rootBlock.AddChildBlock(null, NodePosition.After, null);
-            InstructionBlock leaveTryBlock = rootBlock.AddChildBlock(null, NodePosition.After, null);
-            
-            InstructionSequence sequence = parentBlock.AddInstructionSequence(null, NodePosition.After, null);
+            InstructionBlock parentBlock = rootBlock.AddChildBlock( null, NodePosition.After, null );
+            InstructionBlock tryBlock = rootBlock.AddChildBlock( null, NodePosition.After, null );
+            InstructionBlock leaveTryBlock = rootBlock.AddChildBlock( null, NodePosition.After, null );
+
+            InstructionSequence sequence = parentBlock.AddInstructionSequence( null, NodePosition.After, null );
             // set isLogging to true
-            this.writer.AttachInstructionSequence(sequence);
-            this.writer.EmitInstruction(OpCodeNumber.Ldc_I4_1);
-            this.writer.EmitInstructionField(OpCodeNumber.Stsfld, this.isLoggingField);
+            this.writer.AttachInstructionSequence( sequence );
+            this.writer.EmitInstruction( OpCodeNumber.Ldc_I4_1 );
+            this.writer.EmitInstructionField( OpCodeNumber.Stsfld, this.isLoggingField );
             this.writer.DetachInstructionSequence();
 
             // if isLogging is true, return
-            InstructionSequence branchSequence = parentBlock.AddInstructionSequence(null, NodePosition.Before, null);
-            this.writer.AttachInstructionSequence(branchSequence);
-            this.writer.EmitInstructionField(OpCodeNumber.Ldsfld, this.isLoggingField);
-            this.writer.EmitBranchingInstruction(OpCodeNumber.Brfalse_S, sequence);
-            this.writer.EmitInstruction(OpCodeNumber.Ret);
+            InstructionSequence branchSequence = parentBlock.AddInstructionSequence( null, NodePosition.Before, null );
+            this.writer.AttachInstructionSequence( branchSequence );
+            this.writer.EmitInstructionField( OpCodeNumber.Ldsfld, this.isLoggingField );
+            this.writer.EmitBranchingInstruction( OpCodeNumber.Brfalse_S, sequence );
+            this.writer.EmitInstruction( OpCodeNumber.Ret );
             this.writer.DetachInstructionSequence();
 
             // return instruction at the end of the method
-            InstructionSequence retSequence = leaveTryBlock.AddInstructionSequence(null, NodePosition.After, null);
-            this.writer.AttachInstructionSequence(retSequence);
-            this.writer.EmitInstruction(OpCodeNumber.Ret);
+            InstructionSequence retSequence = leaveTryBlock.AddInstructionSequence( null, NodePosition.After, null );
+            this.writer.AttachInstructionSequence( retSequence );
+            this.writer.EmitInstruction( OpCodeNumber.Ret );
             this.writer.DetachInstructionSequence();
 
-            InstructionSequence trySequence = tryBlock.AddInstructionSequence(null, NodePosition.After, null);
-            this.writer.AttachInstructionSequence(trySequence);
+            InstructionSequence trySequence = tryBlock.AddInstructionSequence( null, NodePosition.After, null );
+            this.writer.AttachInstructionSequence( trySequence );
 
-            for (int i = 0; i < wrapperMethod.Parameters.Count; i++)
+            for ( int i = 0; i < wrapperMethod.Parameters.Count; i++ )
             {
-                writer.EmitInstructionInt16(OpCodeNumber.Ldarg, (short)i);
+                writer.EmitInstructionInt16( OpCodeNumber.Ldarg, (short) i );
             }
 
-            this.EmitCallHandler(loggerMethod);
+            this.EmitCallHandler( loggerMethod );
 
             this.writer.DetachInstructionSequence();
 
-            InstructionSequence leaveSequence = tryBlock.AddInstructionSequence(null, NodePosition.After, null);
-            this.writer.AttachInstructionSequence(leaveSequence);
-            this.writer.EmitBranchingInstruction(OpCodeNumber.Leave, retSequence);
+            InstructionSequence leaveSequence = tryBlock.AddInstructionSequence( null, NodePosition.After, null );
+            this.writer.AttachInstructionSequence( leaveSequence );
+            this.writer.EmitBranchingInstruction( OpCodeNumber.Leave, retSequence );
             this.writer.DetachInstructionSequence();
 
             InstructionBlock protectedBlock;
             InstructionBlock[] catchBlocks;
             InstructionBlock finallyBlock;
-            this.weavingHelper.AddExceptionHandlers(this.writer, tryBlock, leaveSequence, null, true, out protectedBlock, out catchBlocks, out finallyBlock);
+            this.weavingHelper.AddExceptionHandlers( this.writer, tryBlock, leaveSequence, null, true, out protectedBlock, out catchBlocks, out finallyBlock );
 
-            InstructionSequence finallySequence = finallyBlock.AddInstructionSequence(null, NodePosition.After, null);
-            this.writer.AttachInstructionSequence(finallySequence);
-            this.writer.EmitInstruction(OpCodeNumber.Ldc_I4_0);
-            this.writer.EmitInstructionField(OpCodeNumber.Stsfld, this.isLoggingField);
+            InstructionSequence finallySequence = finallyBlock.AddInstructionSequence( null, NodePosition.After, null );
+            this.writer.AttachInstructionSequence( finallySequence );
+            this.writer.EmitInstruction( OpCodeNumber.Ldc_I4_0 );
+            this.writer.EmitInstructionField( OpCodeNumber.Stsfld, this.isLoggingField );
             //this.writer.EmitInstruction(OpCodeNumber.Endfinally);
             this.writer.DetachInstructionSequence();
         }
 
-        private void EmitContstructorBlock(MethodDefDeclaration staticConstructor)
+        private void EmitContstructorBlock( MethodDefDeclaration staticConstructor )
         {
             this.constructorBlock = staticConstructor.MethodBody.RootInstructionBlock = staticConstructor.MethodBody.CreateInstructionBlock();
-            this.returnSequence = staticConstructor.MethodBody.RootInstructionBlock.AddInstructionSequence(null,
-                                                                                                           NodePosition.After,
-                                                                                                           null);
-            this.writer.AttachInstructionSequence(this.returnSequence);
-            this.writer.EmitInstruction(OpCodeNumber.Ret);
+            this.returnSequence = staticConstructor.MethodBody.RootInstructionBlock.AddInstructionSequence( null,
+                                                                                                            NodePosition.After,
+                                                                                                            null );
+            this.writer.AttachInstructionSequence( this.returnSequence );
+            this.writer.EmitInstruction( OpCodeNumber.Ret );
             this.writer.DetachInstructionSequence();
         }
 
         private FieldDefDeclaration CreateIsLoggingField()
         {
             FieldDefDeclaration isLoggingFieldDef = new FieldDefDeclaration
-            {
-                Name = "isLogging",
-                Attributes = FieldAttributes.Private | FieldAttributes.Static,
-                FieldType = this.module.Cache.GetType(typeof(bool))
-            };
-            this.implementationType.Fields.Add(isLoggingFieldDef);
+                                                        {
+                                                            Name = "isLogging",
+                                                            Attributes = FieldAttributes.Private | FieldAttributes.Static,
+                                                            FieldType = this.module.Cache.GetType( typeof(bool) )
+                                                        };
+            this.implementationType.Fields.Add( isLoggingFieldDef );
 
-            isLoggingFieldDef.CustomAttributes.Add(this.CreateThreadStaticAttribute());
+            isLoggingFieldDef.CustomAttributes.Add( this.CreateThreadStaticAttribute() );
 
             return isLoggingFieldDef;
         }
@@ -244,58 +254,58 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
         private TypeDefDeclaration CreateContainingType()
         {
             string uniqueName = this.module.Types.GetUniqueName(
-                DebuggerSpecialNames.GetDeclarationSpecialName("LoggingImplementationDetails{0}"));
+                DebuggerSpecialNames.GetDeclarationSpecialName( "LoggingImplementationDetails{0}" ) );
 
             TypeDefDeclaration logCategoriesType = new TypeDefDeclaration
-            {
-                Name = uniqueName,
-                Attributes = TypeAttributes.NotPublic | TypeAttributes.Sealed | TypeAttributes.Abstract,
-                BaseType = ((IType)this.module.Cache.GetType("System.Object, mscorlib"))
-            };
-            this.module.Types.Add(logCategoriesType);
+                                                       {
+                                                           Name = uniqueName,
+                                                           Attributes = TypeAttributes.NotPublic | TypeAttributes.Sealed | TypeAttributes.Abstract,
+                                                           BaseType = ((IType) this.module.Cache.GetType( "System.Object, mscorlib" ))
+                                                       };
+            this.module.Types.Add( logCategoriesType );
 
             // Add [CompilerGenerated] and [DebuggerNonUserCode] to the type
-            this.weavingHelper.AddCompilerGeneratedAttribute(logCategoriesType.CustomAttributes);
-            this.weavingHelper.AddDebuggerNonUserCodeAttribute(logCategoriesType.CustomAttributes);
+            this.weavingHelper.AddCompilerGeneratedAttribute( logCategoriesType.CustomAttributes );
+            this.weavingHelper.AddDebuggerNonUserCodeAttribute( logCategoriesType.CustomAttributes );
 
             MethodDefDeclaration staticConstructor = new MethodDefDeclaration
-            {
-                Name = ".cctor",
-                Attributes = MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.RTSpecialName |
-                             MethodAttributes.SpecialName | MethodAttributes.HideBySig,
-            };
-            logCategoriesType.Methods.Add(staticConstructor);
+                                                         {
+                                                             Name = ".cctor",
+                                                             Attributes = MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.RTSpecialName |
+                                                                          MethodAttributes.SpecialName | MethodAttributes.HideBySig,
+                                                         };
+            logCategoriesType.Methods.Add( staticConstructor );
 
             staticConstructor.ReturnParameter = new ParameterDeclaration
-            {
-                Attributes = ParameterAttributes.Retval,
-                ParameterType = this.module.Cache.GetIntrinsic(IntrinsicType.Void)
-            };
+                                                    {
+                                                        Attributes = ParameterAttributes.Retval,
+                                                        ParameterType = this.module.Cache.GetIntrinsic( IntrinsicType.Void )
+                                                    };
 
-            this.EmitContstructorBlock(staticConstructor);
+            this.EmitContstructorBlock( staticConstructor );
 
             return logCategoriesType;
         }
 
-        private FieldDefDeclaration CreateCategoryField(ITypeSignature fieldType, Action<InstructionWriter> initializeFieldAction)
+        private FieldDefDeclaration CreateCategoryField( ITypeSignature fieldType, Action<InstructionWriter> initializeFieldAction )
         {
-            string fieldName = string.Format("l{0}", this.implementationType.Fields.Count);
+            string fieldName = string.Format( "l{0}", this.implementationType.Fields.Count );
 
             FieldDefDeclaration loggerFieldDef = new FieldDefDeclaration
-            {
-                Name = fieldName,
-                Attributes = FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly,
-                FieldType = fieldType
-            };
-            this.implementationType.Fields.Add(loggerFieldDef);
+                                                     {
+                                                         Name = fieldName,
+                                                         Attributes = FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly,
+                                                         FieldType = fieldType
+                                                     };
+            this.implementationType.Fields.Add( loggerFieldDef );
 
-            InstructionSequence sequence = this.constructorBlock.AddInstructionSequence(null,
-                                                                                        NodePosition.Before,
-                                                                                        this.returnSequence);
+            InstructionSequence sequence = this.constructorBlock.AddInstructionSequence( null,
+                                                                                         NodePosition.Before,
+                                                                                         this.returnSequence );
 
-            this.writer.AttachInstructionSequence(sequence);
-            initializeFieldAction(this.writer);
-            this.writer.EmitInstructionField(OpCodeNumber.Stsfld, loggerFieldDef);
+            this.writer.AttachInstructionSequence( sequence );
+            initializeFieldAction( this.writer );
+            this.writer.EmitInstructionField( OpCodeNumber.Stsfld, loggerFieldDef );
             this.writer.DetachInstructionSequence();
 
             return loggerFieldDef;

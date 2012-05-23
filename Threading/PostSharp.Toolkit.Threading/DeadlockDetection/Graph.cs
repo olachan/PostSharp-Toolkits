@@ -12,7 +12,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PostSharp.Toolkit.Threading.Deadlock
+namespace PostSharp.Toolkit.Threading.DeadlockDetection
 {
     internal sealed class Graph
     {

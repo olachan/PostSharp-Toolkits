@@ -13,7 +13,7 @@ using PostSharp.Aspects;
 using PostSharp.Aspects.Dependencies;
 using PostSharp.Aspects.Internals;
 using PostSharp.Extensibility;
-using PostSharp.Toolkit.Threading.Deadlock;
+using PostSharp.Toolkit.Threading.DeadlockDetection;
 
 namespace PostSharp.Toolkit.Threading.Synchronization
 {

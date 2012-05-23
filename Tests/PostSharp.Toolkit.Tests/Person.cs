@@ -1,3 +1,12 @@
+#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
 namespace PostSharp.Toolkit.Tests
 {
     public class Person
@@ -5,14 +14,14 @@ namespace PostSharp.Toolkit.Tests
         public string FirstName { get; set; }
         public string LastName { get; set; }
 
-        private static string GetFirstName(Person person)
+        private static string GetFirstName( Person person )
         {
             return person.FirstName;
         }
 
         public override string ToString()
         {
-            return string.Format("{0} {1}", GetFirstName(this), this.LastName);
-        } 
+            return string.Format( "{0} {1}", GetFirstName( this ), this.LastName );
+        }
     }
 }

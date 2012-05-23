@@ -10,7 +10,7 @@
 using System;
 using System.Threading;
 
-namespace PostSharp.Toolkit.Threading.Deadlock
+namespace PostSharp.Toolkit.Threading.DeadlockDetection
 {
     internal class Node : IEquatable<Node>
     {

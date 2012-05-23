@@ -7,7 +7,7 @@
 
 #endregion
 
-namespace PostSharp.Toolkit.Threading.Deadlock
+namespace PostSharp.Toolkit.Threading.DeadlockDetection
 {
     internal enum ResourceType
     {

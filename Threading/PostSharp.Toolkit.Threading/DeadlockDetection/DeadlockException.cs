@@ -10,7 +10,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace PostSharp.Toolkit.Threading.Deadlock
+namespace PostSharp.Toolkit.Threading.DeadlockDetection
 {
     /// <summary>
     /// Exception thrown by the <see cref="DeadlockMonitor"/> class when a deadlock

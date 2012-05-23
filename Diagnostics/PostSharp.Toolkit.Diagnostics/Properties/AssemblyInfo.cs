@@ -1,3 +1,12 @@
-﻿using System.Reflection;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
 
-[assembly: AssemblyTitle("PostSharp Logging Toolkit")]
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
+using System.Reflection;
+
+[assembly: AssemblyTitle( "PostSharp Logging Toolkit" )]

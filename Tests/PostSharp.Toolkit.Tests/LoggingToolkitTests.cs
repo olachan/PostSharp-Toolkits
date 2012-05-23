@@ -1,4 +1,12 @@
-﻿using System;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
 using NUnit.Framework;
 using TestAssembly;
 
@@ -14,7 +22,7 @@ namespace PostSharp.Toolkit.Tests
             s.Method1();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("Entering: TestAssembly.SimpleClass.Method1()", output);
+            StringAssert.Contains( "Entering: TestAssembly.SimpleClass.Method1()", output );
         }
 
         [Test]
@@ -24,7 +32,7 @@ namespace PostSharp.Toolkit.Tests
             string value = s.Property1;
 
             string output = OutputString.ToString();
-            StringAssert.Contains("Entering: TestAssembly.SimpleClass.get_Property1()", output);
+            StringAssert.Contains( "Entering: TestAssembly.SimpleClass.get_Property1()", output );
         }
 
         [Test]
@@ -34,7 +42,7 @@ namespace PostSharp.Toolkit.Tests
             s.Property1 = "Test";
 
             string output = OutputString.ToString();
-            StringAssert.Contains("Entering: TestAssembly.SimpleClass.set_Property1(string value = \"Test\")", output);
+            StringAssert.Contains( "Entering: TestAssembly.SimpleClass.set_Property1(string value = \"Test\")", output );
         }
 
         [Test]
@@ -44,7 +52,7 @@ namespace PostSharp.Toolkit.Tests
             s.Field1 = "Test";
 
             string output = OutputString.ToString();
-            StringAssert.DoesNotContain("Field1", output);
+            StringAssert.DoesNotContain( "Field1", output );
         }
 
         [Test]
@@ -55,45 +63,47 @@ namespace PostSharp.Toolkit.Tests
             {
                 s.MethodThrowsException();
             }
-            catch { }
+            catch
+            {
+            }
 
             string output = OutputString.ToString();
-            StringAssert.Contains("An exception occurred:\nSystem.Exception", output);
+            StringAssert.Contains( "An exception occurred:\nSystem.Exception", output );
         }
 
         [Test]
         public void LoggingToolkit_MethodArguments_LogsMethodArgumentNames()
         {
             SimpleClass s = new SimpleClass();
-            s.MethodWith2Arguments(stringArg: "TEST", intArg: 12345);
+            s.MethodWith2Arguments( stringArg: "TEST", intArg: 12345 );
 
             string output = OutputString.ToString();
-            StringAssert.Contains("MethodWith2Arguments(string stringArg = \"TEST\", int intArg = 12345)", output);
+            StringAssert.Contains( "MethodWith2Arguments(string stringArg = \"TEST\", int intArg = 12345)", output );
         }
 
         [Test]
         public void LoggingToolkit_StringArgumentIsNull_PrintsEmptyString()
         {
             SimpleClass s = new SimpleClass();
-            s.MethodWith1Argument(null);
+            s.MethodWith1Argument( null );
 
             string output = OutputString.ToString();
-            StringAssert.Contains("MethodWith1Argument(string stringArg = \"\")", output);
+            StringAssert.Contains( "MethodWith1Argument(string stringArg = \"\")", output );
         }
 
         [Test]
         public void LoggingToolkit_UserDefinedType_DoesNotLogMethodCallsRecursively()
         {
             Person person = new Person
-            {
-                FirstName = "John",
-                LastName = "Smith"
-            };
+                                {
+                                    FirstName = "John",
+                                    LastName = "Smith"
+                                };
             string actual = person.ToString();
 
             string output = OutputString.ToString();
-            Assert.AreEqual("John Smith", actual);
-            StringAssert.Contains("PostSharp.Toolkit.Tests.Person.GetFirstName(PostSharp.Toolkit.Tests.Person person = {John Smith})", output);
+            Assert.AreEqual( "John Smith", actual );
+            StringAssert.Contains( "PostSharp.Toolkit.Tests.Person.GetFirstName(PostSharp.Toolkit.Tests.Person person = {John Smith})", output );
         }
 
         [Test]
@@ -103,8 +113,8 @@ namespace PostSharp.Toolkit.Tests
             s.ErrorMethod();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("Error|Entering: TestAssembly.LogLevelTestClass.ErrorMethod()", output);
-            StringAssert.Contains("Error|Leaving: TestAssembly.LogLevelTestClass.ErrorMethod()", output);
+            StringAssert.Contains( "Error|Entering: TestAssembly.LogLevelTestClass.ErrorMethod()", output );
+            StringAssert.Contains( "Error|Leaving: TestAssembly.LogLevelTestClass.ErrorMethod()", output );
         }
 
         [Test]
@@ -114,7 +124,7 @@ namespace PostSharp.Toolkit.Tests
             s.LogThisArgument();
 
             string output = OutputString.ToString();
-            StringAssert.Contains("TestAssembly.ThisArgumentTestClass.LogThisArgument(this = {TestAssembly.ThisArgumentTestClass})", output);
+            StringAssert.Contains( "TestAssembly.ThisArgumentTestClass.LogThisArgument(this = {TestAssembly.ThisArgumentTestClass})", output );
         }
     }
 }

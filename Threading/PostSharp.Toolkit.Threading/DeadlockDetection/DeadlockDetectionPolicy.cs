@@ -16,7 +16,7 @@ using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 using PostSharp.Extensibility;
 
-namespace PostSharp.Toolkit.Threading.Deadlock
+namespace PostSharp.Toolkit.Threading.DeadlockDetection
 {
     [Serializable]
     public class DeadlockDetectionPolicy : MethodLevelAspect, IAspectProvider

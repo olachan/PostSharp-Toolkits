@@ -1,3 +1,12 @@
+#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -16,15 +25,15 @@ namespace PostSharp.Toolkit.Tests
         public virtual void SetUp()
         {
             this.OutputString = new StringBuilder();
-            this.TextWriter = new StringWriter(this.OutputString);
-            Console.SetOut(this.TextWriter);
-            Trace.Listeners.Add(new TextWriterTraceListener(TextWriter));
+            this.TextWriter = new StringWriter( this.OutputString );
+            Console.SetOut( this.TextWriter );
+            Trace.Listeners.Add( new TextWriterTraceListener( TextWriter ) );
         }
 
         [TearDown]
         public virtual void TearDown()
         {
-            if (this.TextWriter != null)
+            if ( this.TextWriter != null )
             {
                 this.TextWriter.Dispose();
             }

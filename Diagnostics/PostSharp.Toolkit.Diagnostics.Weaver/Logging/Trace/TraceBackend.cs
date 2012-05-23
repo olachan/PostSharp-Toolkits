@@ -1,4 +1,13 @@
-﻿using System;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
+using System;
 using PostSharp.Sdk.AspectWeaver;
 using PostSharp.Sdk.CodeModel;
 using PostSharp.Sdk.CodeModel.TypeSignatures;
@@ -18,62 +27,62 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
         private IMethod traceErrorString;
         private IMethod traceErrorFormat;
 
-        public void Initialize(ModuleDeclaration module)
+        public void Initialize( ModuleDeclaration module )
         {
             this.module = module;
-            this.loggingImplementation = new LoggingImplementationTypeBuilder(module);
+            this.loggingImplementation = new LoggingImplementationTypeBuilder( module );
 
-            ITypeSignature traceTypeSignature = module.Cache.GetType(typeof(System.Diagnostics.Trace));
-            
-            this.writeLineString = module.FindMethod(traceTypeSignature, "WriteLine",
-                method => method.Parameters.Count == 1 &&
-                          IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String));
+            ITypeSignature traceTypeSignature = module.Cache.GetType( typeof(System.Diagnostics.Trace) );
 
-            this.traceInfoString = module.FindMethod(traceTypeSignature, "TraceInformation",
-                method => method.Parameters.Count == 1 &&
-                          IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String));
+            this.writeLineString = module.FindMethod( traceTypeSignature, "WriteLine",
+                                                      method => method.Parameters.Count == 1 &&
+                                                                IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) );
 
-            this.traceInfoFormat = module.FindMethod(traceTypeSignature, "TraceInformation",
-                method => method.Parameters.Count == 2 &&
-                          IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String) &&
-                          method.Parameters[1].ParameterType.BelongsToClassification(TypeClassifications.Array));
+            this.traceInfoString = module.FindMethod( traceTypeSignature, "TraceInformation",
+                                                      method => method.Parameters.Count == 1 &&
+                                                                IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) );
 
-            this.traceWarningString = module.FindMethod(traceTypeSignature, "TraceWarning",
-                method => method.Parameters.Count == 1 &&
-                          IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String));
+            this.traceInfoFormat = module.FindMethod( traceTypeSignature, "TraceInformation",
+                                                      method => method.Parameters.Count == 2 &&
+                                                                IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) &&
+                                                                method.Parameters[1].ParameterType.BelongsToClassification( TypeClassifications.Array ) );
 
-            this.traceWarningFormat = module.FindMethod(traceTypeSignature, "TraceWarning",
-                method => method.Parameters.Count == 2 &&
-                          IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String) &&
-                          method.Parameters[1].ParameterType.BelongsToClassification(TypeClassifications.Array));
+            this.traceWarningString = module.FindMethod( traceTypeSignature, "TraceWarning",
+                                                         method => method.Parameters.Count == 1 &&
+                                                                   IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) );
 
-            this.traceErrorString = module.FindMethod(traceTypeSignature, "TraceError",
-                method => method.Parameters.Count == 1 &&
-                IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String));
+            this.traceWarningFormat = module.FindMethod( traceTypeSignature, "TraceWarning",
+                                                         method => method.Parameters.Count == 2 &&
+                                                                   IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) &&
+                                                                   method.Parameters[1].ParameterType.BelongsToClassification( TypeClassifications.Array ) );
 
-            this.traceErrorFormat = module.FindMethod(traceTypeSignature, "TraceError",
-                method => method.Parameters.Count == 2 &&
-                          IntrinsicTypeSignature.Is(method.Parameters[0].ParameterType, IntrinsicType.String) &&
-                          method.Parameters[1].ParameterType.BelongsToClassification(TypeClassifications.Array));
+            this.traceErrorString = module.FindMethod( traceTypeSignature, "TraceError",
+                                                       method => method.Parameters.Count == 1 &&
+                                                                 IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) );
+
+            this.traceErrorFormat = module.FindMethod( traceTypeSignature, "TraceError",
+                                                       method => method.Parameters.Count == 2 &&
+                                                                 IntrinsicTypeSignature.Is( method.Parameters[0].ParameterType, IntrinsicType.String ) &&
+                                                                 method.Parameters[1].ParameterType.BelongsToClassification( TypeClassifications.Array ) );
         }
 
-        public ILoggingBackendInstance CreateInstance(AspectWeaverInstance aspectWeaverInstance)
+        public ILoggingBackendInstance CreateInstance( AspectWeaverInstance aspectWeaverInstance )
         {
-            return new TraceBackendInstance(this);
+            return new TraceBackendInstance( this );
         }
 
         private class TraceBackendInstance : ILoggingBackendInstance
         {
             private readonly TraceBackend parent;
 
-            public TraceBackendInstance(TraceBackend parent)
+            public TraceBackendInstance( TraceBackend parent )
             {
                 this.parent = parent;
             }
 
-            public ILoggingCategoryBuilder GetCategoryBuilder(string categoryName)
+            public ILoggingCategoryBuilder GetCategoryBuilder( string categoryName )
             {
-                return new TraceCategoryBuilder(this.parent);
+                return new TraceCategoryBuilder( this.parent );
             }
         }
 
@@ -81,7 +90,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
         {
             private readonly TraceBackend parent;
 
-            public TraceCategoryBuilder(TraceBackend parent)
+            public TraceCategoryBuilder( TraceBackend parent )
             {
                 this.parent = parent;
             }
@@ -91,18 +100,18 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
                 get { return false; }
             }
 
-            public void EmitGetIsEnabled(InstructionWriter writer, LogLevel logLevel)
+            public void EmitGetIsEnabled( InstructionWriter writer, LogLevel logLevel )
             {
             }
 
-            public void EmitWrite(InstructionWriter writer, string messageFormattingString, int argumentsCount, LogLevel logLevel, 
-                                  Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper)
+            public void EmitWrite( InstructionWriter writer, string messageFormattingString, int argumentsCount, LogLevel logLevel,
+                                   Action<InstructionWriter> getExceptionAction, Action<int, InstructionWriter> loadArgumentAction, bool useWrapper )
             {
                 bool createArgsArray = argumentsCount > 0;
 
                 IMethod method;
 
-                switch (logLevel)
+                switch ( logLevel )
                 {
                     case LogLevel.Debug:
                         method = createArgsArray
@@ -120,47 +129,47 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging.Trace
                         method = createArgsArray ? this.parent.traceErrorFormat : this.parent.traceErrorString;
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException("logLevel");
+                        throw new ArgumentOutOfRangeException( "logLevel" );
                 }
 
-                if (getExceptionAction != null)
+                if ( getExceptionAction != null )
                 {
-                    getExceptionAction(writer);
+                    getExceptionAction( writer );
                 }
-                writer.EmitInstructionString(OpCodeNumber.Ldstr, messageFormattingString);
+                writer.EmitInstructionString( OpCodeNumber.Ldstr, messageFormattingString );
 
-                if (createArgsArray)
+                if ( createArgsArray )
                 {
-                    writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, argumentsCount);
-                    writer.EmitInstructionType(OpCodeNumber.Newarr,
-                                               this.parent.module.Cache.GetIntrinsicBoxedType(IntrinsicType.Object));
+                    writer.EmitInstructionInt32( OpCodeNumber.Ldc_I4, argumentsCount );
+                    writer.EmitInstructionType( OpCodeNumber.Newarr,
+                                                this.parent.module.Cache.GetIntrinsicBoxedType( IntrinsicType.Object ) );
                 }
 
-                for (int i = 0; i < argumentsCount; i++)
+                for ( int i = 0; i < argumentsCount; i++ )
                 {
-                    if (createArgsArray)
+                    if ( createArgsArray )
                     {
-                        writer.EmitInstruction(OpCodeNumber.Dup);
-                        writer.EmitInstructionInt32(OpCodeNumber.Ldc_I4, i);
+                        writer.EmitInstruction( OpCodeNumber.Dup );
+                        writer.EmitInstructionInt32( OpCodeNumber.Ldc_I4, i );
                     }
 
-                    if (loadArgumentAction != null)
+                    if ( loadArgumentAction != null )
                     {
-                        loadArgumentAction(i, writer);
+                        loadArgumentAction( i, writer );
                     }
 
-                    if (createArgsArray)
+                    if ( createArgsArray )
                     {
-                        writer.EmitInstruction(OpCodeNumber.Stelem_Ref);
+                        writer.EmitInstruction( OpCodeNumber.Stelem_Ref );
                     }
                 }
 
-                if (useWrapper)
+                if ( useWrapper )
                 {
-                    method = this.parent.loggingImplementation.GetWriteWrapperMethod(method);
+                    method = this.parent.loggingImplementation.GetWriteWrapperMethod( method );
                 }
 
-                writer.EmitInstructionMethod(OpCodeNumber.Call, method);
+                writer.EmitInstructionMethod( OpCodeNumber.Call, method );
             }
         }
     }

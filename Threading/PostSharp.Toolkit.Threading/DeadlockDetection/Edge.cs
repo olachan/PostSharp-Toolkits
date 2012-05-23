@@ -9,7 +9,7 @@
 
 using System;
 
-namespace PostSharp.Toolkit.Threading.Deadlock
+namespace PostSharp.Toolkit.Threading.DeadlockDetection
 {
     internal sealed class Edge : IEquatable<Edge>
     {

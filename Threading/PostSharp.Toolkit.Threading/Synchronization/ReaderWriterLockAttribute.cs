@@ -11,7 +11,7 @@ using System;
 using System.Reflection;
 using PostSharp.Aspects;
 using PostSharp.Extensibility;
-using PostSharp.Toolkit.Threading.Deadlock;
+using PostSharp.Toolkit.Threading.DeadlockDetection;
 
 namespace PostSharp.Toolkit.Threading.Synchronization
 {
