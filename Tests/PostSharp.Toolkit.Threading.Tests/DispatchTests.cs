@@ -9,15 +9,16 @@
 
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Threading;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Threading;
+
 using NUnit.Framework;
 using PostSharp.Toolkit.Threading.Dispatching;
+
+using Brushes = System.Windows.Media.Brushes;
 using FormsApplication = System.Windows.Forms.Application;
-using WpfApplication = System.Windows.Application;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {
@@ -29,13 +30,14 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             DispatchWpfObject window = null;
 
-            ManualResetEventSlim ready = new ManualResetEventSlim( false );
-            Thread windowThread = new Thread( () =>
-                                                  {
-                                                      window = new DispatchWpfObject( ready );
-                                                      window.Show();
-                                                      Dispatcher.Run();
-                                                  } );
+            ManualResetEventSlim ready = new ManualResetEventSlim(false);
+            Thread windowThread = new Thread(
+                () =>
+                    {
+                        window = new DispatchWpfObject(ready);
+                        window.Show();
+                        Dispatcher.Run();
+                    });
 
             windowThread.SetApartmentState( ApartmentState.STA );
             windowThread.Start();
@@ -82,6 +84,23 @@ namespace PostSharp.Toolkit.Threading.Tests
             public DispatchWinFormsObject( ManualResetEventSlim ready )
             {
                 this.readyEvent = ready;
+
+                // Attributes set so window does not show during tests
+                this.FormBorderStyle = FormBorderStyle.None;
+                this.Width = 0;
+                this.Height = 0;
+                this.ShowInTaskbar = false;
+                SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
+            }
+
+            // overriden so window does not show during tests
+            protected override void OnPaint(PaintEventArgs e)
+            {
+            }
+
+            // overriden so window does not show during tests
+            protected override void OnPaintBackground(PaintEventArgs e)
+            {
             }
 
             [DispatchedMethod]
@@ -104,7 +123,14 @@ namespace PostSharp.Toolkit.Threading.Tests
             public DispatchWpfObject( ManualResetEventSlim ready )
             {
                 this.ready = ready;
-                Debug.Write( "Test" );
+
+                // Attributes set so window does not show during tests
+                this.WindowStyle = WindowStyle.None;
+                this.ShowInTaskbar = false;
+                this.AllowsTransparency = true;
+                this.Background = Brushes.Transparent;
+                this.Width = 0;
+                this.Height = 0;
             }
 
             [DispatchedMethod]

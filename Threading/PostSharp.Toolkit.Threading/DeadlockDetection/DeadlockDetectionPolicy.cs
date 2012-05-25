@@ -18,8 +18,8 @@ using PostSharp.Extensibility;
 
 namespace PostSharp.Toolkit.Threading.DeadlockDetection
 {
+    // TODO: find a way of ensuring only one instance of DeadlockDetectionPolicy is applyed per assembly
     [Serializable]
-    [MulticastAttributeUsage(MulticastTargets.Method, AllowMultiple = false)]
     public class DeadlockDetectionPolicy : MethodLevelAspect, IAspectProvider
     {
         // Can not be static
