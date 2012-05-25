@@ -265,6 +265,10 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             }
         }
 
+        /// <summary>
+        /// Execute action nad handle possible ThreadAbortException. If thread is aborted because of deadlock the thread abort exception is replaced by DeadlockException.
+        /// </summary>
+        /// <param name="action"></param>
         internal static void ExecuteAction(Action action)
         {
             try
@@ -300,17 +304,18 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             }
 
 
-            EmitStackTraces( cycle, messageBuilder );
+            AbortThreadsInDedlockAndEmitStackTraces( cycle, messageBuilder );
 
             throw new DeadlockException( messageBuilder.ToString() );
         }
 
-        private static void EmitStackTraces( IEnumerable<Edge> cycle, StringBuilder messageBuilder )
+        private static void AbortThreadsInDedlockAndEmitStackTraces( IEnumerable<Edge> cycle, StringBuilder messageBuilder )
         {
             IEnumerable<Thread> threadsInDeadlock =
                 cycle.Where( x => x.Predecessor.Role == ResourceType.Thread ).Select( x => x.Predecessor.SyncObject as Thread );
             List<Thread> suspendedThreads = new List<Thread>();
 
+            // susspend all threads in deadlock
             foreach ( Thread thread in threadsInDeadlock )
             {
                 if ( thread != Thread.CurrentThread )
@@ -322,6 +327,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
                 }
             }
 
+            // collect stack traces of all suspended threads
             foreach ( Thread thread in suspendedThreads )
             {
                 messageBuilder.AppendFormat(
@@ -351,6 +357,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
 
             string message = messageBuilder.ToString();
 
+            // abrot threads in deadlock
             foreach ( Thread thread in threadsInDeadlock )
             {
                 if ( thread != Thread.CurrentThread )

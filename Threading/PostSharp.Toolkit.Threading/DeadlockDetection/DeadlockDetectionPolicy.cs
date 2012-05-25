@@ -71,7 +71,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
                     {
                         if ( timeout > initialTimeout )
                         {
-                            DeadlockMonitor.DetectDeadlocks( Thread.CurrentThread );
+                            DeadlockMonitor.DetectDeadlocksInternal( Thread.CurrentThread );
                         }
 
                         result = getResult( timeout <= secondTimeout ? timeout : Timeout.Infinite );
