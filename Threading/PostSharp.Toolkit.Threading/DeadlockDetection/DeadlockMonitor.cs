@@ -14,6 +14,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
+using ThreadState = System.Threading.ThreadState;
+
 namespace PostSharp.Toolkit.Threading.DeadlockDetection
 {
     /// <summary>
@@ -134,35 +136,50 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
         {
             ignoredResourcesReaderWriterLock.EnterWriteLock();
 
-            if ( ignoredResources.Add( resource ) )
+            if (ignoredResources.Count == 0)
             {
-                graph.RemoveAdjecentEdges( resource, resourceType );
+                Debug.Print("Synchronization resource added to ignored list");
             }
 
-            if ( ignoredResources.Count > 50 )
+            try
             {
-                ignoredResources.ClearNotAlive();
-                if ( ignoredResources.Count > 50 )
+                if (ignoredResources.Add(resource))
                 {
-                    disableDeadlockDetection = true;
+                    graph.RemoveAdjecentEdges(resource, resourceType);
+                }
+
+                if (ignoredResources.Count > 50)
+                {
+                    ignoredResources.ClearNotAlive();
+                    if (ignoredResources.Count > 50)
+                    {
+                        disableDeadlockDetection = true;
+                        Debug.Print("Deadlock detection disabled because there are too many ignored resources");
+                    }
                 }
             }
-
-            ignoredResourcesReaderWriterLock.ExitWriteLock();
+            finally
+            {
+                ignoredResourcesReaderWriterLock.ExitWriteLock();
+            }
         }
 
         private static void AddEdge( object from, ResourceType fromType, object to, ResourceType toType )
         {
             ignoredResourcesReaderWriterLock.EnterReadLock();
-
-            if ( ignoredResources.Contains( from ) || ignoredResources.Contains( to ) )
+            try
             {
-                return;
+                if (ignoredResources.Contains(from) || ignoredResources.Contains(to))
+                {
+                    return;
+                }
+
+                graph.AddEdge(from, fromType, to, toType);
             }
-
-            graph.AddEdge( from, fromType, to, toType );
-
-            ignoredResourcesReaderWriterLock.ExitReadLock();
+            finally
+            {
+                ignoredResourcesReaderWriterLock.ExitReadLock();
+            }
         }
 
 
@@ -201,7 +218,17 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
         /// 	<para class="xmldocbulletlist">When a deadlock is detected, the application is
         ///     expected to stop, since it may have been left in an inconsistent state.</para>
         /// </remarks>
-        public static void DetectDeadlocks( Thread startThread = null )
+        public static void DetectDeadlocks(Thread startThread = null)
+        {
+            if (disableDeadlockDetection)
+            {
+                throw new DeadlockDetectionDisabledException();
+            }
+
+            DetectDeadlocksInternal(startThread);
+        }
+        
+        internal static void DetectDeadlocksInternal( Thread startThread = null )
         {
             if ( disableDeadlockDetection )
             {
@@ -238,6 +265,25 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             }
         }
 
+        internal static void ExecuteAction(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (ThreadAbortException e)
+            {
+                var stateInfo = e.ExceptionState as ThreadAbortToken;
+                if (stateInfo == null)
+                {
+                    throw;
+                }
+
+                Thread.ResetAbort();
+                throw new DeadlockException(stateInfo.Message);
+            }
+        }
+
         private static void ThrowDeadlockException( IEnumerable<Edge> cycle )
         {
             // We found a cycle. Analyze it to produce a meaningful error message.
@@ -269,17 +315,10 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             {
                 if ( thread != Thread.CurrentThread )
                 {
-                    try
-                    {
 #pragma warning disable 612,618
-                        thread.Suspend();
+                    thread.Suspend();
 #pragma warning restore 612,618
-                        suspendedThreads.Add( thread );
-                    }
-                    catch ( Exception e )
-                    {
-                        Debug.Print( "Suspend thrown an exception: {0}", e.Message );
-                    }
+                    suspendedThreads.Add( thread );
                 }
             }
 
@@ -318,10 +357,14 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
                 {
                     try
                     {
-                        thread.Abort( message );
+                        thread.Abort(new ThreadAbortToken(message));
                     }
-                    catch ( Exception )
+                    catch (ThreadStateException) // The thread's suspended - we do know it
                     {
+                        if (!thread.ThreadState.HasFlag(ThreadState.AbortRequested))
+                        {
+                            throw;
+                        }
                     }
 #pragma warning disable 612,618
                     thread.Resume();

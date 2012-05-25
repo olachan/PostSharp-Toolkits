@@ -19,13 +19,15 @@ using PostSharp.Extensibility;
 namespace PostSharp.Toolkit.Threading.DeadlockDetection
 {
     [Serializable]
+    [MulticastAttributeUsage(MulticastTargets.Method, AllowMultiple = false)]
     public class DeadlockDetectionPolicy : MethodLevelAspect, IAspectProvider
     {
-        private static readonly Dictionary<Type, Type> TypesToInstrument;
+        // Can not be static
+        private readonly Dictionary<Type, Type> typesToInstrument;
 
-        static DeadlockDetectionPolicy()
+        public DeadlockDetectionPolicy()
         {
-            TypesToInstrument = new Dictionary<Type, Type>
+            this.typesToInstrument = new Dictionary<Type, Type>
                                     {
                                         {typeof(Mutex), typeof(MutexEnhancements)},
                                         {typeof(WaitHandle), typeof(WaitHandleEnhancements)},
@@ -38,33 +40,22 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
 
         public IEnumerable<AspectInstance> ProvideAspects( object targetElement )
         {
-            MethodBase method = (MethodBase) targetElement;
+            MethodBase method = (MethodBase)targetElement;
 
-            if ( TypesToInstrument.ContainsKey( method.DeclaringType ) )
+            if (!this.typesToInstrument.ContainsKey(method.DeclaringType))
             {
-                Type aspectType = TypesToInstrument[method.DeclaringType];
-                TypesToInstrument.Remove( method.DeclaringType );
-                yield return new AspectInstance( method.DeclaringType, Activator.CreateInstance( aspectType ) as IAspect );
+                yield break;
             }
+
+            var aspectType = this.typesToInstrument[method.DeclaringType];
+            this.typesToInstrument.Remove(method.DeclaringType);
+            yield return new AspectInstance(method.DeclaringType, Activator.CreateInstance(aspectType) as IAspect);
         }
 
         internal static class LockAspectHelper
         {
             private const int initialTimeout = 200;
             private const int secondTimeout = 1000;
-
-            public static void HandleAbortException( Action action )
-            {
-                try
-                {
-                    action();
-                }
-                catch ( ThreadAbortException e )
-                {
-                    Thread.ResetAbort();
-                    throw new DeadlockException( e.ExceptionState != null ? e.ExceptionState.ToString() : null );
-                }
-            }
 
             public static void NoTimeoutAcquire( Action enterWaiting, Func<int, bool> getResult, Action convertWaitingToAcquired, Action exitWaiting )
             {
@@ -105,7 +96,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "Join" )]
             public void OnJoin( MethodInterceptionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
+                DeadlockMonitor.ExecuteAction(
                     () =>
                         {
                             if ( args.Arguments.Count == 0 ||
@@ -129,7 +120,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "WaitOne" )]
             public void OnWaitOne( MethodInterceptionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
+                DeadlockMonitor.ExecuteAction(
                     () =>
                         {
                             if ( !(args.Instance is Mutex) )
@@ -166,7 +157,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "WaitAll" )]
             public void OnWaitAll( MethodInterceptionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
+                DeadlockMonitor.ExecuteAction(
                     () =>
                         {
                             WaitHandle[] waitHandles = args.Arguments[0] as WaitHandle[];
@@ -221,7 +212,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "regex:Handle|SafeWaitHandle" )]
             public void OnHandleModification( MethodExecutionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
+                DeadlockMonitor.ExecuteAction(
                     () =>
                         {
                             if ( !(args.Instance is Mutex) )
@@ -241,8 +232,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "Release" )]
             public void OnRelease( MethodExecutionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
-                    () => DeadlockMonitor.ExitAcquired( args.Instance, ResourceType.Lock ) );
+                DeadlockMonitor.ExecuteAction(() => DeadlockMonitor.ExitAcquired(args.Instance, ResourceType.Lock));
             }
         }
 
@@ -253,7 +243,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "Enter" )]
             public void OnEnter( MethodInterceptionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
+                DeadlockMonitor.ExecuteAction(
                     () => LockAspectHelper.NoTimeoutAcquire(
                         () => DeadlockMonitor.EnterWaiting( args.Arguments[0], ResourceType.Lock ),
                         timeout =>
@@ -274,7 +264,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "TryEnter" )]
             public void OnTryEnter( MethodInterceptionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
+                DeadlockMonitor.ExecuteAction(
                     () =>
                         {
                             if ( args.Arguments[0] is int && (int) args.Arguments[0] == -1 )
@@ -338,8 +328,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "Exit" )]
             public void OnExit( MethodExecutionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
-                    () => DeadlockMonitor.ExitAcquired( args.Arguments[0], ResourceType.Lock ) );
+                DeadlockMonitor.ExecuteAction(() => DeadlockMonitor.ExitAcquired(args.Arguments[0], ResourceType.Lock));
             }
         }
 
@@ -352,50 +341,43 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "regex:^EnterReadLock|^AcquireReaderLock" )]
             public void OnReaderLockEnter( MethodInterceptionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
-                    () => OnEnter( args, ResourceType.Read ) );
+                DeadlockMonitor.ExecuteAction(() => OnEnter(args, ResourceType.Read));
             }
 
             [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "EnterUpgradeableReadLock" )]
             public void OnUpgradeableReadEnter( MethodInterceptionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
-                    () => OnEnter( args, ResourceType.UpgradeableRead ) );
+                DeadlockMonitor.ExecuteAction(() => OnEnter(args, ResourceType.UpgradeableRead));
             }
 
             [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "regex:^EnterWriteLock|^AcquireWriterLock|^UpgradeToWriterLock" )]
             public void OnWriterLockEnter( MethodInterceptionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
-                    () => OnEnter( args, ResourceType.Write ) );
+                DeadlockMonitor.ExecuteAction(() => OnEnter(args, ResourceType.Write));
             }
 
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "regex:^ExitReadLock|^ReleaseReaderLock" )]
             public void OnReaderLockExit( MethodExecutionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
-                    () => ReaderWriterTypeDeadlockMonitorHelper.ExitAcquired( args.Instance, ResourceType.Read ) );
+                DeadlockMonitor.ExecuteAction(() => ReaderWriterTypeDeadlockMonitorHelper.ExitAcquired(args.Instance, ResourceType.Read));
             }
 
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "ExitUpgradeableReadLock" )]
             public void OnUpgradeableReadLockExit( MethodExecutionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
-                    () => ReaderWriterTypeDeadlockMonitorHelper.ExitAcquired(
-                        args.Instance, ResourceType.UpgradeableRead ) );
+                DeadlockMonitor.ExecuteAction(() => ReaderWriterTypeDeadlockMonitorHelper.ExitAcquired(args.Instance, ResourceType.UpgradeableRead));
             }
 
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "regex:^ExitWriteLock|^ReleaseWriterLock|^DowngradeFromWriterLock" )]
             public void OnWriterLockExit( MethodExecutionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
-                    () => ReaderWriterTypeDeadlockMonitorHelper.ExitAcquired( args.Instance, ResourceType.Write ) );
+                DeadlockMonitor.ExecuteAction(() => ReaderWriterTypeDeadlockMonitorHelper.ExitAcquired(args.Instance, ResourceType.Write));
             }
 
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "TryEnterReadLock" )]
             public void OnTryEnterReadLock( MethodExecutionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
+                DeadlockMonitor.ExecuteAction(
                     () =>
                         {
                             if ( (bool) args.ReturnValue )
@@ -409,7 +391,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "TryEnterUpgradeableReadLock" )]
             public void OnTryEnterUpgradeableReadLock( MethodExecutionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
+                DeadlockMonitor.ExecuteAction(
                     () =>
                         {
                             if ( (bool) args.ReturnValue )
@@ -423,7 +405,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "TryEnterWriteLock" )]
             public void OnTryEnterWriteLock( MethodExecutionArgs args )
             {
-                LockAspectHelper.HandleAbortException(
+                DeadlockMonitor.ExecuteAction(
                     () =>
                         {
                             if ( (bool) args.ReturnValue )
@@ -439,12 +421,11 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             {
                 Func<int, bool> acquireLock;
 
-                if ( args.Arguments.Count == 0 )
+                if (args.Arguments.Count == 0) // when arguments count == 0 it must be ReaderWriterLockSlim
                 {
                     acquireLock = timeout =>
                                       {
                                           bool lockTaken = false;
-                                          // TODO: this won't work with ReaderWriterLock (non-slim).
                                           ReaderWriterLockSlim rwl = (ReaderWriterLockSlim) args.Instance;
                                           switch ( type )
                                           {
