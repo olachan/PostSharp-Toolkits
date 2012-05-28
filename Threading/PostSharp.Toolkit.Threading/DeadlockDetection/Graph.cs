@@ -30,6 +30,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             this.adjacencyList.TryRemove( node, out n );
         }
 
+        // this method is thread-safe because every edge is edited only by thread on the end of this edge. 
         public void AddEdge( object from, ResourceType fromType, object to, ResourceType toType )
         {
             Node fromNode = new Node( from, fromType );
@@ -42,6 +43,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             edge.Counter++;
         }
 
+        // this method is thread-safe because every edge is edited only by thread on the end of this edge. 
         public void RemoveEdge( object from, ResourceType fromType, object to, ResourceType toType )
         {
             Node fromNode = new Node( from, fromType );

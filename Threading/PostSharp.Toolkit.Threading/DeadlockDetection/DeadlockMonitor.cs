@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using ThreadState = System.Threading.ThreadState;
 
 namespace PostSharp.Toolkit.Threading.DeadlockDetection
 {
@@ -60,8 +61,6 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
         private static readonly WeakHashSet ignoredResources = new WeakHashSet();
         private static readonly ReaderWriterLockSlim ignoredResourcesReaderWriterLock = new ReaderWriterLockSlim( LockRecursionPolicy.SupportsRecursion );
         private static bool disableDeadlockDetection;
-
-        // TODO: Define a TraceSwitch and a TraceSource, migrate from Debug.Print.
 
         /// <summary>Method to be invoked before starting to wait for a synchronization object.</summary>
         /// <param name="syncObject">The synchronization object that will be waited for.</param>
@@ -136,7 +135,10 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
         {
             ignoredResourcesReaderWriterLock.EnterWriteLock();
 
-            //TODO: Generate some debug warning on first call?
+            if ( ignoredResources.Count == 0 )
+            {
+                Debug.Print( "Synchronization resource added to ignored list" );
+            }
 
             try
             {
@@ -151,7 +153,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
                     if ( ignoredResources.Count > 50 )
                     {
                         disableDeadlockDetection = true;
-                        //TODO: Generate some debug warning
+                        Debug.Print( "Deadlock detection disabled because there are too many ignored resources" );
                     }
                 }
             }
@@ -219,21 +221,28 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
         {
             if ( disableDeadlockDetection )
             {
-                //TODO: Don't print it repeatedly. Silently ignore for automatic detection; exception for manual calls?
+                throw new DeadlockDetectionDisabledException();
+            }
+
+            DetectDeadlocksInternal( startThread );
+        }
+
+        internal static void DetectDeadlocksInternal( Thread startThread = null )
+        {
+            if ( disableDeadlockDetection )
+            {
                 Debug.Print( "Deadlock detection canceled because there are too many ignored resources" );
                 return;
             }
 
             if ( Interlocked.CompareExchange( ref detectionPending, 1, 0 ) == 1 )
             {
-                //TODO: Do we need to print it?
                 Debug.Print( "Deadlock detection skipped because another one is pending." );
                 return;
             }
 
             try
             {
-                //TODO: Do we need to print it?
                 Debug.Print( "Deadlock detection started in thread {0}.", Thread.CurrentThread.ManagedThreadId );
 
                 IEnumerable<Edge> cycle;
@@ -255,6 +264,29 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             }
         }
 
+        /// <summary>
+        /// Execute action nad handle possible ThreadAbortException. If thread is aborted because of deadlock the thread abort exception is replaced by DeadlockException.
+        /// </summary>
+        /// <param name="action"></param>
+        internal static void ExecuteAction( Action action )
+        {
+            try
+            {
+                action();
+            }
+            catch ( ThreadAbortException e )
+            {
+                ThreadAbortToken stateInfo = e.ExceptionState as ThreadAbortToken;
+                if ( stateInfo == null )
+                {
+                    throw;
+                }
+
+                Thread.ResetAbort();
+                throw new DeadlockException( stateInfo.Message );
+            }
+        }
+
         private static void ThrowDeadlockException( IEnumerable<Edge> cycle )
         {
             // We found a cycle. Analyze it to produce a meaningful error message.
@@ -271,36 +303,30 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             }
 
 
-            EmitStackTraces( cycle, messageBuilder );
+            AbortThreadsInDedlockAndEmitStackTraces( cycle, messageBuilder );
 
             throw new DeadlockException( messageBuilder.ToString() );
         }
 
-        private static void EmitStackTraces( IEnumerable<Edge> cycle, StringBuilder messageBuilder )
+        private static void AbortThreadsInDedlockAndEmitStackTraces( IEnumerable<Edge> cycle, StringBuilder messageBuilder )
         {
             IEnumerable<Thread> threadsInDeadlock =
                 cycle.Where( x => x.Predecessor.Role == ResourceType.Thread ).Select( x => x.Predecessor.SyncObject as Thread );
             List<Thread> suspendedThreads = new List<Thread>();
 
+            // susspend all threads in deadlock
             foreach ( Thread thread in threadsInDeadlock )
             {
                 if ( thread != Thread.CurrentThread )
                 {
-                    try
-                    {
 #pragma warning disable 612,618
-                        thread.Suspend();
+                    thread.Suspend();
 #pragma warning restore 612,618
-                        suspendedThreads.Add( thread );
-                    }
-                    catch ( Exception e )
-                    {
-                        //TODO: Are we fine with it?
-                        Debug.Print( "Suspend thrown an exception: {0}", e.Message );
-                    }
+                    suspendedThreads.Add( thread );
                 }
             }
 
+            // collect stack traces of all suspended threads
             foreach ( Thread thread in suspendedThreads )
             {
                 messageBuilder.AppendFormat(
@@ -330,16 +356,21 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
 
             string message = messageBuilder.ToString();
 
+            // abrot threads in deadlock
             foreach ( Thread thread in threadsInDeadlock )
             {
                 if ( thread != Thread.CurrentThread )
                 {
                     try
                     {
-                        thread.Abort( message );
+                        thread.Abort( new ThreadAbortToken( message ) );
                     }
-                    catch ( ThreadStateException ) //The thread's suspended - we do know it
+                    catch ( ThreadStateException ) // The thread's suspended - we do know it
                     {
+                        if ( !thread.ThreadState.HasFlag( ThreadState.AbortRequested ) )
+                        {
+                            throw;
+                        }
                     }
 #pragma warning disable 612,618
                     thread.Resume();

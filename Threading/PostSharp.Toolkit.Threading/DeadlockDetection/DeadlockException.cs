@@ -58,4 +58,8 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
     }
 #pragma warning restore 628
 
+    [Serializable]
+    public class DeadlockDetectionDisabledException : ThreadingException
+    {
+    }
 }
