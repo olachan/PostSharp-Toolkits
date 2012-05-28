@@ -43,7 +43,8 @@ namespace PostSharp.Toolkit.Threading.Dispatching
         [OnMethodInvokeAdvice, MethodPointcut( "SelectMethods" )]
         public void OnMethodInvoke( MethodInterceptionArgs args )
         {
-            ((IDispatcherObject) args.Instance).Dispatcher.BeginInvoke( new WorkItem( args, true ) );
+            if ( ((Actor) args.Instance).IsDisposed) throw new ObjectDisposedException( args.Instance.ToString() );
+            ((IDispatcherObject) args.Instance).Dispatcher.BeginInvoke( new ActorWorkItem( args, true ) );
         }
     }
 }

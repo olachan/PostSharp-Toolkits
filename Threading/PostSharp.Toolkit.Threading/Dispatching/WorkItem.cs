@@ -7,16 +7,32 @@
 
 #endregion
 
+using System;
 using System.Threading;
 using PostSharp.Aspects;
 
 namespace PostSharp.Toolkit.Threading.Dispatching
 {
-    internal sealed class WorkItem : IAction
+    internal class WorkItem : IAction
     {
         private readonly IMethodBinding binding;
         private readonly Arguments arguments;
         private object instance;
+
+        protected IMethodBinding Binding
+        {
+            get { return this.binding; }
+        }
+
+        protected Arguments Arguments
+        {
+            get { return this.arguments; }
+        }
+
+        protected object Instance
+        {
+            get { return this.instance; }
+        }
 
         public WorkItem( MethodInterceptionArgs args, bool clone = false )
         {
@@ -34,7 +50,21 @@ namespace PostSharp.Toolkit.Threading.Dispatching
 
         public void Invoke()
         {
-            this.binding.Invoke( ref this.instance, this.arguments );
+            try
+            {
+                this.binding.Invoke( ref this.instance, this.arguments );
+            }
+            catch ( Exception e )
+            {
+                bool handled = false;
+                this.OnException( e, ref handled );
+                if (!handled) throw;
+            }
+        }
+
+        protected virtual void OnException( Exception e, ref bool handled)
+        {
+            
         }
 
         public static readonly SendOrPostCallback SendOrPostCallbackDelegate = SendOrPostCallback;

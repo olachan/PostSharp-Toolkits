@@ -47,6 +47,8 @@
     <Compile Include="DeadlockDetection\ThreadAbortToken.cs" />
     <Compile Include="Dispatching\Actor.cs" />
     <Compile Include="Dispatching\ActorAttribute.cs" />
+    <Compile Include="Dispatching\ActorDispatcher.cs" />
+    <Compile Include="Dispatching\ActorWorkItem.cs" />
     <Compile Include="Dispatching\BackgroundMethodAttribute.cs" />
     <Compile Include="DeadlockDetection\DeadlockException.cs" />
     <Compile Include="DeadlockDetection\DeadlockMonitor.cs" />
