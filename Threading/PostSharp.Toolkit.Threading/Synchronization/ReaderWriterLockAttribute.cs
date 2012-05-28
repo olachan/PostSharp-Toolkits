@@ -31,5 +31,6 @@ namespace PostSharp.Toolkit.Threading.Synchronization
             Attribute[] attributes = GetCustomAttributes( method.DeclaringType.Assembly, typeof(DeadlockDetectionPolicy) );
             this.useDeadlockDetection = attributes.Length > 0;
         }
+
     }
 }

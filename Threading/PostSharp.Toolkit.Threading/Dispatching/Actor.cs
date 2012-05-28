@@ -17,6 +17,8 @@ using PostSharp.Extensibility;
 
 namespace PostSharp.Toolkit.Threading.Dispatching
 {
+    // TODO: Split the IDispatcher functionality from the Actor class, so several dispatchers can be used.
+
     [Actor(AttributeInheritance = MulticastInheritance.Strict)]
     public abstract class Actor : IDispatcherObject, IDispatcher
     {
@@ -25,23 +27,23 @@ namespace PostSharp.Toolkit.Threading.Dispatching
         private readonly ConcurrentQueue<IAction> workItems;
         private volatile Thread currentThread;
         private volatile int workItemsCount;
-        private readonly Actor master;
+        private readonly IDispatcher dispatcher;
 
         protected Actor()
             : this(null)
         {
         }
 
-        protected Actor(Actor master)
+        protected Actor(IDispatcher dispatcher)
         {
-            if (master == null)
+            if (dispatcher == null)
             {
-                this.master = this;
+                this.dispatcher = this;
                 this.workItems = new ConcurrentQueue<IAction>();
             }
             else
             {
-                this.master = master;
+                this.dispatcher = dispatcher;
             }
         }
 
@@ -65,7 +67,7 @@ namespace PostSharp.Toolkit.Threading.Dispatching
                     }
 
                     // TODO: Cooperative multitasking: Avoid processing the whole queue if it's very long.
-                    // Rather interrupt and requeue a ProcessQueue task.
+                    // Rather interrupt and requeue a ProcessQueue task. Use Stopwatch
 
                     try
                     {
@@ -89,7 +91,7 @@ namespace PostSharp.Toolkit.Threading.Dispatching
 
         IDispatcher IDispatcherObject.Dispatcher
         {
-            get { return this.master; }
+            get { return this.dispatcher; }
         }
 
         bool IDispatcher.CheckAccess()
@@ -105,7 +107,7 @@ namespace PostSharp.Toolkit.Threading.Dispatching
         void IDispatcher.BeginInvoke(IAction action)
         {
             if (this.IsDisposed) throw new ObjectDisposedException(this.ToString());
-            if (this.master != this) throw new InvalidOperationException();
+            if (this.dispatcher != this) throw new InvalidOperationException();
 
             if (Interlocked.Increment(ref this.workItemsCount) == 1)
             {

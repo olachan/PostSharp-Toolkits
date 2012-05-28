@@ -39,6 +39,15 @@ namespace PostSharp.Toolkit.Threading.Synchronization
         [ThreadStatic] private static Dictionary<ReaderWriterLockSlim, ReadCheckNode> runningMethods;
 
 
+        public override bool CompileTimeValidate(Type type)
+        {
+            // TODO: All fields should be private or protected unless marked as [ThreadSafe]. [Error]
+
+            // TODO: Fields cannot be accessed from a static method unless the method or the field is marked as [ThreadSafe]. [Warning]
+
+            return base.CompileTimeValidate(type);
+        }
+
         public override object CreateInstance( AdviceArgs aspectArgs )
         {
             ReaderWriterSynchronizedAttribute instance = new ReaderWriterSynchronizedAttribute();

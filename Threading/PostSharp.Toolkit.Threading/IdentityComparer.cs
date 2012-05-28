@@ -12,7 +12,7 @@ using System.Runtime.CompilerServices;
 
 namespace PostSharp.Toolkit.Threading
 {
-    internal class IdentityComparer<T> : IEqualityComparer<T>
+    internal sealed class IdentityComparer<T> : IEqualityComparer<T>
     {
         public static readonly IdentityComparer<T> Instance = new IdentityComparer<T>();
 

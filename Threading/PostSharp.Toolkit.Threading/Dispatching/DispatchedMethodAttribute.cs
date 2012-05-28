@@ -139,6 +139,8 @@ namespace PostSharp.Toolkit.Threading.Dispatching
                 }
                 else
                 {
+                    // TODO: Get rid of reference to assembly WindowsBase (use 'dynamic' and string-based reflection).
+
                     //Sometimes there's still no Dispatcher, even though Dispatcher is already available
 
                     // Cannot use Dispacther.CurrentDispatcher, because it might create a new Dispatcher

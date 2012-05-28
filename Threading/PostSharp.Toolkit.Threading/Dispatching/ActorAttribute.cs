@@ -20,7 +20,11 @@ namespace PostSharp.Toolkit.Threading.Dispatching
     [AspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     public sealed class ActorAttribute : TypeLevelAspect
     {
-        // TODO: Check that the attribute is applied on a class derived from Actor (should not be used manually anyway).
+        // TODO: Check that the attribute is applied on a class derived from Actor (should not be used manually anyway). [ERROR]
+
+        // TODO: Check that instance fields are only accessed by instance methods [WARNING]
+
+        // TODO: Check that static methods do not access methods not selected by SelectMethods [WARNING]
 
         public IEnumerable<MethodBase> SelectMethods( Type type )
         {

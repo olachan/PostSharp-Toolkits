@@ -61,6 +61,8 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
         private static readonly ReaderWriterLockSlim ignoredResourcesReaderWriterLock = new ReaderWriterLockSlim( LockRecursionPolicy.SupportsRecursion );
         private static bool disableDeadlockDetection;
 
+        // TODO: Define a TraceSwitch and a TraceSource, migrate from Debug.Print.
+
         /// <summary>Method to be invoked before starting to wait for a synchronization object.</summary>
         /// <param name="syncObject">The synchronization object that will be waited for.</param>
         /// <param name="syncObjectRole">
@@ -134,35 +136,47 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
         {
             ignoredResourcesReaderWriterLock.EnterWriteLock();
 
-            if ( ignoredResources.Add( resource ) )
-            {
-                graph.RemoveAdjecentEdges( resource, resourceType );
-            }
+            //TODO: Generate some debug warning on first call?
 
-            if ( ignoredResources.Count > 50 )
+            try
             {
-                ignoredResources.ClearNotAlive();
+                if ( ignoredResources.Add( resource ) )
+                {
+                    graph.RemoveAdjecentEdges( resource, resourceType );
+                }
+
                 if ( ignoredResources.Count > 50 )
                 {
-                    disableDeadlockDetection = true;
+                    ignoredResources.ClearNotAlive();
+                    if ( ignoredResources.Count > 50 )
+                    {
+                        disableDeadlockDetection = true;
+                        //TODO: Generate some debug warning
+                    }
                 }
             }
-
-            ignoredResourcesReaderWriterLock.ExitWriteLock();
+            finally
+            {
+                ignoredResourcesReaderWriterLock.ExitWriteLock();
+            }
         }
 
         private static void AddEdge( object from, ResourceType fromType, object to, ResourceType toType )
         {
             ignoredResourcesReaderWriterLock.EnterReadLock();
-
-            if ( ignoredResources.Contains( from ) || ignoredResources.Contains( to ) )
+            try
             {
-                return;
+                if ( ignoredResources.Contains( from ) || ignoredResources.Contains( to ) )
+                {
+                    return;
+                }
+
+                graph.AddEdge( from, fromType, to, toType );
             }
-
-            graph.AddEdge( from, fromType, to, toType );
-
-            ignoredResourcesReaderWriterLock.ExitReadLock();
+            finally
+            {
+                ignoredResourcesReaderWriterLock.ExitReadLock();
+            }
         }
 
 
@@ -205,18 +219,21 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
         {
             if ( disableDeadlockDetection )
             {
+                //TODO: Don't print it repeatedly. Silently ignore for automatic detection; exception for manual calls?
                 Debug.Print( "Deadlock detection canceled because there are too many ignored resources" );
                 return;
             }
 
             if ( Interlocked.CompareExchange( ref detectionPending, 1, 0 ) == 1 )
             {
+                //TODO: Do we need to print it?
                 Debug.Print( "Deadlock detection skipped because another one is pending." );
                 return;
             }
 
             try
             {
+                //TODO: Do we need to print it?
                 Debug.Print( "Deadlock detection started in thread {0}.", Thread.CurrentThread.ManagedThreadId );
 
                 IEnumerable<Edge> cycle;
@@ -278,6 +295,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
                     }
                     catch ( Exception e )
                     {
+                        //TODO: Are we fine with it?
                         Debug.Print( "Suspend thrown an exception: {0}", e.Message );
                     }
                 }
@@ -320,7 +338,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
                     {
                         thread.Abort( message );
                     }
-                    catch ( Exception )
+                    catch ( ThreadStateException ) //The thread's suspended - we do know it
                     {
                     }
 #pragma warning disable 612,618

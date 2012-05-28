@@ -38,11 +38,6 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
@@ -59,6 +54,7 @@
     <Compile Include="DeadlockDetection\WeakHashSet.cs" />
     <Compile Include="DeadlockDetection\Graph.cs" />
     <Compile Include="Dispatching\DispatcherWrapper.cs" />
+    <Compile Include="Dispatching\IAction.cs" />
     <Compile Include="Dispatching\IDispatcher.cs" />
     <Compile Include="Dispatching\ReflectionHelper.cs" />
     <Compile Include="Dispatching\SynchronizationContextWrapper.cs" />

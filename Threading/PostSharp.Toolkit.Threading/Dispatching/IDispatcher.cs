@@ -15,9 +15,4 @@ namespace PostSharp.Toolkit.Threading.Dispatching
         void Invoke( IAction action );
         void BeginInvoke( IAction action );
     }
-
-    public interface IAction
-    {
-        void Invoke();
-    }
 }

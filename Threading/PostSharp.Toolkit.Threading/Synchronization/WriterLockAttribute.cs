@@ -31,6 +31,8 @@ namespace PostSharp.Toolkit.Threading.Synchronization
     [AspectTypeDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute))]
     public sealed class WriterLockAttribute : ReaderWriterLockAttribute
     {
+        // TODO: Should be implemented as an upgraded upgradeable reader lock to allow for ObserverLock.
+
         /// <summary>
         /// Handler executed before execution of the method to which the current custom attribute is applied.
         /// </summary>
@@ -78,8 +80,11 @@ namespace PostSharp.Toolkit.Threading.Synchronization
 
             public override void Invoke( ref object instance, Arguments arguments, object reserved )
             {
+                
                 ((ReaderWriterLockSlim) instance).EnterWriteLock();
             }
         }
     }
+
+    // TODO: UpgradeableReaderLock and ObserverLock
 }

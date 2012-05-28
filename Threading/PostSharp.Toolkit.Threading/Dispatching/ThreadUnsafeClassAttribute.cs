@@ -40,7 +40,7 @@ namespace PostSharp.Toolkit.Threading.Dispatching
     /// </para>
     /// </remarks>
     [Conditional( "DEBUG" ), Conditional( "DEBUG_THREADING" )]
-    [MulticastAttributeUsage( MulticastTargets.Class | MulticastTargets.Struct, PersistMetaData = true )]
+    [MulticastAttributeUsage( MulticastTargets.Class | MulticastTargets.Struct, PersistMetaData = true, Inheritance = MulticastInheritance.Strict)]
     [AspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     public class ThreadUnsafeClassAttribute : TypeLevelAspect
     {
@@ -64,10 +64,23 @@ namespace PostSharp.Toolkit.Threading.Dispatching
 
         public override bool CompileTimeValidate( Type type )
         {
-            // TODO: All fields of an unsafe class should be private.
+
+            // TODO: Define an attribute [ThreadUnsafeMethodAttribute] used to mark non-public methods.
+
+            // TODO: [ThreadUnsafeMethod] cannot be used on static methods. [Error]
+
+            // TODO: [ThreadUnsafeMethod] should not be used if policy is "Static". [Warning]
+
+            // TODO: All fields should be private or protected unless marked as [ThreadSafe]. [Error]
+
+            // TODO: If policy is "Instance", fields cannot be accessed from a static method unless marked as [ThreadSafe]. [Warning]
+
+            // TODO: If policy is "Instance", static methods cannot access instance methods that are not public or internal or [ThreadUnsafeMethod]. [Warning]
+
             return base.CompileTimeValidate( type );
         }
 
+        // TODO: Replace MulticastPointcut to SelectMethod, take [ThreadSafe] (exclude inconditionally) and [ThreadUnsafeMethod] (include) into account.
 
         [OnMethodEntryAdvice,
          MulticastPointcut(
@@ -129,6 +142,8 @@ namespace PostSharp.Toolkit.Threading.Dispatching
         private IEnumerable<MethodBase> SelectStaticMethods( Type type )
         {
             if ( this.policy == ThreadUnsafePolicy.Instance ) return null;
+
+            // TODO: Check for absence of [ThreadSafe].
 
             return type.GetMethods( BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly ).Where(
                 m => ReflectionHelper.IsInternalOrPublic( m, true ) );
