@@ -10,46 +10,40 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 using PostSharp.Extensibility;
+using PostSharp.Reflection;
 
 namespace PostSharp.Toolkit.Threading.DeadlockDetection
 {
-    // TODO: find a way of ensuring only one instance of DeadlockDetectionPolicy is applyed per assembly
     [Serializable]
-    public class DeadlockDetectionPolicy : MethodLevelAspect, IAspectProvider
+    public sealed class DeadlockDetectionPolicy : AssemblyLevelAspect, IAspectProvider
     {
-        // Can not be static
-        private readonly Dictionary<Type, Type> typesToInstrument;
-
-        public DeadlockDetectionPolicy()
+        public override bool CompileTimeValidate( _Assembly assembly )
         {
-            this.typesToInstrument = new Dictionary<Type, Type>
-                                    {
-                                        {typeof(Mutex), typeof(MutexEnhancements)},
-                                        {typeof(WaitHandle), typeof(WaitHandleEnhancements)},
-                                        {typeof(Monitor), typeof(MonitorEnhancements)},
-                                        {typeof(ReaderWriterLockSlim), typeof(ReaderWriterEnhancements)},
-                                        {typeof(ReaderWriterLock), typeof(ReaderWriterEnhancements)},
-                                        {typeof(Thread), typeof(ThreadEnhancements)},
-                                    };
+            if ( assembly != PostSharpEnvironment.CurrentProject.GetTargetAssembly( false ) )
+            {
+                Message.Write( assembly, SeverityType.Error, "PSTK01", "Aspect DeadlockDetectionPolicy must be added to the current assembly only." );
+                return false;
+            }
+            return true;
         }
 
         public IEnumerable<AspectInstance> ProvideAspects( object targetElement )
         {
-            MethodBase method = (MethodBase)targetElement;
+            yield return CreateAspectInstance( typeof(Mutex), typeof(MutexEnhancements) );
+            yield return CreateAspectInstance( typeof(WaitHandle), typeof(WaitHandleEnhancements) );
+            yield return CreateAspectInstance( typeof(Monitor), typeof(MonitorEnhancements) );
+            yield return CreateAspectInstance( typeof(ReaderWriterLockSlim), typeof(ReaderWriterEnhancements) );
+            yield return CreateAspectInstance( typeof(Thread), typeof(ThreadEnhancements) );
+        }
 
-            if (!this.typesToInstrument.ContainsKey(method.DeclaringType))
-            {
-                yield break;
-            }
-
-            var aspectType = this.typesToInstrument[method.DeclaringType];
-            this.typesToInstrument.Remove(method.DeclaringType);
-            yield return new AspectInstance(method.DeclaringType, Activator.CreateInstance(aspectType) as IAspect);
+        private static AspectInstance CreateAspectInstance( Type targetType, Type aspectType )
+        {
+            return new AspectInstance( targetType, new ObjectConstruction( aspectType ), null );
         }
 
         internal static class LockAspectHelper
@@ -102,10 +96,10 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
                             if ( args.Arguments.Count == 0 ||
                                  (args.Arguments[0] is int && (int) args.Arguments[0] == Timeout.Infinite) )
                             {
-                                Thread thread = args.Instance as Thread;
+                                Thread thread = (Thread) args.Instance;
                                 LockAspectHelper.NoTimeoutAcquire(
                                     () => DeadlockMonitor.EnterWaiting( thread, ResourceType.Thread ),
-                                    timeout => thread.Join( timeout ),
+                                    thread.Join,
                                     () => { },
                                     () => DeadlockMonitor.ExitWaiting( thread, ResourceType.Thread ) );
                             }
@@ -160,7 +154,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
                 DeadlockMonitor.ExecuteAction(
                     () =>
                         {
-                            WaitHandle[] waitHandles = args.Arguments[0] as WaitHandle[];
+                            WaitHandle[] waitHandles = (WaitHandle[]) args.Arguments[0];
 
                             if ( args.Arguments.Count == 1 ||
                                  (args.Arguments[0] is int && (int) args.Arguments[0] == Timeout.Infinite) )
@@ -232,7 +226,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "Release" )]
             public void OnRelease( MethodExecutionArgs args )
             {
-                DeadlockMonitor.ExecuteAction(() => DeadlockMonitor.ExitAcquired(args.Instance, ResourceType.Lock));
+                DeadlockMonitor.ExecuteAction( () => DeadlockMonitor.ExitAcquired( args.Instance, ResourceType.Lock ) );
             }
         }
 
@@ -328,7 +322,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "Exit" )]
             public void OnExit( MethodExecutionArgs args )
             {
-                DeadlockMonitor.ExecuteAction(() => DeadlockMonitor.ExitAcquired(args.Arguments[0], ResourceType.Lock));
+                DeadlockMonitor.ExecuteAction( () => DeadlockMonitor.ExitAcquired( args.Arguments[0], ResourceType.Lock ) );
             }
         }
 
@@ -341,37 +335,37 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "regex:^EnterReadLock|^AcquireReaderLock" )]
             public void OnReaderLockEnter( MethodInterceptionArgs args )
             {
-                DeadlockMonitor.ExecuteAction(() => OnEnter(args, ResourceType.Read));
+                DeadlockMonitor.ExecuteAction( () => OnEnter( args, ResourceType.Read ) );
             }
 
             [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "EnterUpgradeableReadLock" )]
             public void OnUpgradeableReadEnter( MethodInterceptionArgs args )
             {
-                DeadlockMonitor.ExecuteAction(() => OnEnter(args, ResourceType.UpgradeableRead));
+                DeadlockMonitor.ExecuteAction( () => OnEnter( args, ResourceType.UpgradeableRead ) );
             }
 
             [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "regex:^EnterWriteLock|^AcquireWriterLock|^UpgradeToWriterLock" )]
             public void OnWriterLockEnter( MethodInterceptionArgs args )
             {
-                DeadlockMonitor.ExecuteAction(() => OnEnter(args, ResourceType.Write));
+                DeadlockMonitor.ExecuteAction( () => OnEnter( args, ResourceType.Write ) );
             }
 
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "regex:^ExitReadLock|^ReleaseReaderLock" )]
             public void OnReaderLockExit( MethodExecutionArgs args )
             {
-                DeadlockMonitor.ExecuteAction(() => ReaderWriterTypeDeadlockMonitorHelper.ExitAcquired(args.Instance, ResourceType.Read));
+                DeadlockMonitor.ExecuteAction( () => ReaderWriterTypeDeadlockMonitorHelper.ExitAcquired( args.Instance, ResourceType.Read ) );
             }
 
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "ExitUpgradeableReadLock" )]
             public void OnUpgradeableReadLockExit( MethodExecutionArgs args )
             {
-                DeadlockMonitor.ExecuteAction(() => ReaderWriterTypeDeadlockMonitorHelper.ExitAcquired(args.Instance, ResourceType.UpgradeableRead));
+                DeadlockMonitor.ExecuteAction( () => ReaderWriterTypeDeadlockMonitorHelper.ExitAcquired( args.Instance, ResourceType.UpgradeableRead ) );
             }
 
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "regex:^ExitWriteLock|^ReleaseWriterLock|^DowngradeFromWriterLock" )]
             public void OnWriterLockExit( MethodExecutionArgs args )
             {
-                DeadlockMonitor.ExecuteAction(() => ReaderWriterTypeDeadlockMonitorHelper.ExitAcquired(args.Instance, ResourceType.Write));
+                DeadlockMonitor.ExecuteAction( () => ReaderWriterTypeDeadlockMonitorHelper.ExitAcquired( args.Instance, ResourceType.Write ) );
             }
 
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "TryEnterReadLock" )]
@@ -421,11 +415,11 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
             {
                 Func<int, bool> acquireLock;
 
-                if (args.Arguments.Count == 0) // when arguments count == 0 it must be ReaderWriterLockSlim
+                if ( args.Arguments.Count == 0 ) // when arguments count == 0 it must be ReaderWriterLockSlim
                 {
                     acquireLock = timeout =>
                                       {
-                                          bool lockTaken = false;
+                                          bool lockTaken;
                                           ReaderWriterLockSlim rwl = (ReaderWriterLockSlim) args.Instance;
                                           switch ( type )
                                           {
@@ -448,7 +442,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
                 {
                     acquireLock = timeout =>
                                       {
-                                          bool lockTaken = false;
+                                          bool lockTaken;
                                           args.Arguments.SetArgument( 0, timeout );
 
                                           try
