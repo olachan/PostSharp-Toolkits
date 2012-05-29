@@ -9,6 +9,7 @@
 
 using System.Reflection;
 using System.Runtime.InteropServices;
+using PostSharp.Toolkit.Threading;
 using PostSharp.Toolkit.Threading.DeadlockDetection;
 
 // General Information about an assembly is controlled through the following 
