@@ -11,7 +11,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using PostSharp.Toolkit.Threading.Dispatching;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {
@@ -235,7 +234,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         }
 
 
-        [ThreadUnsafeClass]
+        [ThreadUnsafeObject]
         public class SingleThreadedClassObject
         {
             private int _testProperty;
@@ -274,7 +273,7 @@ namespace PostSharp.Toolkit.Threading.Tests
 //            }
 //        }
 
-        [ThreadUnsafeClass( ThreadUnsafePolicy.Static )]
+        [ThreadUnsafeObject( ThreadUnsafePolicy.Static )]
         public class SingleThreadedStaticMethodsObject
         {
             public static void StaticTypeDependentMethod()
@@ -288,7 +287,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             }
         }
 
-        [ThreadUnsafeClass]
+        [ThreadUnsafeObject]
         public class SingleThreadedMethodsObject
         {
             public void InstanceDependentMethod()
@@ -313,7 +312,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         }
 
 
-        [ThreadUnsafeClass( ThreadUnsafePolicy.Static )]
+        [ThreadUnsafeObject( ThreadUnsafePolicy.Static )]
         public class SingleThreadedStaticMethodsDerivedObject : SingleThreadedStaticMethodsObject
         {
             public static void DerivedStaticTypeDependentMethod()
@@ -327,7 +326,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             }
         }
 
-        [ThreadUnsafeClass]
+        [ThreadUnsafeObject]
         public class SingleThreadedMethodsDerivedObject : SingleThreadedMethodsObject
         {
             public void DerivedInstanceDependentMethod()

@@ -11,7 +11,7 @@ using System;
 using System.Threading;
 using PostSharp.Aspects;
 
-namespace PostSharp.Toolkit.Threading.Dispatching
+namespace PostSharp.Toolkit.Threading
 {
     internal class WorkItem : IAction
     {
@@ -39,13 +39,6 @@ namespace PostSharp.Toolkit.Threading.Dispatching
             this.instance = args.Instance;
             this.binding = args.Binding;
             this.arguments = clone ? args.Arguments.Clone() : args.Arguments;
-        }
-
-        public WorkItem( object instance, IMethodBinding binding, Arguments arguments )
-        {
-            this.instance = instance;
-            this.binding = binding;
-            this.arguments = arguments;
         }
 
         public void Invoke()

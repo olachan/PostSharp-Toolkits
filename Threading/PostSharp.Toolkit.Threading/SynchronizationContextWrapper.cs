@@ -9,7 +9,7 @@
 
 using System.Threading;
 
-namespace PostSharp.Toolkit.Threading.Dispatching
+namespace PostSharp.Toolkit.Threading
 {
     internal class SynchronizationContextWrapper : IDispatcher
     {

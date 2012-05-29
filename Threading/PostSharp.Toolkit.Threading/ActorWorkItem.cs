@@ -1,7 +1,7 @@
 using System;
 using PostSharp.Aspects;
 
-namespace PostSharp.Toolkit.Threading.Dispatching
+namespace PostSharp.Toolkit.Threading
 {
     internal class ActorWorkItem : WorkItem
     {

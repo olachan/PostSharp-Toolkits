@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 using Microsoft.Win32.SafeHandles;
 using NUnit.Framework;
 using PostSharp.Toolkit.Threading.DeadlockDetection;
-using PostSharp.Toolkit.Threading.Synchronization;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {

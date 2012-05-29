@@ -13,7 +13,7 @@ using PostSharp.Aspects;
 using PostSharp.Extensibility;
 using PostSharp.Toolkit.Threading.DeadlockDetection;
 
-namespace PostSharp.Toolkit.Threading.Synchronization
+namespace PostSharp.Toolkit.Threading
 {
     [Serializable]
     [MulticastAttributeUsage( MulticastTargets.Method, TargetMemberAttributes = MulticastAttributes.Instance )]

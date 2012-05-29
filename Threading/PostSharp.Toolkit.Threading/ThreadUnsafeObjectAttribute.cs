@@ -19,8 +19,9 @@ using PostSharp.Aspects.Advices;
 using PostSharp.Aspects.Configuration;
 using PostSharp.Aspects.Serialization;
 using PostSharp.Extensibility;
+using PostSharp.Reflection;
 
-namespace PostSharp.Toolkit.Threading.Dispatching
+namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
     /// Custom attribute that, when applied on a type, ensures that only one thread executes in methods of this type.
@@ -42,12 +43,12 @@ namespace PostSharp.Toolkit.Threading.Dispatching
     [Conditional( "DEBUG" ), Conditional( "DEBUG_THREADING" )]
     [MulticastAttributeUsage( MulticastTargets.Class | MulticastTargets.Struct, PersistMetaData = true, Inheritance = MulticastInheritance.Strict)]
     [AspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
-    public class ThreadUnsafeClassAttribute : TypeLevelAspect
+    public sealed class ThreadUnsafeObjectAttribute : TypeLevelAspect
     {
         private readonly ThreadUnsafePolicy policy;
-        private static readonly ConcurrentDictionary<object, Thread> locks = new ConcurrentDictionary<object, Thread>( IdentityComparer<object>.Instance );
+        private static readonly ConcurrentDictionary<object, ThreadHandle> locks = new ConcurrentDictionary<object, ThreadHandle>( IdentityComparer<object>.Instance );
 
-        public ThreadUnsafeClassAttribute() : this( ThreadUnsafePolicy.Instance )
+        public ThreadUnsafeObjectAttribute() : this( ThreadUnsafePolicy.Instance )
         {
         }
 
@@ -56,7 +57,7 @@ namespace PostSharp.Toolkit.Threading.Dispatching
             get { return this.policy; }
         }
 
-        public ThreadUnsafeClassAttribute( ThreadUnsafePolicy policy )
+        public ThreadUnsafeObjectAttribute( ThreadUnsafePolicy policy )
         {
             this.policy = policy;
         }
@@ -73,9 +74,13 @@ namespace PostSharp.Toolkit.Threading.Dispatching
 
             // TODO: All fields should be private or protected unless marked as [ThreadSafe]. [Error]
 
-            // TODO: If policy is "Instance", fields cannot be accessed from a static method unless marked as [ThreadSafe]. [Warning]
+            // TODO: If policy is "Instance", fields cannot be accessed from a static method unless method or field marked as [ThreadSafe]. [Warning]
 
             // TODO: If policy is "Instance", static methods cannot access instance methods that are not public or internal or [ThreadUnsafeMethod]. [Warning]
+
+            // TODO: If policy is "Instance", fields of instance A cannot be accessed from an instance method of instance B (A!=B) unless method or field marked as [ThreadSafe]. [Warning]
+
+            // TODO: (?) dynamic field-access check
 
             return base.CompileTimeValidate( type );
         }
@@ -103,27 +108,26 @@ namespace PostSharp.Toolkit.Threading.Dispatching
                 syncObject = args.Method.DeclaringType;
             }
 
-            Thread currentThread = Thread.CurrentThread;
-            bool lockAcquired = false;
-            locks.AddOrUpdate( syncObject, o =>
-                                               {
-                                                   lockAcquired = true;
-                                                   return currentThread;
-                                               },
+            ThreadHandle currentThread = new ThreadHandle(Thread.CurrentThread);
+
+            ThreadHandle actualThread = locks.AddOrUpdate(syncObject, o => currentThread,
                                ( o, thread ) =>
                                    {
-                                       if ( thread != currentThread )
+                                       if ( thread.Thread != currentThread.Thread )
                                            throw new ThreadUnsafeException();
+
+                                       // Same thread, but different ThreadHandle: we are in a nested call on the same thread.
                                        return thread;
                                    } );
 
 
-            if ( lockAcquired )
+            if (actualThread == currentThread)
             {
                 args.MethodExecutionTag = syncObject;
             }
         }
 
+       
         [OnMethodExitAdvice( Master = "OnEnterInstanceMethod" )]
         public void OnExitInstanceMethod( MethodExecutionArgs args )
         {
@@ -134,7 +138,7 @@ namespace PostSharp.Toolkit.Threading.Dispatching
         {
             if ( args.MethodExecutionTag != null )
             {
-                Thread thread;
+                ThreadHandle thread;
                 locks.TryRemove( args.MethodExecutionTag, out thread );
             }
         }
@@ -161,5 +165,16 @@ namespace PostSharp.Toolkit.Threading.Dispatching
         {
             ExitLock( args );
         }
+
+        sealed class ThreadHandle
+        {
+            public readonly Thread Thread;
+
+            public ThreadHandle(Thread thread)
+            {
+                this.Thread = thread;
+            }
+        }
+
     }
 }

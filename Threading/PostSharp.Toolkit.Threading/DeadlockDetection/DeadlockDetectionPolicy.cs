@@ -26,7 +26,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
         {
             if ( assembly != PostSharpEnvironment.CurrentProject.GetTargetAssembly( false ) )
             {
-                Message.Write( assembly, SeverityType.Error, "PSTK01", "Aspect DeadlockDetectionPolicy must be added to the current assembly only." );
+                Message.Write( assembly, SeverityType.Error, "THR001", "Aspect DeadlockDetectionPolicy must be added to the current assembly only." );
                 return false;
             }
             return true;

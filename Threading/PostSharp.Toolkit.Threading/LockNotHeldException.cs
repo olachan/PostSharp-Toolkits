@@ -10,7 +10,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace PostSharp.Toolkit.Threading.Synchronization
+namespace PostSharp.Toolkit.Threading
 {
     [Serializable]
     public class LockNotHeldException : Exception

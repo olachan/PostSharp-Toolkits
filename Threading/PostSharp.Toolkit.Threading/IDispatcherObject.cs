@@ -7,7 +7,7 @@
 
 #endregion
 
-namespace PostSharp.Toolkit.Threading.Dispatching
+namespace PostSharp.Toolkit.Threading
 {
     public interface IDispatcherObject
     {

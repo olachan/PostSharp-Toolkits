@@ -14,7 +14,7 @@ using PostSharp.Aspects.Dependencies;
 using PostSharp.Aspects.Internals;
 using PostSharp.Toolkit.Threading.DeadlockDetection;
 
-namespace PostSharp.Toolkit.Threading.Synchronization
+namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
     /// Custom attribute that, when applied on a method, specifies that it should be executed in

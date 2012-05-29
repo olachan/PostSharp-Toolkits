@@ -7,7 +7,7 @@
 
 #endregion
 
-namespace PostSharp.Toolkit.Threading.Dispatching
+namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
     /// Exception thrown when an attempt to simultaneously access a single-threaded method is detected.

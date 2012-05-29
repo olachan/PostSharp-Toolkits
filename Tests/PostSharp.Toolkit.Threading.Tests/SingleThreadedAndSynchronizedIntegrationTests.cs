@@ -12,7 +12,6 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using PostSharp.Toolkit.Threading.Dispatching;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {
@@ -95,7 +94,7 @@ namespace PostSharp.Toolkit.Threading.Tests
 //        }
     }
 
-    [ThreadUnsafeClass]
+    [ThreadUnsafeObject]
     public class ThreadUnsafeClass
     {
         public void SingleThreadedInstanceDependentMethod()
@@ -109,7 +108,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         }
     }
 
-    [ThreadUnsafeClass( ThreadUnsafePolicy.Static )]
+    [ThreadUnsafeObject( ThreadUnsafePolicy.Static )]
     public static class ThreadUnsafeStaticClass
     {
         public static void SingleThreadedStaticTypeDependentMethod()

@@ -20,13 +20,13 @@ using PostSharp.Aspects.Serialization;
 using PostSharp.Extensibility;
 using PostSharp.Reflection;
 
-namespace PostSharp.Toolkit.Threading.Dispatching
+namespace PostSharp.Toolkit.Threading
 {
     [AttributeUsage( AttributeTargets.Method )]
     [ProvideAspectRole( StandardRoles.Threading )]
     [Serializable]
     [MulticastAttributeUsage( MulticastTargets.Method, TargetExternalMemberAttributes = MulticastAttributes.Internal )]
-    public class DispatchedMethodAttribute : MethodInterceptionAspect, IAspectProvider
+    public sealed class DispatchedMethodAttribute : MethodInterceptionAspect, IAspectProvider
     {
         private static readonly TypeLevelAspectRepository typeLevelAspects;
 
@@ -52,21 +52,11 @@ namespace PostSharp.Toolkit.Threading.Dispatching
 
             if ( this.IsAsync && methodInfo.ReturnType != typeof(void) )
             {
-                Message.Write( method, SeverityType.Error, "THREADING.DISPATCH02",
+                Message.Write( method, SeverityType.Error, "THR001",
                                "Asynchronous DispatchedMethodAttribute cannot be applied to {0}.{1}. It can only be applied to void methods.",
                                method.DeclaringType.Name, method.Name );
                 return false;
             }
-
-//            if (!typeof(IDispatcherObject).IsAssignableFrom( method.DeclaringType ) &&
-//                    method.DeclaringType.GetCustomAttributes(typeof(DispatcherObjectAspect), true).Length == 0)
-//            {
-//
-//                Message.Write(method, SeverityType.Error, "THREADING.DISPATCH03",
-//                               "DispatchedMethodAttribute cannot be applied to {0}.{1}. It can only be applied to methods in classes implementing "+
-//                               "IDispatcherObject or marked with DispatcherObjectAspect.",
-//                               method.DeclaringType.Name, method.Name);
-//            }
 
             return base.CompileTimeValidate( method );
         }

@@ -9,7 +9,7 @@
 
 using System.Reflection;
 
-namespace PostSharp.Toolkit.Threading.Dispatching
+namespace PostSharp.Toolkit.Threading
 {
     internal static class ReflectionHelper
     {

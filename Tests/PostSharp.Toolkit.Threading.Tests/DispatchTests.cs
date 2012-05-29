@@ -15,8 +15,6 @@ using System.Windows.Forms;
 using System.Windows.Threading;
 
 using NUnit.Framework;
-using PostSharp.Toolkit.Threading.Dispatching;
-
 using Brushes = System.Windows.Media.Brushes;
 using FormsApplication = System.Windows.Forms.Application;
 

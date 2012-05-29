@@ -8,14 +8,11 @@
 #endregion
 
 using System;
-using System.Collections.Concurrent;
-using System.Threading;
-using System.Threading.Tasks;
 using PostSharp.Extensibility;
 
 #pragma warning disable 420
 
-namespace PostSharp.Toolkit.Threading.Dispatching
+namespace PostSharp.Toolkit.Threading
 {
     [Actor(AttributeInheritance = MulticastInheritance.Strict)]
     public abstract class Actor : IDispatcherObject

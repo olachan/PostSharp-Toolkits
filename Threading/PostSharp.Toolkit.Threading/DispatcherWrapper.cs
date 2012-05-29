@@ -10,7 +10,7 @@
 using System;
 using System.Windows.Threading;
 
-namespace PostSharp.Toolkit.Threading.Dispatching
+namespace PostSharp.Toolkit.Threading
 {
     internal class DispatcherWrapper : IDispatcher
     {

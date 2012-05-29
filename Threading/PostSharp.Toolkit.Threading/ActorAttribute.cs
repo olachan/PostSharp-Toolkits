@@ -14,8 +14,10 @@ using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 using PostSharp.Aspects.Configuration;
 using PostSharp.Aspects.Serialization;
+using PostSharp.Reflection;
+using System.Linq;
 
-namespace PostSharp.Toolkit.Threading.Dispatching
+namespace PostSharp.Toolkit.Threading
 {
     [AspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     public sealed class ActorAttribute : TypeLevelAspect
@@ -25,6 +27,8 @@ namespace PostSharp.Toolkit.Threading.Dispatching
         // TODO: Check that instance fields are only accessed by instance methods [WARNING]
 
         // TODO: Check that static methods do not access methods not selected by SelectMethods [WARNING]
+
+        // TODO: Cope with callbacks (delegate): make dispatchable if we can, otherwise check that thread is ok (IDispatcher.CheckAccess())
 
         public IEnumerable<MethodBase> SelectMethods( Type type )
         {
@@ -37,6 +41,11 @@ namespace PostSharp.Toolkit.Threading.Dispatching
 
                     yield return method;
                 }
+
+                /*
+                ReflectionSearch.GetMethodsUsingDeclaration( method ).Any(
+                    reference => (reference.Instructions & MethodUsageInstructions.LoadMethodAddress | MethodUsageInstructions.LoadMethodAddressVirtual) != 0 );
+                 */
             }
         }
 
