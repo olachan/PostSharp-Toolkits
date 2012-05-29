@@ -1,5 +1,5 @@
 ﻿// @ExpectedMessage(THR001)
-
+// @ExpectedMessage(PS0060)
 
 namespace PostSharp.Toolkit.Threading.BuildTests.Dispatched
 {

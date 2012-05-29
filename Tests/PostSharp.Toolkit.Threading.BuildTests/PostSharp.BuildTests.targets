@@ -1,7 +1,48 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0" InitialTargets="PrepareTest">
 
-  <Import Project="..\..\Dependencies\MSBuildCommunityTasks\MSBuild.Community.Tasks.Targets"/>
+
+  <UsingTask TaskName="RegexMatch" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+    <ParameterGroup>
+      <Expression ParameterType="System.String" />
+      <Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+      <Matches ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <!--<Reference Include="" />-->
+      <Using Namespace="System"/>
+      <Using Namespace="System.Diagnostics"/>
+      <Using Namespace="System.Collections.Generic"/>
+      <Using Namespace="System.IO"/>
+      <Using Namespace="System.Text.RegularExpressions"/>
+      <Using Namespace="Microsoft.Build.Framework"/>
+      <Using Namespace="Microsoft.Build.Utilities"/>
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+       Regex regex = new Regex( this.Expression, RegexOptions.Multiline );
+
+            foreach ( ITaskItem file in this.Files )
+            {
+                string content = File.ReadAllText( file.ItemSpec );
+                MatchCollection regexMatches = regex.Matches( content );
+                List<ITaskItem> matchesList = new List<ITaskItem>();
+
+                foreach ( Match match in regexMatches )
+                {
+                    matchesList.Add( new TaskItem( match.Groups[1].Value ) );
+                }
+
+                this.Matches = matchesList.ToArray();
+            }
+
+            return true;
+        
+]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+
   <ItemGroup>
     <Source Include="$(Source)"/>
   </ItemGroup>
@@ -77,25 +118,20 @@
     <MakeDir Directories="$(OutputPath)"/>
     
     
-    <ReadLinesFromFile File="$(Source)">
-      <Output TaskParameter="Lines" ItemName="SourceLines"/>
-    </ReadLinesFromFile>
-
-
-    <RegexMatch Input="@(SourceLines)" Expression="@ExpectedMessage\((\w+)\)">
-      <Output TaskParameter="Output" ItemName="_ExpectedMessages"/>
+    <RegexMatch Files="$(Source)" Expression="@ExpectedMessage\((\w+)\)">
+      <Output TaskParameter="Matches" ItemName="_ExpectedMessages"/>
     </RegexMatch>
 
     <Message Text="Expected Messages: @(_ExpectedMessages)"/>
 
-    <RegexMatch Input="@(SourceLines)" Expression="(@Unsafe)">
-      <Output TaskParameter="Output" PropertyName="_Unsafe"/>
+    <RegexMatch Files="$(Source)" Expression="(@Unsafe)">
+      <Output TaskParameter="Matches" PropertyName="_Unsafe"/>
     </RegexMatch>
 
     <Message Text="Unsafe: $(_Unsafe)" />
 
-    <RegexMatch Input="@(SourceLines)" Expression="@License\((\w+)\)">
-      <Output TaskParameter="Output" PropertyName="_License"/>
+    <RegexMatch Files="$(Source)" Expression="@License\((\w+)\)">
+      <Output TaskParameter="Matches" PropertyName="_License"/>
     </RegexMatch>
 
     <Message Text="License: $(_License)"/>

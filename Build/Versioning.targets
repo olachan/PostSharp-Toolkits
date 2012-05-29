@@ -150,9 +150,7 @@
       <AssemblyVersionContent>
       <![CDATA[
 [assembly: System.Reflection.AssemblyVersion( "$(MajorVersion).0.0" )]
-#if !SMALL
 [assembly: System.Reflection.AssemblyFileVersion( "$(Version)" )]
-#endif
 ]]>
       </AssemblyVersionContent>
     </PropertyGroup>
