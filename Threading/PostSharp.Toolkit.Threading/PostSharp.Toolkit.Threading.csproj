@@ -62,6 +62,7 @@
     <Compile Include="ReflectionHelper.cs" />
     <Compile Include="SynchronizationContextWrapper.cs" />
     <Compile Include="IdentityComparer.cs" />
+    <Compile Include="ThreadingMessageSource.cs" />
     <Compile Include="ThreadSafeAttribute.cs" />
     <Compile Include="ThreadUnsafeMethodAttribute.cs" />
     <Compile Include="ThreadUnsafeObjectAttribute.cs" />
