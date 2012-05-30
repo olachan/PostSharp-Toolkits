@@ -1,48 +1,9 @@
 # ﻿PostSharp Toolkits
 
+PostSharp Toolkits provides development team with ready-made, tested and optimized solutions to most common cross-cutting concerns of business applications.
 
-Welcome to PostSharp Toolkits!
+For more information, see our [Wiki on GitHub] (https://github.com/sharpcrafters/PostSharp-Toolkits/wiki).
 
-## What are PostSharp Toolkits?
+## Licensing
 
-
-PostSharp Toolkits are a collection of ready-made solutions for adding logging, exception handling and performance monitoring to your application with no changes to your source code!
-
-Powered by [PostSharp](http://www.sharpcrafters.com), the most complete AOP solution for .NET, the PostSharp Toolkits build upon the raw power of Aspect-Oriented Programming to seamlessly apply those solutions throughout your application.
-
-
-## What toolkits currently exist?
-
-Currently, we're working on the **PostSharp Diagnostics Toolkit** - an instrumentation toolkit that adds diagnostics feautres, such as logging, exception handling, performance counters and feature tracking to your application.
-
-The PostSharp Diagnostics Toolkit includes pluggable support for the leading logging frameworks, such as NLog. Support for additional frameworks is coming soon!
-
-## How to install the PostSharp Diagnostics Toolkit?
-
-The **PostSharp Diagnostics Toolkit** is available on NuGet:
-
-![PostSharp Diagnostics Toolkit](http://i.imgur.com/NSWXm.png)
-
-NLog support is available via the **PostSharp Diagnostics Toolkit for NLog** package:
-
-![PostSharp Diagnostics Toolkit for NLog](http://i.imgur.com/cfNDL.png)
-
-Log4Net support is available via the **PostSharp Diagnostics Toolkit for Log4Net** package:
-
-![PostSharp Diagnostics Toolkit for Log4Net](http://i.imgur.com/Oq9jP.png)
-
-### Getting started with PostSharp Diagnostics Toolkit for NLog
-
- - **Step 1:** Add the **PostSharp Diagnostics Toolkit for NLog** from NuGet to the assembly you wish to instrument. It downloads the required dependencies automatically (includes PostSharp 2.1 SP1, NLog and the required PostSharp Diagnostics Toolkit base).  
-
- - **Step 2:** Configure NLog using the desired configuration (see the [official documentation](http://nlog-project.org/wiki/Configuration_file) for support), or get the **NLog.Configuration** package from NuGet.
-
- - **Step 3:** Rebuild your project. It is now enhanced with logging capabilities!
-
-### How does this work?
-
-To learn about how do the PostSharp Toolkits work, please read the blog post [**Introducing PostSharp Toolkits**](http://www.sharpcrafters.com/blog/post/introducing-postsharp-toolkits.aspx) on the [SharpCrafters](http://www.sharpcrafters.com) website.
-
-# Questions? Suggestions? Bugs?
-
-Please visit our dedicated [PostSharp Toolkits Support Forum](http://www.sharpcrafters.com/forum/Group27.aspx) to let us know what you think!
+PostSharp Toolkits are built on the top of PostSharp. PostSharp Toolkits are free and open source (BSD 2-clause license, see [License.md] (https://github.com/sharpcrafters/PostSharp-Toolkits/blob/master/License.md)), but you need a commercial license of PostSharp to use them. 
