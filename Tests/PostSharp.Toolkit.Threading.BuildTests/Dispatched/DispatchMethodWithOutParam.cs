@@ -10,7 +10,7 @@ namespace PostSharp.Toolkit.Threading.BuildTests.Dispatched
         {
             public static int Main()
             {
-                return 1;
+                return 0;
             }
 
             [DispatchedMethod]
