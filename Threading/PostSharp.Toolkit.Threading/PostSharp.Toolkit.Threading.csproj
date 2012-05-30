@@ -63,6 +63,7 @@
     <Compile Include="SynchronizationContextWrapper.cs" />
     <Compile Include="IdentityComparer.cs" />
     <Compile Include="ThreadSafeAttribute.cs" />
+    <Compile Include="ThreadUnsafeMethodAttribute.cs" />
     <Compile Include="ThreadUnsafeObjectAttribute.cs" />
     <Compile Include="ThreadUnsafePolicy.cs" />
     <Compile Include="WorkItem.cs" />

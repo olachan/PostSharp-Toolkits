@@ -65,12 +65,28 @@ namespace PostSharp.Toolkit.Threading
 
         public override bool CompileTimeValidate( Type type )
         {
+            bool result = base.CompileTimeValidate(type);
 
-            // TODO: Define an attribute [ThreadUnsafeMethodAttribute] used to mark non-public methods.
+            // [ThreadUnsafeMethod] cannot be used on static methods. [Error]
+            IEnumerable<MethodInfo> staticThreadUnsafeMethods = type.GetMethods( BindingFlags.Static ).Where( m => m.GetCustomAttributes( typeof(ThreadUnsafeMethodAttribute), false ).Length != 0 );
 
-            // TODO: [ThreadUnsafeMethod] cannot be used on static methods. [Error]
+            foreach ( var staticThreadUnsafeMethod in staticThreadUnsafeMethods )
+            {
+                Message.Write(staticThreadUnsafeMethod, SeverityType.Error, "TH001", "Static method {0} can not be marked ThreadUnsafe", staticThreadUnsafeMethod.Name);
+                result = false;
+            }
 
-            // TODO: [ThreadUnsafeMethod] should not be used if policy is "Static". [Warning]
+            // [ThreadUnsafeMethod] should not be used if policy is "Static". [Warning]
+            if (this.Policy == ThreadUnsafePolicy.Static)
+            {
+                IEnumerable<MethodInfo> threadUnsafeMethods = type
+                    .GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                    .Where(m => m.GetCustomAttributes(typeof(ThreadUnsafeMethodAttribute), false).Length != 0);
+                foreach ( var threadUnsafeMethod in threadUnsafeMethods )
+                {
+                    Message.Write(threadUnsafeMethod, SeverityType.Warning, "THW002", "method {0} should not be marked ThreadUnsafe when ThreadUnsafePolicy is Static", threadUnsafeMethod.Name);
+                }
+            }
 
             // TODO: All fields should be private or protected unless marked as [ThreadSafe]. [Error]
 
@@ -82,17 +98,21 @@ namespace PostSharp.Toolkit.Threading
 
             // TODO: (?) dynamic field-access check
 
-            return base.CompileTimeValidate( type );
+            return result;
         }
 
-        // TODO: Replace MulticastPointcut to SelectMethod, take [ThreadSafe] (exclude inconditionally) and [ThreadUnsafeMethod] (include) into account.
-
-        [OnMethodEntryAdvice,
-         MulticastPointcut(
-             Attributes = MulticastAttributes.Instance | MulticastAttributes.Public | MulticastAttributes.Internal | MulticastAttributes.InternalOrProtected )]
+        [OnMethodEntryAdvice, MethodPointcut("SelectMethods")]
         public void OnEnterInstanceMethod( MethodExecutionArgs args )
         {
             TryEnterLock( this.policy, args );
+        }
+
+        private IEnumerable<MethodBase> SelectMethods(Type type)
+        {
+            return
+                type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                    .Where(m => m.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0)
+                    .Where(m => ReflectionHelper.IsInternalOrPublic(m, true) || m.GetCustomAttributes(typeof(ThreadUnsafeMethodAttribute), false).Length != 0);
         }
 
         private static void TryEnterLock( ThreadUnsafePolicy policy, MethodExecutionArgs args )
@@ -147,10 +167,9 @@ namespace PostSharp.Toolkit.Threading
         {
             if ( this.policy == ThreadUnsafePolicy.Instance ) return null;
 
-            // TODO: Check for absence of [ThreadSafe].
-
-            return type.GetMethods( BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly ).Where(
-                m => ReflectionHelper.IsInternalOrPublic( m, true ) );
+            return type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                    .Where(m => m.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0)
+                    .Where(m => ReflectionHelper.IsInternalOrPublic(m, true) || m.GetCustomAttributes(typeof(ThreadUnsafeMethodAttribute), false).Length != 0);
         }
 
 

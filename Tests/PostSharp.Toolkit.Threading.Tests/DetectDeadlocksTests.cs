@@ -50,7 +50,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                                 }
                             };
 
-            TestHelpers.InvokeSimultaneouslyAndWait( t1, t2 );
+            TestHelpers.InvokeSimultaneouslyAndWaitForDeadlockDetection( t1, t2 );
         }
 
         [Test]
@@ -83,7 +83,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                                 }
                             };
 
-            TestHelpers.InvokeSimultaneouslyAndWait( t1, t2 );
+            TestHelpers.InvokeSimultaneouslyAndWaitForDeadlockDetection( t1, t2 );
         }
 
         [Test]
@@ -121,7 +121,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                         SafeWaitHandle handle = mutex1.SafeWaitHandle;
                     } );
 
-            TestHelpers.InvokeSimultaneouslyAndWait( t1, t2, 500 );
+            TestHelpers.InvokeSimultaneouslyAndWaitForDeadlockDetection( t1, t2, 500 );
         }
 
         [Test]
@@ -151,7 +151,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                                 mutex2.ReleaseMutex();
                             };
 
-            TestHelpers.InvokeSimultaneouslyAndWait( t1, t2 );
+            TestHelpers.InvokeSimultaneouslyAndWaitForDeadlockDetection( t1, t2 );
         }
 
         [Test]
@@ -208,7 +208,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             //    }
             //};
 
-            TestHelpers.InvokeSimultaneouslyAndWait( t1, t2 );
+            TestHelpers.InvokeSimultaneouslyAndWaitForDeadlockDetection( t1, t2 );
         }
 
         [Test]
@@ -237,7 +237,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                                 }
                             };
 
-            TestHelpers.InvokeSimultaneouslyAndWait( t1, t2 );
+            TestHelpers.InvokeSimultaneouslyAndWaitForDeadlockDetection( t1, t2 );
         }
 
 //        [Test]
@@ -268,7 +268,7 @@ namespace PostSharp.Toolkit.Threading.Tests
 //                Debug.Print("lock released by thread {0}", Thread.CurrentThread.ManagedThreadId);
 //            };
 //
-//            TestHelpers.InvokeSimultaneouslyAndWait(t1, t2);
+//            TestHelpers.InvokeSimultaneouslyAndWaitForDeadlockDetection(t1, t2);
 //        }
     }
 
