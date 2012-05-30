@@ -41,7 +41,7 @@ namespace PostSharp.Toolkit.Threading
 
         public override bool CompileTimeValidate(Type type)
         {
-            // TODO: All fields should be private or protected unless marked as [ThreadSafe]. [Error]
+            // TODO [NOW]: All fields should be private or protected unless marked as [ThreadSafe]. [Error]
 
             // TODO: Fields cannot be accessed from a static method unless the method or the field is marked as [ThreadSafe]. [Warning]
 
