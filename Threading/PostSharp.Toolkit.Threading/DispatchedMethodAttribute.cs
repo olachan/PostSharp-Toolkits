@@ -53,6 +53,7 @@ namespace PostSharp.Toolkit.Threading
 
             if ( this.IsAsync && methodInfo.ReturnType != typeof(void) )
             {
+                ThreadingMessageSource.Instance.Write(method, SeverityType.Error, "THR001", method.DeclaringType.Name, method.Name);
                 Message.Write( method, SeverityType.Error, "THR001",
                                "Asynchronous DispatchedMethodAttribute cannot be applied to {0}.{1}. It can only be applied to void methods.",
                                method.DeclaringType.Name, method.Name );

@@ -68,11 +68,13 @@ namespace PostSharp.Toolkit.Threading
             bool result = base.CompileTimeValidate(type);
 
             // [ThreadUnsafeMethod] cannot be used on static methods. [Error]
-            IEnumerable<MethodInfo> staticThreadUnsafeMethods = type.GetMethods( BindingFlags.Static ).Where( m => m.GetCustomAttributes( typeof(ThreadUnsafeMethodAttribute), false ).Length != 0 );
+            IEnumerable<MethodInfo> staticThreadUnsafeMethods = type.GetMethods( BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic ).Where(m => m.GetCustomAttributes(typeof(ThreadUnsafeMethodAttribute), false).Length != 0);
 
             foreach ( var staticThreadUnsafeMethod in staticThreadUnsafeMethods )
             {
-                Message.Write(staticThreadUnsafeMethod, SeverityType.Error, "TH001", "Static method {0} can not be marked ThreadUnsafe", staticThreadUnsafeMethod.Name);
+                ThreadingMessageSource.Instance.Write(staticThreadUnsafeMethod, SeverityType.Error, "THR002",  staticThreadUnsafeMethod.DeclaringType.Name, staticThreadUnsafeMethod.Name );
+
+                // Message.Write(staticThreadUnsafeMethod, SeverityType.Error, "THR002", staticThreadUnsafeMethod.Name);
                 result = false;
             }
 
@@ -84,7 +86,8 @@ namespace PostSharp.Toolkit.Threading
                     .Where(m => m.GetCustomAttributes(typeof(ThreadUnsafeMethodAttribute), false).Length != 0);
                 foreach ( var threadUnsafeMethod in threadUnsafeMethods )
                 {
-                    Message.Write(threadUnsafeMethod, SeverityType.Warning, "THW002", "method {0} should not be marked ThreadUnsafe when ThreadUnsafePolicy is Static", threadUnsafeMethod.Name);
+                    ThreadingMessageSource.Instance.Write(threadUnsafeMethod, SeverityType.Warning, "THR003", threadUnsafeMethod.DeclaringType.Name, threadUnsafeMethod.Name);
+                    //Message.Write(threadUnsafeMethod, SeverityType.Warning, "THR003", "method {0} should not be marked ThreadUnsafe when ThreadUnsafePolicy is Static", threadUnsafeMethod.Name);
                 }
             }
 
