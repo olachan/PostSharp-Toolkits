@@ -24,7 +24,7 @@ namespace PostSharp.Toolkit.Threading
     [MethodInterceptionAspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     public sealed class BackgroundMethodAttribute : MethodInterceptionAspect
     {
-        // TODO: Check that the method returns 'void', has no out/ref argument.
+        // TODO [NOW]: Check that the method returns 'void', has no out/ref argument.
 
         /// <inheritdoc />
         public override void OnInvoke( MethodInterceptionArgs args )

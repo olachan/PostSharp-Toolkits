@@ -129,7 +129,7 @@ namespace PostSharp.Toolkit.Threading
                 }
                 else
                 {
-                    // TODO: Get rid of reference to assembly WindowsBase (use 'dynamic' and string-based reflection).
+                    // TODO [NOW]: Get rid of reference to assembly WindowsBase (use 'dynamic' and string-based reflection).
 
                     //Sometimes there's still no Dispatcher, even though Dispatcher is already available
 

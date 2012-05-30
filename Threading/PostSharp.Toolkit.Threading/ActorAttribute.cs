@@ -22,11 +22,11 @@ namespace PostSharp.Toolkit.Threading
     [AspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     public sealed class ActorAttribute : TypeLevelAspect
     {
-        // TODO: Check that the attribute is applied on a class derived from Actor (should not be used manually anyway). [ERROR]
+        // TODO [NOW]: Check that the attribute is applied on a class derived from Actor (should not be used manually anyway). [ERROR]
 
-        // TODO: Check that instance fields are only accessed by instance methods [WARNING]
+        // TODO [NOW]: Check that all fields are private or protected. [ERROR
 
-        // TODO: Check that static methods do not access methods not selected by SelectMethods [WARNING]
+        // TODO: Check that instance fields, and unprotected instance methods, are only accessed by instance methods, and from the 'this' object. [WARNING]
 
         // TODO: Cope with callbacks (delegate): make dispatchable if we can, otherwise check that thread is ok (IDispatcher.CheckAccess())
 

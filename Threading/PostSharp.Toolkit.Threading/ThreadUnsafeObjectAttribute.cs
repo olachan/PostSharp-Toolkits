@@ -72,7 +72,7 @@ namespace PostSharp.Toolkit.Threading
 
             // TODO: [ThreadUnsafeMethod] should not be used if policy is "Static". [Warning]
 
-            // TODO: All fields should be private or protected unless marked as [ThreadSafe]. [Error]
+            // TODO [NOW]: All instance fields should be private or protected unless marked as [ThreadSafe]. [Error]
 
             // TODO: If policy is "Instance", fields cannot be accessed from a static method unless method or field marked as [ThreadSafe]. [Warning]
 
@@ -80,12 +80,12 @@ namespace PostSharp.Toolkit.Threading
 
             // TODO: If policy is "Instance", fields of instance A cannot be accessed from an instance method of instance B (A!=B) unless method or field marked as [ThreadSafe]. [Warning]
 
-            // TODO: (?) dynamic field-access check
+            // TODO: [NOW] Dynamic field-access check (exclude constructors from this check, as in ReaderWriterSynchronized).
 
             return base.CompileTimeValidate( type );
         }
 
-        // TODO: Replace MulticastPointcut to SelectMethod, take [ThreadSafe] (exclude inconditionally) and [ThreadUnsafeMethod] (include) into account.
+        // TODO [NOW]: Replace MulticastPointcut to SelectMethod, take [ThreadSafe] (exclude inconditionally) and [ThreadUnsafeMethod] (include) into account.
 
         [OnMethodEntryAdvice,
          MulticastPointcut(
@@ -147,7 +147,7 @@ namespace PostSharp.Toolkit.Threading
         {
             if ( this.policy == ThreadUnsafePolicy.Instance ) return null;
 
-            // TODO: Check for absence of [ThreadSafe].
+            // TODO [NOW]: Check for absence of [ThreadSafe].
 
             return type.GetMethods( BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly ).Where(
                 m => ReflectionHelper.IsInternalOrPublic( m, true ) );
