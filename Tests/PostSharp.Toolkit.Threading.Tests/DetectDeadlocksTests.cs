@@ -299,60 +299,7 @@ namespace PostSharp.Toolkit.Threading.Tests
 
             //rw.Read( 100 );
         }
-       
-
-        //        [Test]
-        //        [ExpectedException(typeof(DeadlockException))]
-        //        public void SynchronizedAttribute_WhenDeadlocked_Throws()
-        //        {
-        //            var rw = new SynchronizedAttributeClass();
-        //            var barrier = new Barrier(2);
-        //            int i = 0;
-        //
-        //            Action t1 = () => rw.Read(() =>
-        //            {
-        //                barrier.SignalAndWait();
-        //                lock (rw)
-        //                {
-        //                    Debug.Print("lock acquired by thread {0}", Thread.CurrentThread.ManagedThreadId);
-        //                    i = 1;
-        //                }
-        //            });
-        //
-        //            Action t2 = () =>
-        //            {
-        //                lock (rw)
-        //                {
-        //                    barrier.SignalAndWait();
-        //                    rw.Write(i, () => { });
-        //                }
-        //                Debug.Print("lock released by thread {0}", Thread.CurrentThread.ManagedThreadId);
-        //            };
-        //
-        //            TestHelpers.InvokeSimultaneouslyAndWaitForDeadlockDetection(t1, t2);
-        //        }
-    }
-
-    //    public class SynchronizedAttributeClass
-    //    {
-    //        private int field;
-    //
-    //        [Synchronized]
-    //        public int Read(Action action)
-    //        {
-    //            action();
-    //            var value = this.field;
-    //            return value;
-    //        }
-    //
-    //        [Synchronized]
-    //        public void Write(int value, Action action)
-    //        {
-    //            action();
-    //            this.field = value;
-    //        }
-    //    }
-
+     
     [ReaderWriterSynchronized]
     public class ReaderWriterAttributeClass
     {

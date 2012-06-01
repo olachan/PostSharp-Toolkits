@@ -40,6 +40,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="UpgradeableReaderLockAttribute.cs" />
     <Compile Include="DeadlockDetection\Edge.cs" />
     <Compile Include="DeadlockDetection\Node.cs" />
     <Compile Include="DeadlockDetection\ResourceType.cs" />

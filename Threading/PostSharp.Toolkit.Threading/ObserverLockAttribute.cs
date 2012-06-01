@@ -1,0 +1,175 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Threading;
+
+using PostSharp.Aspects;
+using PostSharp.Aspects.Advices;
+using PostSharp.Aspects.Dependencies;
+using PostSharp.Aspects.Internals;
+using PostSharp.Extensibility;
+
+namespace PostSharp.Toolkit.Threading
+{
+    [Serializable]
+    [MulticastAttributeUsage(MulticastTargets.Method | MulticastTargets.Event, TargetMemberAttributes = MulticastAttributes.Instance)]
+    [ProvideAspectRole(StandardRoles.Threading)]
+    [AspectTypeDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute))]
+    public class ObserverLockAttribute : Aspect, IEventLevelAspectBuildSemantics, IMethodLevelAspectBuildSemantics
+    {
+        private bool useDeadlockDetection = false;
+
+        internal bool UseDeadlockDetection
+        {
+            get { return this.useDeadlockDetection; }
+        }
+
+        [OnEventInvokeHandlerAdvice, MethodPointcut("SelectEvents")]
+        public void OnInvoke(EventInterceptionArgs args)
+        {
+            ReaderWriterLockSlim @lock = ((IReaderWriterSynchronized)args.Instance).Lock;
+
+            bool reEnterWriteLock = @lock.IsWriteLockHeld;
+
+            this.OnEntry(@lock);
+
+            try
+            {
+                args.ProceedInvokeHandler();
+            }
+            finally
+            {
+                this.OnExit(reEnterWriteLock, @lock);
+            }
+        }
+
+        private IEnumerable<object> SelectEvents(object target)
+        {
+            if (target is EventInfo)
+            {
+                yield return target;
+            }
+        }
+
+        private IEnumerable<object> SelectMethods(object target)
+        {
+            MethodBase method = target as MethodBase;
+            if (method != null && !(method.IsSpecialName && (method.Name.StartsWith("add_") || method.Name.StartsWith("remove_"))))
+            {
+                yield return target;
+            }
+        }
+
+        /// <summary>
+        /// Handler executed before execution of the method to which the current custom attribute is applied.
+        /// </summary>
+        /// <param name="eventArgs"></param>
+        [OnMethodEntryAdvice, MethodPointcut("SelectMethods")]
+        public void OnEntry( MethodExecutionArgs eventArgs )
+        {
+            ReaderWriterLockSlim @lock = ((IReaderWriterSynchronized) eventArgs.Instance).Lock;
+            if (@lock.IsWriteLockHeld)
+            {
+                eventArgs.MethodExecutionTag = new RestoreWriteLockCookie();
+            }
+
+            this.OnEntry( @lock );
+        }
+
+        private void OnEntry( ReaderWriterLockSlim @lock )
+        {
+            if ( @lock.IsWriteLockHeld )
+            {
+                if ( this.UseDeadlockDetection )
+                {
+                    MethodExecutionArgs args = new MethodExecutionArgs( @lock, Arguments.Empty );
+
+                    DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnWriterLockExit( args );
+                }
+
+                @lock.ExitWriteLock();
+            }
+            else if ( @lock.IsWriteLockHeld )
+            {
+                if ( this.UseDeadlockDetection )
+                {
+                    MethodInterceptionArgs args = new MethodInterceptionArgsImpl( @lock, Arguments.Empty ) { TypedBinding = WriterReadLockBinding.Instance };
+
+                    DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnReaderLockEnter( args );
+                }
+                else
+                {
+                    @lock.EnterReadLock();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handler executed after execution of the method to which the current custom attribute is applied.
+        /// </summary>
+        /// <param name="eventArgs"></param>
+        [OnMethodExitAdvice(Master = "OnEntry")]
+        public void OnExit( MethodExecutionArgs eventArgs )
+        {
+            ReaderWriterLockSlim @lock = ((IReaderWriterSynchronized) eventArgs.Instance).Lock;
+
+            this.OnExit( eventArgs.MethodExecutionTag is RestoreWriteLockCookie, @lock);
+        }
+
+        private void OnExit( bool reEnterWriteLock, ReaderWriterLockSlim @lock )
+        {
+            if (reEnterWriteLock)
+            {
+                if ( this.UseDeadlockDetection )
+                {
+                    MethodInterceptionArgs args = new MethodInterceptionArgsImpl( @lock, Arguments.Empty ) { TypedBinding = WriterReadLockBinding.Instance };
+
+                    DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnWriterLockEnter( args );
+                }
+                else
+                {
+                    @lock.EnterWriteLock();
+                }
+            }
+            else
+            {
+                if ( this.UseDeadlockDetection )
+                {
+                    MethodExecutionArgs args = new MethodExecutionArgs( @lock, Arguments.Empty );
+
+                    DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnReaderLockExit( args );
+                }
+
+                @lock.ExitReadLock();
+            }
+        }
+
+        private sealed class WriterReadLockBinding : MethodBinding
+        {
+            public static readonly WriterReadLockBinding Instance = new WriterReadLockBinding();
+
+            public override void Invoke( ref object instance, Arguments arguments, object reserved )
+            {
+                
+                ((ReaderWriterLockSlim) instance).EnterWriteLock();
+            }
+        }
+
+        private sealed class RestoreWriteLockCookie
+        {
+             
+        }
+
+        public void CompileTimeInitialize( EventInfo targetEvent, AspectInfo aspectInfo )
+        {
+            Attribute[] attributes = GetCustomAttributes(targetEvent.DeclaringType.Assembly, typeof(DeadlockDetectionPolicy));
+            this.useDeadlockDetection = attributes.Length > 0;
+        }
+
+        public void CompileTimeInitialize( MethodBase method, AspectInfo aspectInfo )
+        {
+            Attribute[] attributes = GetCustomAttributes(method.DeclaringType.Assembly, typeof(DeadlockDetectionPolicy));
+            this.useDeadlockDetection = attributes.Length > 0;
+        }
+    }
+}

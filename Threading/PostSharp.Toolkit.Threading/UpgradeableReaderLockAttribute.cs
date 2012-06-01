@@ -12,7 +12,6 @@ using System.Threading;
 using PostSharp.Aspects;
 using PostSharp.Aspects.Dependencies;
 using PostSharp.Aspects.Internals;
-using PostSharp.Extensibility;
 using PostSharp.Toolkit.Threading.DeadlockDetection;
 
 namespace PostSharp.Toolkit.Threading
@@ -26,10 +25,9 @@ namespace PostSharp.Toolkit.Threading
     /// the <see cref="IReaderWriterSynchronized"/> interface.</para>
     /// </remarks>
     [Serializable]
-    [MulticastAttributeUsage( MulticastTargets.Method, TargetMemberAttributes = MulticastAttributes.Instance )]
     [ProvideAspectRole( StandardRoles.Threading )]
     [AspectTypeDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute))]
-    public sealed class WriterLockAttribute : ReaderWriterLockAttribute
+    public sealed class UpgradeableReaderLockAttribute : ReaderWriterLockAttribute
     {
         /// <summary>
         /// Handler executed before execution of the method to which the current custom attribute is applied.
@@ -38,21 +36,18 @@ namespace PostSharp.Toolkit.Threading
         public override void OnEntry( MethodExecutionArgs eventArgs )
         {
             ReaderWriterLockSlim @lock = ((IReaderWriterSynchronized) eventArgs.Instance).Lock;
-
             if ( this.UseDeadlockDetection )
             {
                 MethodInterceptionArgs args = new MethodInterceptionArgsImpl( @lock, Arguments.Empty )
                                                   {
-                                                      TypedBinding = WriterReadLockBinding.Instance
+                                                      TypedBinding = EnterReadLockBinding.Instance
                                                   };
 
                 DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnUpgradeableReadEnter( args );
-                DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnWriterLockEnter( args );
             }
             else
             {
                 @lock.EnterUpgradeableReadLock();
-                @lock.EnterWriteLock();
             }
         }
 
@@ -68,22 +63,19 @@ namespace PostSharp.Toolkit.Threading
             {
                 MethodExecutionArgs args = new MethodExecutionArgs( @lock, Arguments.Empty );
 
-                DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnWriterLockExit( args );
                 DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnUpgradeableReadLockExit( args );
             }
 
-            @lock.ExitWriteLock();
-            @lock.ExitUpgradeableReadLock();
+            ((IReaderWriterSynchronized) eventArgs.Instance).Lock.ExitUpgradeableReadLock();
         }
 
-        private sealed class WriterReadLockBinding : MethodBinding
+        private sealed class EnterReadLockBinding : MethodBinding
         {
-            public static readonly WriterReadLockBinding Instance = new WriterReadLockBinding();
+            public static readonly EnterReadLockBinding Instance = new EnterReadLockBinding();
 
             public override void Invoke( ref object instance, Arguments arguments, object reserved )
             {
-                
-                ((ReaderWriterLockSlim) instance).EnterWriteLock();
+                ((ReaderWriterLockSlim) instance).EnterReadLock();
             }
         }
     }
