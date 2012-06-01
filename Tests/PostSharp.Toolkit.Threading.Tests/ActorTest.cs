@@ -67,10 +67,15 @@ namespace PostSharp.Toolkit.Threading.Tests
 
     internal class ActorClass : Actor
     {
-        public CountdownEvent CountdownEvent = new CountdownEvent( 10 );
 
+        public CountdownEvent CountdownEvent { [ThreadSafe] get; [ThreadSafe] set; }
 
-        public int Count;
+        public int Count { [ThreadSafe] get; [ThreadSafe] set; }
+
+        public ActorClass()
+        {
+             CountdownEvent = new CountdownEvent( 10 );
+        }
 
         public void Foo()
         {

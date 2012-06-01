@@ -23,6 +23,16 @@ namespace PostSharp.Toolkit.Threading
                         return "static method {0}.{1} can not be marked ThreadUnsafe.";
                     case 3:
                         return "method {0}.{1} should not be marked ThreadUnsafe when ThreadUnsafePolicy is Static";
+                    case 4:
+                        return "ActorAttribute can not be  to type {0}. It can only be applied to types derived from Actor class.";
+                    case 5:
+                        return "ActorAttribute can not be applied to type {0} because it contains public field {0}.{1}";
+                    case 6:
+                        return "BackgroundMethodAttribute cannot be applied to {0}.{1}. It can only be applied to void methods without out/ref parameters.";
+                    case 7:
+                        return "ReaderWriterSynchronizedAttribute cannot be applied to type {0} becouse it contains public field {0}.{1} not marked as ThreadSafe.";
+                    case 8:
+                        return "ThreadUnsafeObject cannot be applied to type {0} becouse it contains public field {0}.{1} not marked as ThreadSafe.";
                     default:
                         return null;
                 }

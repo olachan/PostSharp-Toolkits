@@ -57,10 +57,12 @@
     <Compile Include="DeadlockDetection\Graph.cs" />
     <Compile Include="IAction.cs" />
     <Compile Include="IDispatcher.cs" />
+    <Compile Include="ObserverLockAttribute.cs" />
     <Compile Include="ReflectionHelper.cs" />
     <Compile Include="SynchronizationContextWrapper.cs" />
     <Compile Include="IdentityComparer.cs" />
     <Compile Include="ThreadingMessageSource.cs" />
+    <Compile Include="ThreadingToolkitAspectRoles.cs" />
     <Compile Include="ThreadSafeAttribute.cs" />
     <Compile Include="ThreadUnsafeMethodAttribute.cs" />
     <Compile Include="ThreadUnsafeObjectAttribute.cs" />

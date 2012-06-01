@@ -29,8 +29,9 @@ namespace PostSharp.Toolkit.Threading
     [Serializable]
     [CompositionAspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     [IntroduceInterface( typeof(IReaderWriterSynchronized), OverrideAction = InterfaceOverrideAction.Ignore )]
-    [ProvideAspectRole( StandardRoles.Threading )]
     [MulticastAttributeUsage( MulticastTargets.Class, Inheritance = MulticastInheritance.Strict )]
+    // [AspectRoleDependency(AspectDependencyAction.Conflict, ThreadingToolkitAspectRoles.ThreadingModel)]
+    [ProvideAspectRole(ThreadingToolkitAspectRoles.ThreadingModel)]
     public sealed class ReaderWriterSynchronizedAttribute : InstanceLevelAspect, IReaderWriterSynchronized
     {
         [NonSerialized] private ReaderWriterLockSlim @lock;
@@ -41,11 +42,18 @@ namespace PostSharp.Toolkit.Threading
 
         public override bool CompileTimeValidate(Type type)
         {
-            // TODO [NOW]: All fields should be private or protected unless marked as [ThreadSafe]. [Error]
+            bool result = base.CompileTimeValidate(type);
+
+            // All fields should be private or protected unless marked as [ThreadSafe]. [Error]
+            foreach (var publicField in type.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(f => f.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0))
+            {
+                ThreadingMessageSource.Instance.Write(type, SeverityType.Error, "THR007", type.Name, publicField.Name);
+                result = false;
+            }
 
             // TODO: Fields cannot be accessed from a static method unless the method or the field is marked as [ThreadSafe]. [Warning]
 
-            return base.CompileTimeValidate(type);
+            return result;
         }
 
         public override object CreateInstance( AdviceArgs aspectArgs )
@@ -56,7 +64,7 @@ namespace PostSharp.Toolkit.Threading
 
         public ReaderWriterLockSlim Lock
         {
-            get { return LazyInitializer.EnsureInitialized( ref this.@lock, () => new ReaderWriterLockSlim( LockRecursionPolicy.NoRecursion ) ); }
+            get { return LazyInitializer.EnsureInitialized( ref this.@lock, () => new ReaderWriterLockSlim( LockRecursionPolicy.SupportsRecursion ) ); }
         }
 
 

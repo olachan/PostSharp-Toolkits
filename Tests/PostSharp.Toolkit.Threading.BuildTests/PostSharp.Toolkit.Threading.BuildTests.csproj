@@ -54,8 +54,15 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Actor\ActorOnNotActorDerrivedClass.cs" />
+    <Compile Include="BackgroundMethod\BackgroundMethodOnNotVoidMethod.cs" />
+    <Compile Include="BackgroundMethod\BackgroundMethodOnRefMethod.cs" />
+    <Compile Include="BackgroundMethod\BackgroundMethodOnOutMethod.cs" />
     <Compile Include="Dispatched\DispatchMethodWithOutParam.cs" />
     <Compile Include="Dispatched\DispatchNonVoidMethod.cs" />
+    <Compile Include="ReaderWriterSynchronized\ReaderWriterSynchronizedOnClassWithPublicFields.cs" />
+    <Compile Include="ThreadUnsafe\ThreadUnsafeOnClassWithPublicField.cs" />
+    <Compile Include="ThreadUnsafe\ThreadUnsafeMethodOnStaticPolicy.cs" />
     <Compile Include="ThreadUnsafe\ThreadUnsafeOnStaticMethod.cs" />
   </ItemGroup>
   <ItemGroup>

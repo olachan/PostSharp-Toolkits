@@ -17,6 +17,7 @@ using System.Threading;
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 using PostSharp.Aspects.Configuration;
+using PostSharp.Aspects.Dependencies;
 using PostSharp.Aspects.Serialization;
 using PostSharp.Extensibility;
 using PostSharp.Reflection;
@@ -43,6 +44,9 @@ namespace PostSharp.Toolkit.Threading
     [Conditional( "DEBUG" ), Conditional( "DEBUG_THREADING" )]
     [MulticastAttributeUsage( MulticastTargets.Class | MulticastTargets.Struct, PersistMetaData = true, Inheritance = MulticastInheritance.Strict)]
     [AspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
+    //[AspectRoleDependency(AspectDependencyAction.Conflict, ThreadingToolkitAspectRoles.ThreadingModel)]
+    //[AspectTypeDependencyAttribute(AspectDependencyAction.Commute, typeof(ThreadUnsafeObjectAttribute))]
+    [ProvideAspectRole(ThreadingToolkitAspectRoles.ThreadingModel)]
     public sealed class ThreadUnsafeObjectAttribute : TypeLevelAspect
     {
         private readonly ThreadUnsafePolicy policy;
@@ -89,7 +93,12 @@ namespace PostSharp.Toolkit.Threading
                 }
             }
 
-            // TODO [NOW]: All instance fields should be private or protected unless marked as [ThreadSafe]. [Error]
+            // All instance fields should be private or protected unless marked as [ThreadSafe]. [Error]
+            foreach (var publicField in type.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(f => f.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0))
+            {
+                ThreadingMessageSource.Instance.Write(type, SeverityType.Error, "THR008", type.Name, publicField.Name);
+                result = false;
+            }
 
             // TODO: If policy is "Instance", fields cannot be accessed from a static method unless method or field marked as [ThreadSafe]. [Warning]
 

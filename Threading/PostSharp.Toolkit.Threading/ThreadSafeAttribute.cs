@@ -11,7 +11,7 @@ using System;
 
 namespace PostSharp.Toolkit.Threading
 {
-    [AttributeUsage( AttributeTargets.Method | AttributeTargets.Field )]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Field)]
     public sealed class ThreadSafeAttribute : Attribute
     {
     }

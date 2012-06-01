@@ -13,18 +13,40 @@ using System.Reflection;
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 using PostSharp.Aspects.Configuration;
+using PostSharp.Aspects.Dependencies;
 using PostSharp.Aspects.Serialization;
+using PostSharp.Extensibility;
 using PostSharp.Reflection;
 using System.Linq;
 
 namespace PostSharp.Toolkit.Threading
 {
     [AspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
+    // [AspectRoleDependency(AspectDependencyAction.Conflict, ThreadingToolkitAspectRoles.ThreadingModel)]
+    [ProvideAspectRole(ThreadingToolkitAspectRoles.ThreadingModel)]
     public sealed class ActorAttribute : TypeLevelAspect
     {
-        // TODO [NOW]: Check that the attribute is applied on a class derived from Actor (should not be used manually anyway). [ERROR]
+        public override bool CompileTimeValidate(Type type)
+        {
+            bool result = base.CompileTimeValidate( type );
 
-        // TODO [NOW]: Check that all fields are private or protected. [ERROR
+            // Check that the attribute is applied on a class derived from Actor (should not be used manually anyway). [ERROR]
+            if (!typeof(Actor).IsAssignableFrom( type ))
+            {
+                ThreadingMessageSource.Instance.Write(type, SeverityType.Error, "THR004", type.Name);
+                result = false;
+            }
+
+            // Check that all fields are private or protected. [ERROR]
+            foreach (var publicField in type.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)) // .Where( f => f.GetCustomAttributes( typeof(ThreadSafeAttribute), false ).Length == 0 )
+            {
+                ThreadingMessageSource.Instance.Write(type, SeverityType.Error, "THR005", type.Name, publicField.Name);
+                result = false;
+            }
+
+            return result;
+        }
+
 
         // TODO: Check that instance fields, and unprotected instance methods, are only accessed by instance methods, and from the 'this' object. [WARNING]
 

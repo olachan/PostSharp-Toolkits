@@ -8,11 +8,14 @@
 #endregion
 
 using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 using PostSharp.Aspects;
 using PostSharp.Aspects.Configuration;
 using PostSharp.Aspects.Serialization;
+using PostSharp.Extensibility;
 
 namespace PostSharp.Toolkit.Threading
 {
@@ -24,7 +27,24 @@ namespace PostSharp.Toolkit.Threading
     [MethodInterceptionAspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     public sealed class BackgroundMethodAttribute : MethodInterceptionAspect
     {
-        // TODO [NOW]: Check that the method returns 'void', has no out/ref argument.
+        // Check that the method returns 'void', has no out/ref argument.
+        public override bool CompileTimeValidate(System.Reflection.MethodBase method)
+        {
+            bool result = base.CompileTimeValidate(method);
+
+            MethodInfo methodInfo = (MethodInfo) method;
+
+
+            if ( methodInfo.ReturnType != typeof(void) || methodInfo.GetParameters().Any( p => p.ParameterType.IsByRef ))
+            {
+                ThreadingMessageSource.Instance.Write(method, SeverityType.Error, "THR006", method.DeclaringType.Name, method.Name);
+
+                result = false;
+            }
+
+
+            return result;
+        }
 
         /// <inheritdoc />
         public override void OnInvoke( MethodInterceptionArgs args )

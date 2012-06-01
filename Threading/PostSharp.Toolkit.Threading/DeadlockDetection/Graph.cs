@@ -113,6 +113,8 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
         private bool DetectCycleInStronglyConnectedComponent( Dictionary<Node, int> gamma, Node r, ref int currentGamma, Dictionary<Node, Edge> predecessors,
                                                               out IEnumerable<Edge> cycle )
         {
+            // TODO [NOW] ignore cycles of length 2
+
             if ( gamma.ContainsKey( r ) )
             {
                 cycle = null;

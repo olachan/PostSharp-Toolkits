@@ -39,6 +39,7 @@ namespace PostSharp.Toolkit.Threading
             yield return CreateAspectInstance( typeof(WaitHandle), typeof(WaitHandleEnhancements) );
             yield return CreateAspectInstance( typeof(Monitor), typeof(MonitorEnhancements) );
             yield return CreateAspectInstance( typeof(ReaderWriterLockSlim), typeof(ReaderWriterEnhancements) );
+            yield return CreateAspectInstance( typeof(ReaderWriterLock), typeof(ReaderWriterEnhancements) );
             yield return CreateAspectInstance( typeof(Thread), typeof(ThreadEnhancements) );
         }
 
@@ -345,10 +346,16 @@ namespace PostSharp.Toolkit.Threading
                 DeadlockMonitor.ExecuteAction( () => OnEnter( args, ResourceType.UpgradeableRead ) );
             }
 
-            [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "regex:^EnterWriteLock|^AcquireWriterLock|^UpgradeToWriterLock" )]
+            [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "regex:^EnterWriteLock|^AcquireWriterLock" )]
             public void OnWriterLockEnter( MethodInterceptionArgs args )
             {
                 DeadlockMonitor.ExecuteAction( () => OnEnter( args, ResourceType.Write ) );
+            }
+
+            [OnMethodInvokeAdvice, MulticastPointcut(MemberName = "UpgradeToWriterLock")]
+            public void OnUpgradeToWriterLock(MethodInterceptionArgs args)
+            {
+                DeadlockMonitor.ExecuteAction(() => OnEnter(args, ResourceType.Write, false));
             }
 
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "regex:^ExitReadLock|^ReleaseReaderLock" )]
@@ -363,7 +370,7 @@ namespace PostSharp.Toolkit.Threading
                 DeadlockMonitor.ExecuteAction( () => ReaderWriterTypeDeadlockMonitorHelper.ExitAcquired( args.Instance, ResourceType.UpgradeableRead ) );
             }
 
-            [OnMethodEntryAdvice, MulticastPointcut( MemberName = "regex:^ExitWriteLock|^ReleaseWriterLock|^DowngradeFromWriterLock" )]
+            [OnMethodEntryAdvice, MulticastPointcut( MemberName = "regex:^ExitWriteLock|^ReleaseWriterLock" )]
             public void OnWriterLockExit( MethodExecutionArgs args )
             {
                 DeadlockMonitor.ExecuteAction( () => ReaderWriterTypeDeadlockMonitorHelper.ExitAcquired( args.Instance, ResourceType.Write ) );
@@ -412,7 +419,7 @@ namespace PostSharp.Toolkit.Threading
             }
 
 
-            internal static void OnEnter( MethodInterceptionArgs args, ResourceType type )
+            internal static void OnEnter( MethodInterceptionArgs args, ResourceType type , bool addAcquierdEdge = true)
             {
                 Func<int, bool> acquireLock;
 
@@ -462,7 +469,7 @@ namespace PostSharp.Toolkit.Threading
                 LockAspectHelper.NoTimeoutAcquire(
                     () => ReaderWriterTypeDeadlockMonitorHelper.EnterWaiting( args.Instance, type, null ),
                     acquireLock,
-                    () => ReaderWriterTypeDeadlockMonitorHelper.ConvertWaitingToAcquired( args.Instance, type, null ),
+                    addAcquierdEdge ? () => ReaderWriterTypeDeadlockMonitorHelper.ConvertWaitingToAcquired( args.Instance, type, null ) : (Action)(() => { }),
                     () => ReaderWriterTypeDeadlockMonitorHelper.ExitWaiting( args.Instance, type ) );
             }
         }
@@ -471,52 +478,52 @@ namespace PostSharp.Toolkit.Threading
         {
             public static void EnterWaiting( object syncObject, ResourceType syncObjectRole, object syncObjectInfo )
             {
-                DeadlockMonitor.EnterWaiting( syncObject, syncObjectRole );
+                DeadlockMonitor.EnterWaiting(syncObject, ResourceType.Write);
 
-                if ( syncObjectRole == ResourceType.Write )
-                {
-                    DeadlockMonitor.EnterWaiting( syncObject, ResourceType.Read );
-                }
+                //if ( syncObjectRole == ResourceType.Write )
+                //{
+                //    DeadlockMonitor.EnterWaiting( syncObject, ResourceType.Read );
+                //}
             }
 
             public static void ExitWaiting( object syncObject, ResourceType syncObjectRole )
             {
-                DeadlockMonitor.ExitWaiting( syncObject, syncObjectRole );
+                DeadlockMonitor.ExitWaiting(syncObject, ResourceType.Write);
 
-                if ( syncObjectRole == ResourceType.Write )
-                {
-                    DeadlockMonitor.ExitWaiting( syncObject, ResourceType.Read );
-                }
+                //if ( syncObjectRole == ResourceType.Write )
+                //{
+                //    DeadlockMonitor.ExitWaiting( syncObject, ResourceType.Read );
+                //}
             }
 
             public static void ConvertWaitingToAcquired( object syncObject, ResourceType syncObjectRole, object syncObjectInfo )
             {
-                DeadlockMonitor.ConvertWaitingToAcquired( syncObject, syncObjectRole );
+                DeadlockMonitor.ConvertWaitingToAcquired(syncObject, ResourceType.Write);
 
-                if ( syncObjectRole == ResourceType.Write )
-                {
-                    DeadlockMonitor.ConvertWaitingToAcquired( syncObject, ResourceType.Read );
-                }
+                //if ( syncObjectRole == ResourceType.Write )
+                //{
+                //    DeadlockMonitor.ConvertWaitingToAcquired( syncObject, ResourceType.Read );
+                //}
             }
 
             public static void EnterAcquired( object syncObject, ResourceType syncObjectRole, object syncObjectInfo )
             {
-                DeadlockMonitor.EnterAcquired( syncObject, syncObjectRole );
+                DeadlockMonitor.EnterAcquired(syncObject, ResourceType.Write);
 
-                if ( syncObjectRole == ResourceType.Write )
-                {
-                    DeadlockMonitor.EnterAcquired( syncObject, ResourceType.Read );
-                }
+                //if ( syncObjectRole == ResourceType.Write )
+                //{
+                //    DeadlockMonitor.EnterAcquired( syncObject, ResourceType.Read );
+                //}
             }
 
             public static void ExitAcquired( object syncObject, ResourceType syncObjectRole )
             {
-                DeadlockMonitor.ExitAcquired( syncObject, syncObjectRole );
+                DeadlockMonitor.ExitAcquired(syncObject, ResourceType.Write);
 
-                if ( syncObjectRole == ResourceType.Write )
-                {
-                    DeadlockMonitor.ExitAcquired( syncObject, ResourceType.Read );
-                }
+                //if ( syncObjectRole == ResourceType.Write )
+                //{
+                //    DeadlockMonitor.ExitAcquired( syncObject, ResourceType.Read );
+                //}
             }
         }
     }
