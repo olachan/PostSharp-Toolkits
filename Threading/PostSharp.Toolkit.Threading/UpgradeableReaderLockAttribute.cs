@@ -18,7 +18,7 @@ namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
     /// Custom attribute that, when applied on a method, specifies that it should be executed in
-    /// a reader lock.
+    /// a upgradeable reader lock.
     /// </summary>
     /// <remarks>
     /// <para>The current custom attribute can be applied to instance methods of classes implementing

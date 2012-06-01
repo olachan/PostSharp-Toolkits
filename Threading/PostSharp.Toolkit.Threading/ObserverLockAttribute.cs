@@ -11,6 +11,15 @@ using PostSharp.Extensibility;
 
 namespace PostSharp.Toolkit.Threading
 {
+    /// <summary>
+    /// Custom attribute that, when applied on a method, specifies that it should be executed in
+    /// a observer lock. When current thread has writer lock acquired the lock is downgraded to upgradeable reader lock on entry in other case reader lock is acquired. 
+    /// On exit state from before invoke is restored.
+    /// </summary>
+    /// <remarks>
+    /// <para>The current custom attribute can be applied to instance methods of classes implementing
+    /// the <see cref="IReaderWriterSynchronized"/> interface.</para>
+    /// </remarks>
     [Serializable]
     [MulticastAttributeUsage(MulticastTargets.Method | MulticastTargets.Event, TargetMemberAttributes = MulticastAttributes.Instance)]
     [ProvideAspectRole(StandardRoles.Threading)]

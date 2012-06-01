@@ -173,6 +173,13 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             new ReaderWriterEntity().ReadOneField();
         }
+
+        [Test]
+        public void AcquireWriteLockFromUpgradeableRead_DoesNotThrow()
+        {
+            ReaderWriterWithUpgradeableReadlockClass rw = new ReaderWriterWithUpgradeableReadlockClass();
+            rw.ReadAndWrite( 2100 );
+        }
     }
 
     [ReaderWriterSynchronized(CheckFieldAccess = true)]
@@ -285,6 +292,26 @@ namespace PostSharp.Toolkit.Threading.Tests
             {
                 this.OnWrite();
             }
+        }
+    }
+
+    [ReaderWriterSynchronized]
+    public class ReaderWriterWithUpgradeableReadlockClass
+    {
+        private int field;
+
+        [UpgradeableReaderLock]
+        public int ReadAndWrite(int value)
+        {
+            this.Write( value );
+            return this.field;
+        }
+
+
+        [WriterLock]
+        public void Write(int value)
+        {
+            this.field = value;
         }
     }
 
