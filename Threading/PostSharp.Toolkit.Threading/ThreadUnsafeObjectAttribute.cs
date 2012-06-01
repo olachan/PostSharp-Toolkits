@@ -74,7 +74,6 @@ namespace PostSharp.Toolkit.Threading
             {
                 ThreadingMessageSource.Instance.Write(staticThreadUnsafeMethod, SeverityType.Error, "THR002",  staticThreadUnsafeMethod.DeclaringType.Name, staticThreadUnsafeMethod.Name );
 
-                // Message.Write(staticThreadUnsafeMethod, SeverityType.Error, "THR002", staticThreadUnsafeMethod.Name);
                 result = false;
             }
 
@@ -87,7 +86,6 @@ namespace PostSharp.Toolkit.Threading
                 foreach ( var threadUnsafeMethod in threadUnsafeMethods )
                 {
                     ThreadingMessageSource.Instance.Write(threadUnsafeMethod, SeverityType.Warning, "THR003", threadUnsafeMethod.DeclaringType.Name, threadUnsafeMethod.Name);
-                    //Message.Write(threadUnsafeMethod, SeverityType.Warning, "THR003", "method {0} should not be marked ThreadUnsafe when ThreadUnsafePolicy is Static", threadUnsafeMethod.Name);
                 }
             }
 

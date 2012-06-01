@@ -20,7 +20,7 @@ namespace PostSharp.Toolkit.Threading
                     case 1:
                         return "Asynchronous DispatchedMethodAttribute cannot be applied to {0}.{1}. It can only be applied to void methods.";
                     case 2:
-                        return "method {0}.{1} should not be marked ThreadUnsafe when ThreadUnsafePolicy is Static.";
+                        return "static method {0}.{1} can not be marked ThreadUnsafe.";
                     case 3:
                         return "method {0}.{1} should not be marked ThreadUnsafe when ThreadUnsafePolicy is Static";
                     default:
