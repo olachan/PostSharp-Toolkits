@@ -9,9 +9,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
-using System.Windows.Threading;
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 using PostSharp.Aspects.Configuration;
@@ -130,17 +131,14 @@ namespace PostSharp.Toolkit.Threading
                 }
                 else
                 {
-                    // TODO [NOW]: Get rid of reference to assembly WindowsBase (use 'dynamic' and string-based reflection).
+                    //Sometimes there's still no SynchronizationContext, even though Dispatcher is already available
+                    IDispatcher dispatcher = WpfDispatcherBinding.TryFindWpfDispatcher(Thread.CurrentThread);
 
-                    //Sometimes there's still no Dispatcher, even though Dispatcher is already available
-
-                    // Cannot use Dispacther.CurrentDispatcher, because it might create a new Dispatcher
-                    Dispatcher dispatcher = Dispatcher.FromThread( Thread.CurrentThread );
-
-                    if ( dispatcher != null )
+                    if (dispatcher != null)
                     {
-                        this.dispatcher = new DispatcherWrapper( dispatcher );
+                        this.dispatcher = dispatcher;
                     }
+                    
                 }
 
                 if ( this.dispatcher == null )
@@ -150,6 +148,8 @@ namespace PostSharp.Toolkit.Threading
                         "(typically WPF or Windows.Forms UI threads)." );
                 }
             }
+
+            
         }
     }
 }
