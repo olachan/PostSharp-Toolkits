@@ -47,6 +47,8 @@ namespace PostSharp.Toolkit.Threading
             foreach (MethodInfo method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
                 .Where(m => m.GetCustomAttributes(typeof(ThreadSafeAttribute), true).Length == 0 && ReflectionHelper.IsInternalOrPublic(m, false)))
             {
+                // Check that the method returns void and does not have ref/out parameters.
+
                 if ( method.ReturnType != typeof(void) || method.GetParameters().Any( p => p.ParameterType.IsByRef ) )
                 {
                     ThreadingMessageSource.Instance.Write( method, SeverityType.Error, "THR009", method.DeclaringType.Name, method.Name );
@@ -69,10 +71,6 @@ namespace PostSharp.Toolkit.Threading
                 if ( method.GetCustomAttributes( typeof(ThreadSafeAttribute), false ).Length == 0 &&
                      ReflectionHelper.IsInternalOrPublic( method, false ) )
                 {
-                   
-
-                    // TODO: Check that the method returns void and does not have ref/out parameters.
-
                     yield return method;
                 }
 
