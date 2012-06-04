@@ -42,7 +42,7 @@ namespace PostSharp.Toolkit.Threading
     /// </para>
     /// </remarks>
     [Conditional( "DEBUG" ), Conditional( "DEBUG_THREADING" )]
-    [MulticastAttributeUsage( MulticastTargets.Class | MulticastTargets.Struct, PersistMetaData = true, Inheritance = MulticastInheritance.Strict)]
+    [MulticastAttributeUsage(MulticastTargets.Class | MulticastTargets.Struct, PersistMetaData = true, Inheritance = MulticastInheritance.Strict, AllowMultiple = false)]
     [AspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     //[AspectRoleDependency(AspectDependencyAction.Conflict, ThreadingToolkitAspectRoles.ThreadingModel)]
     //[AspectTypeDependencyAttribute(AspectDependencyAction.Commute, typeof(ThreadUnsafeObjectAttribute))]

@@ -21,7 +21,7 @@ namespace PostSharp.Toolkit.Threading
     /// the <see cref="IReaderWriterSynchronized"/> interface.</para>
     /// </remarks>
     [Serializable]
-    [MulticastAttributeUsage(MulticastTargets.Method | MulticastTargets.Event, TargetMemberAttributes = MulticastAttributes.Instance)]
+    [MulticastAttributeUsage(MulticastTargets.Method | MulticastTargets.Event, TargetMemberAttributes = MulticastAttributes.Instance, AllowMultiple = false)]
     [ProvideAspectRole(StandardRoles.Threading)]
     [AspectTypeDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute))]
     public class ObserverLockAttribute : Aspect, IEventLevelAspectBuildSemantics, IMethodLevelAspectBuildSemantics

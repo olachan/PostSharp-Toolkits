@@ -9,6 +9,8 @@
 
 using System;
 
+using PostSharp.Extensibility;
+
 namespace PostSharp.Toolkit.Threading
 {
     /// <summary>

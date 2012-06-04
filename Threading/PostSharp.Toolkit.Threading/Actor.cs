@@ -61,5 +61,23 @@ namespace PostSharp.Toolkit.Threading
         {
             this.IsDisposed = true;
         }
+
+        [ThreadSafe]
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+
+        [ThreadSafe]
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
+        [ThreadSafe]
+        public override string ToString()
+        {
+            return base.ToString();
+        }
     }
 }

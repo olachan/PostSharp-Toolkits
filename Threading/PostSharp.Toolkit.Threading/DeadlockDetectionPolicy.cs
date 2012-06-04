@@ -52,7 +52,7 @@ namespace PostSharp.Toolkit.Threading
         {
             if ( assembly != PostSharpEnvironment.CurrentProject.GetTargetAssembly( false ) )
             {
-                Message.Write( assembly, SeverityType.Error, "THR001", "Aspect DeadlockDetectionPolicy must be added to the current assembly only." );
+                ThreadingMessageSource.Instance.Write(assembly, SeverityType.Error, "THR010");
                 return false;
             }
             return true;
@@ -248,7 +248,7 @@ namespace PostSharp.Toolkit.Threading
 
         [Serializable]
         [MulticastAttributeUsage( MulticastTargets.Class, AllowMultiple = false )]
-        public class MutexEnhancements : TypeLevelAspect
+        public sealed class MutexEnhancements : TypeLevelAspect
         {
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "Release" )]
             public void OnRelease( MethodExecutionArgs args )
@@ -259,7 +259,7 @@ namespace PostSharp.Toolkit.Threading
 
         [Serializable]
         [MulticastAttributeUsage( MulticastTargets.Class, AllowMultiple = false )]
-        public class MonitorEnhancements : TypeLevelAspect
+        public sealed class MonitorEnhancements : TypeLevelAspect
         {
             [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "Enter" )]
             public void OnEnter( MethodInterceptionArgs args )
@@ -355,7 +355,7 @@ namespace PostSharp.Toolkit.Threading
 
         [Serializable]
         [MulticastAttributeUsage( MulticastTargets.Class, AllowMultiple = false )]
-        public class ReaderWriterEnhancements : TypeLevelAspect
+        public sealed class ReaderWriterEnhancements : TypeLevelAspect
         {
             internal static readonly ReaderWriterEnhancements Instance = new ReaderWriterEnhancements();
 
@@ -366,7 +366,7 @@ namespace PostSharp.Toolkit.Threading
             }
 
             [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "EnterUpgradeableReadLock" )]
-            public void OnUpgradeableReadEnter( MethodInterceptionArgs args )
+            public void OnUpgradeableReadEnter(MethodInterceptionArgs args)
             {
                 DeadlockMonitor.ExecuteAction( () => OnEnter( args, ResourceType.UpgradeableRead ) );
             }
