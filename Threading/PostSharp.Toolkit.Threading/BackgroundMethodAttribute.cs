@@ -20,8 +20,7 @@ using PostSharp.Extensibility;
 namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
-    /// Custom attribute that, when applied on a method, makes it asynchronous, i.e.
-    /// queued to the <see cref="ThreadPool"/>.
+    /// Custom attribute that, when applied on a method, makes it asynchronous, i.e.method is started in a new <see cref="Task"/>.
     /// </summary>
     [Serializable]
     [MethodInterceptionAspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]

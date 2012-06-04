@@ -14,7 +14,7 @@ using PostSharp.Toolkit.Threading.DeadlockDetection;
 namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
-    /// Exception thrown by the <see cref="DeadlockMonitor"/> class when a deadlock
+    /// Exception thrown by the <see cref="DeadlockDetectionPolicy"/> class when a deadlock
     /// is detected.
     /// </summary>
     [Serializable]

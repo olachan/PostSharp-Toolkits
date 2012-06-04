@@ -53,7 +53,6 @@
     <Compile Include="DeadlockException.cs" />
     <Compile Include="DeadlockDetection\DeadlockMonitor.cs" />
     <Compile Include="DeadlockDetectionPolicy.cs" />
-    <Compile Include="DeadlockDetection\MonitorWrapper.cs" />
     <Compile Include="DeadlockDetection\WeakHashSet.cs" />
     <Compile Include="DeadlockDetection\Graph.cs" />
     <Compile Include="IAction.cs" />
