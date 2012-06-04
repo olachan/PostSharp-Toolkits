@@ -55,6 +55,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Actor\ActorOnNotActorDerrivedClass.cs" />
+    <Compile Include="Actor\ActorContainingNotVoidMethods.cs" />
+    <Compile Include="Actor\ActorContainingRefParametr.cs" />
     <Compile Include="BackgroundMethod\BackgroundMethodOnNotVoidMethod.cs" />
     <Compile Include="BackgroundMethod\BackgroundMethodOnRefMethod.cs" />
     <Compile Include="BackgroundMethod\BackgroundMethodOnOutMethod.cs" />
