@@ -51,7 +51,8 @@ namespace PostSharp.Toolkit.Threading
             MethodInfo methodInfo = (MethodInfo) method;
 
 
-            if ( this.IsAsync && methodInfo.ReturnType != typeof(void) )
+            if ( this.IsAsync &&
+                (methodInfo.ReturnType != typeof(void) || methodInfo.GetParameters().Any(p => p.ParameterType.IsByRef)))
             {
                 ThreadingMessageSource.Instance.Write(method, SeverityType.Error, "THR001", method.DeclaringType.Name, method.Name);
                 

@@ -18,7 +18,7 @@ namespace PostSharp.Toolkit.Threading
                 switch (number)
                 {
                     case 1:
-                        return "Asynchronous DispatchedMethodAttribute cannot be applied to {0}.{1}. It can only be applied to void methods.";
+                        return "Asynchronous DispatchedMethodAttribute cannot be applied to {0}.{1}. It can only be applied to void methods with no ref or out parameters.";
                     case 2:
                         return "static method {0}.{1} can not be marked ThreadUnsafe.";
                     case 3:
