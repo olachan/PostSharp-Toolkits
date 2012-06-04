@@ -15,7 +15,7 @@ using NUnit.Framework;
 namespace PostSharp.Toolkit.Threading.Tests
 {
     [TestFixture]
-    public class SingleThreadedTests
+    public class ThreadUnsafeTests
     {
         [Test]
         public void MethodsInvokedOnSeparateObjects_NoException()
@@ -125,8 +125,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         }
 
         [Test]
-        [ExpectedException(typeof(ThreadUnsafeException))]
-        public void PrivateThreadUnsafeMethod_InvokedFromTwoThreads_DoesThrow()
+        public void PrivateThreadUnsafeMethod_InvokedFromThreadSafeInTwoThreads_DoesNotThrow()
         {
             SingleThreadedMethodsObject o = new SingleThreadedMethodsObject();
             TestHelpers.InvokeSimultaneouslyAndWait(o.ThreadSafeMethodInvokingThreadUnsafePrivateMethod, o.ThreadSafeMethodInvokingThreadUnsafePrivateMethod);
@@ -137,6 +136,82 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             SingleThreadedMethodsObject o = new SingleThreadedMethodsObject();
             TestHelpers.InvokeSimultaneouslyAndWait(o.ThreadSafeMethodInvokingThreadSafePrivateMethod, o.ThreadSafeMethodInvokingThreadSafePrivateMethod);
+        }
+
+        [Test]
+        public void NonThreadSafeField_ModifiedFromThreadSafeMethod_DoesNotThrow()
+        {
+            var o = new ThreadUnsafeWithFieldAccessCheckObject();
+            o.ChangeNonThreadSafeFieldFromThreadSafe();
+        }
+
+        [Test]
+        public void ThreadSafeField_ModifiedFromThreadSafeMethod_DoesNotThrow()
+        {
+            var o = new ThreadUnsafeWithFieldAccessCheckObject();
+            o.ChangeThreadSafeFieldFromThreadSafe();
+        }
+
+        [Test]
+        [ExpectedException(typeof(LockNotHeldException))]
+        public void NonThreadSafeField_ModifiedFromStaticUnsafeMethod_Throws()
+        {
+            var o = new ThreadUnsafeWithFieldAccessCheckObject();
+            ThreadUnsafeWithFieldAccessCheckObject.ChangeNonThreadSafeField(o);
+        }
+
+        [Test]
+        [ExpectedException(typeof(LockNotHeldException))]
+        public void NonThreadSafeField_ModifiedFromStaticSafeMethod_Throws()
+        {
+            var o = new ThreadUnsafeWithFieldAccessCheckObject();
+            ThreadUnsafeWithFieldAccessCheckObject.ChangeNonThreadSafeFieldFromThreadSafe(o);
+        }
+
+        [Test]
+        public void ThreadSafeField_ModifiedFromStaticMethod_DoesNotThrow()
+        {
+            var o = new ThreadUnsafeWithFieldAccessCheckObject();
+            ThreadUnsafeWithFieldAccessCheckObject.ChangeThreadSafeField(o);
+        }
+
+        [Test]
+        public void ThreadSafeStaticField_Modified_NeverThrows()
+        {
+            var o = new ThreadUnsafeWithFieldAccessCheckStaticClass();
+            o.ChangeThreadSafeStaticField();
+            ThreadUnsafeWithFieldAccessCheckStaticClass.ChangeThreadSafeStaticFieldStatic();
+        }
+
+        [Test]
+        public void NonThreadSafeStaticField_ModifiedByStaticMethod_DoesNotThrow()
+        {
+            ThreadUnsafeWithFieldAccessCheckStaticClass.ChangeNonThreadSafeStaticFieldStatic();
+        }
+
+        [Test]
+        [ExpectedException(typeof(LockNotHeldException))]
+        public void NonThreadSafeStaticField_ModifiedExternaly_Throws()
+        {
+            ThreadUnsafeWithFieldAccessCheckStaticClass.NonThreadSafeStaticField++;
+        }
+
+        [Test]
+        public void ThreadSafeStaticField_ModifiedExternaly_DoesNotThrow()
+        {
+            ThreadUnsafeWithFieldAccessCheckStaticClass.ThreadSafeStaticField++;
+        }
+
+        [Test]
+        public void ThreadSafeProperty_ModifiedExternaly_DoesNotThrow()
+        {
+            new ThreadUnsafeWithFieldAccessCheckObject().ThreadSafeProperty = 7;
+        }
+
+        [Test]
+        public void NonThreadSafeProperty_ModifiedExternaly_DoesNotThrows()
+        {
+            new ThreadUnsafeWithFieldAccessCheckObject().NonThreadSafeProperty = 7;
         }
 
         [ThreadUnsafeObject]
@@ -253,6 +328,75 @@ namespace PostSharp.Toolkit.Threading.Tests
             public void DerivedInstanceDependentMethod2()
             {
                 Thread.Sleep( 200 );
+            }
+        }
+
+        [ThreadUnsafeObject(CheckFieldAccess = true)]
+        public class ThreadUnsafeWithFieldAccessCheckObject
+        {
+            [ThreadSafe]
+            private int threadSafeField = 11;
+
+            private int nonThreadSafeField = 12;
+
+            public int ThreadSafeProperty { [ThreadSafe]get; [ThreadSafe]set; }
+
+            public int NonThreadSafeProperty { get; set; }
+
+            [ThreadSafe]
+            public void ChangeThreadSafeFieldFromThreadSafe()
+            {
+                threadSafeField++;
+            }
+
+            [ThreadSafe]
+            public void ChangeNonThreadSafeFieldFromThreadSafe()
+            {
+                nonThreadSafeField++;
+            }
+
+            public static void ChangeThreadSafeField(ThreadUnsafeWithFieldAccessCheckObject obj)
+            {
+                ++obj.threadSafeField;
+            }
+
+            public static void ChangeNonThreadSafeField(ThreadUnsafeWithFieldAccessCheckObject obj)
+            {
+                ++obj.nonThreadSafeField;
+            }
+
+            public static void ChangeNonThreadSafeFieldFromThreadSafe(ThreadUnsafeWithFieldAccessCheckObject obj)
+            {
+                ++obj.nonThreadSafeField;
+            }
+        }
+
+        [ThreadUnsafeObject(ThreadUnsafePolicy.Static, CheckFieldAccess = true)]
+        public class ThreadUnsafeWithFieldAccessCheckStaticClass
+        {
+            public static int NonThreadSafeStaticField = 21;
+
+            [ThreadSafe]
+            public static int ThreadSafeStaticField = 22;
+
+            public void ChangeThreadSafeStaticField()
+            {
+                ThreadSafeStaticField++;
+            }
+
+            public void ChangeNonThreadSafeStaticField()
+            {
+                NonThreadSafeStaticField++;
+            }
+
+            public static void ChangeThreadSafeStaticFieldStatic()
+            {
+                ThreadSafeStaticField++;
+            }
+
+            public static void ChangeNonThreadSafeStaticFieldStatic()
+            {
+                NonThreadSafeStaticField++;
             }
         }
     }
