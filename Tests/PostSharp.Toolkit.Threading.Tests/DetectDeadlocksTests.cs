@@ -299,76 +299,77 @@ namespace PostSharp.Toolkit.Threading.Tests
 
             //rw.Read( 100 );
         }
-     
-    [ReaderWriterSynchronized]
-    public class ReaderWriterAttributeClass
-    {
-        private int field;
 
-        [ReaderLock]
-        public int Read(Action action)
+        [ReaderWriterSynchronized]
+        public class ReaderWriterAttributeClass
         {
-            action();
-            int value = this.field;
-            return value;
+            private int field;
+
+            [ReaderLock]
+            public int Read(Action action)
+            {
+                action();
+                int value = this.field;
+                return value;
+            }
+
+            [WriterLock]
+            public void Write(int value, Action action)
+            {
+                action();
+                this.field = value;
+            }
         }
 
-        [WriterLock]
-        public void Write(int value, Action action)
+
+
+
+        public class ReaderWriterSlimClass
         {
-            action();
-            this.field = value;
-        }
-    }
+            private ReaderWriterLockSlim rwl = new ReaderWriterLockSlim();
 
-    
+            private int field;
 
+            public int Read(Action action)
+            {
+                rwl.EnterReadLock();
+                action();
+                int value = field;
+                rwl.ExitReadLock();
+                return value;
+            }
 
-    public class ReaderWriterSlimClass
-    {
-        private ReaderWriterLockSlim rwl = new ReaderWriterLockSlim();
-
-        private int field;
-
-        public int Read(Action action)
-        {
-            rwl.EnterReadLock();
-            action();
-            int value = field;
-            rwl.ExitReadLock();
-            return value;
-        }
-
-        public void Write(int value, Action action)
-        {
-            rwl.EnterWriteLock();
-            action();
-            this.field = value;
-            rwl.ExitWriteLock();
-        }
-    }
-
-    public class ReaderWriterClass
-    {
-        private ReaderWriterLock rwl = new ReaderWriterLock();
-
-        private int field;
-
-        public int Read(Action action)
-        {
-            rwl.AcquireReaderLock(Timeout.Infinite);
-            action();
-            int value = field;
-            rwl.ReleaseReaderLock();
-            return value;
+            public void Write(int value, Action action)
+            {
+                rwl.EnterWriteLock();
+                action();
+                this.field = value;
+                rwl.ExitWriteLock();
+            }
         }
 
-        public void Write(int value, Action action)
+        public class ReaderWriterClass
         {
-            rwl.AcquireWriterLock(Timeout.Infinite);
-            action();
-            this.field = value;
-            rwl.ReleaseWriterLock();
+            private ReaderWriterLock rwl = new ReaderWriterLock();
+
+            private int field;
+
+            public int Read(Action action)
+            {
+                rwl.AcquireReaderLock(Timeout.Infinite);
+                action();
+                int value = field;
+                rwl.ReleaseReaderLock();
+                return value;
+            }
+
+            public void Write(int value, Action action)
+            {
+                rwl.AcquireWriterLock(Timeout.Infinite);
+                action();
+                this.field = value;
+                rwl.ReleaseWriterLock();
+            }
         }
     }
 }
