@@ -59,9 +59,7 @@
     <Compile Include="DetectDeadlocksTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReaderWriterSynchronizedTests.cs" />
-    <Compile Include="SingleThreadedAndSynchronizedIntegrationTests.cs" />
     <Compile Include="SingleThreadedTests.cs" />
-    <Compile Include="SynchronizedTests.cs" />
     <Compile Include="TestHelpers.cs" />
   </ItemGroup>
   <ItemGroup>

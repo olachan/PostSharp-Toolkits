@@ -107,8 +107,6 @@ namespace PostSharp.Toolkit.Threading.Tests
             //rw.Read( 100 );
         }
 
-        
-
         [Test]
         public void ReaderWriterObserverEventTest()
         {
@@ -153,6 +151,24 @@ namespace PostSharp.Toolkit.Threading.Tests
         public void TestReadTwoFields()
         {
             new ReaderWriterEntity().ReadTwoFields();
+        }
+
+        [Test]
+        public void TestReadTwoFieldsWithReadLock()
+        {
+            new ReaderWriterEntity().ReadTwoFieldsWithReadLock();
+        }
+
+        [Test]
+        public void TestReadTwoFieldsWithUpgradeableReadLock()
+        {
+            new ReaderWriterEntity().ReadTwoFieldsWithUpgredeableReadLock();
+        }
+
+        [Test]
+        public void TestReadTwoFieldsWithWriteLock()
+        {
+            new ReaderWriterEntity().ReadTwoFieldsWithWriteLock();
         }
 
         [Test]
@@ -210,6 +226,24 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             Thread.Sleep(timespan);
             this.field = value;
+        }
+
+        [ReaderLock]
+        public int ReadTwoFieldsWithReadLock()
+        {
+            return field + field2;
+        }
+
+        [WriterLock]
+        public int ReadTwoFieldsWithWriteLock()
+        {
+            return field + field2;
+        }
+
+        [UpgradeableReaderLock]
+        public int ReadTwoFieldsWithUpgredeableReadLock()
+        {
+            return field + field2;
         }
 
         public void WriteWithoutLock()

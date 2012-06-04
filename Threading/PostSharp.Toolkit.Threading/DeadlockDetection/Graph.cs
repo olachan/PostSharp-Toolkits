@@ -113,7 +113,6 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
         private bool DetectCycleInStronglyConnectedComponent( Dictionary<Node, int> gamma, Node r, ref int currentGamma, Dictionary<Node, Edge> predecessors,
                                                               out IEnumerable<Edge> cycle )
         {
-            // TODO [NOW] ignore cycles of length 2
 
             if ( gamma.ContainsKey( r ) )
             {
@@ -142,9 +141,12 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
                     if ( gamma[e.Predecessor] > gamma[e.Successor] && // is not a forward edge
                          gamma[r] <= gamma[e.Successor] ) // is not a cross edge
                     {
-                        cycle = this.GetCycle( e, predecessors );
-
-                        return true;
+                        var tempCycle = this.GetCycle( e, predecessors );
+                        if (tempCycle.Skip(2).Any()) // Ignoring cycles containig only 2 edges these are not deadlocks (e.g. thread having upgradeableReadLock waiting for writerLock)
+                        {
+                            cycle = tempCycle;
+                            return true;
+                        }
                     }
                 }
             }

@@ -160,25 +160,6 @@ namespace PostSharp.Toolkit.Threading.Tests
             }
         }
 
-//        [ThreadUnsafeClass(IgnoreSetters = true)]
-//        public class SingleThreadedClassIngoreSettersObject
-//        {
-//            private int _testProperty;
-//            public int TestProperty
-//            {
-//                get
-//                {
-//                    Thread.Sleep(200);
-//                    return _testProperty;
-//                }
-//                set
-//                {
-//                    Thread.Sleep(200);
-//                    _testProperty = value;
-//                }
-//            }
-//        }
-
         [ThreadUnsafeObject( ThreadUnsafePolicy.Static )]
         public class SingleThreadedStaticMethodsObject
         {
