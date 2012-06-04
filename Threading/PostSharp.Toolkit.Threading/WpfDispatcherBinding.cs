@@ -12,7 +12,6 @@ namespace PostSharp.Toolkit.Threading
     /// </summary>
     internal static class WpfDispatcherBinding
     {
-        //TODO: Do we need to handle any scenario in which WindowsBase is not yet loaded the first time we look for the dispatcher?
         private static Func<Thread, object> dispatcherProvider;
         private static object syncRoot = new object();
         private static bool initialized = false;

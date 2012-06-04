@@ -355,7 +355,7 @@ namespace PostSharp.Toolkit.Threading
 
         [Serializable]
         [MulticastAttributeUsage( MulticastTargets.Class, AllowMultiple = false )]
-        public class ReaderWriterEnhancements : TypeLevelAspect
+        public sealed class ReaderWriterEnhancements : TypeLevelAspect
         {
             internal static readonly ReaderWriterEnhancements Instance = new ReaderWriterEnhancements();
 

@@ -18,7 +18,8 @@ namespace PostSharp.Toolkit.Threading
         Instance,
 
         /// <summary>
-        /// 
+        /// Instance methods are not thread-safe, even on different instances of the class.
+        /// Static methods are not thread-safe as well.
         /// </summary>
         Static
     }

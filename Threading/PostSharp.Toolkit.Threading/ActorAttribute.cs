@@ -21,6 +21,10 @@ using System.Linq;
 
 namespace PostSharp.Toolkit.Threading
 {
+    /// <summary>
+    /// Aspects supporting implementation of actor-base messaging pattern.
+    /// See <see cref="Actor"/> for details.
+    /// </summary>
     [AspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     // [AspectRoleDependency(AspectDependencyAction.Conflict, ThreadingToolkitAspectRoles.ThreadingModel)]
     [ProvideAspectRole(ThreadingToolkitAspectRoles.ThreadingModel)]
