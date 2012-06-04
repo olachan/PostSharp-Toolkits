@@ -38,6 +38,10 @@ namespace PostSharp.Toolkit.Threading
     /// type is a generic type, the exclusion domain is the generic type instance.
     /// </para>
     /// <para>
+    /// By default only public methods are verified. <see cref="ThreadUnsafeMethodAttribute"/> can be used to mark private methods that should be checked as well.
+    /// <see cref="ThreadSafeAttribute"/> allows exclusion of public methods (marking them as thread-safe).
+    /// </para>
+    /// <para>
     /// This aspect shall be applied to the code only if the project is built with debugging symbols <c>DEBUG</c> or <c>DEBUG_THREADING</c>.
     /// </para>
     /// </remarks>

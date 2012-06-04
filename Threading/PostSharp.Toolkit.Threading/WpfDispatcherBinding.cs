@@ -12,7 +12,6 @@ namespace PostSharp.Toolkit.Threading
     /// </summary>
     internal static class WpfDispatcherBinding
     {
-        //TODO: Do we need to handle any scenario in which WindowsBase is not yet loaded the first time we look for the dispatcher?
         private static Func<Thread, object> dispatcherProvider;
         private static object syncRoot = new object();
         private static bool initialized = false;
@@ -93,11 +92,10 @@ namespace PostSharp.Toolkit.Threading
 
         private static void Initialize()
         {
-            Assembly windowsBaseAssembly = AppDomain.CurrentDomain.GetAssemblies().SingleOrDefault(
-                a =>
-                a.FullName == "WindowsBase, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"); //TODO: Maybe we should ignore version number?
+            Assembly windowsBaseAssembly = TryFindWindowsBaseAssembly();
 
-
+            
+            
             if (windowsBaseAssembly != null)
             {
                 dispatcherType = windowsBaseAssembly.GetType("System.Windows.Threading.Dispatcher");
@@ -107,6 +105,28 @@ namespace PostSharp.Toolkit.Threading
 
                 BuildDispatcherCallDelegates();
             }
+        }
+
+        
+
+        private static Assembly TryFindWindowsBaseAssembly()
+        {
+            //TODO: Maybe we should ignore version number?
+            const string windowsBaseAssemblyName =
+                "WindowsBase, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
+
+            var windowsBaseAssembly = AppDomain.CurrentDomain.GetAssemblies().SingleOrDefault(a => a.FullName == windowsBaseAssemblyName);
+
+            if (windowsBaseAssembly == null)
+            {
+                //Maybe it's not loaded yet but referenced and will be loaded in a moment
+                AssemblyName assemblyName =
+                    AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetReferencedAssemblies()).SingleOrDefault(
+                     a => a.FullName == windowsBaseAssemblyName);
+                windowsBaseAssembly = Assembly.Load(assemblyName);
+            }
+
+            return windowsBaseAssembly;
         }
 
         private static void BuildDispatcherCallDelegates()

@@ -14,6 +14,27 @@ using PostSharp.Extensibility;
 
 namespace PostSharp.Toolkit.Threading
 {
+    /// <summary>
+    /// <para>
+    /// Abstract base class for entities implementaing actors-based communication pattern.
+    /// </para>
+    /// <para>
+    /// Actors are business entities that respond to synchronous messages (implemented as void methods calls),
+    /// which are queued and processed one at a time.
+    /// This ensures that while any thread can interact with an actor by sending it a request, its code is never
+    /// executed in two threads simultanously.
+    /// </para>
+    /// <para>
+    /// Since all Actor public methods are by default treated as part of actor's messaging pattern and executed asynchronously,
+    /// they must be void and have no ref or out parameters.
+    /// Methods that should not be part of the contract (i.e. should act like regular methods and be executed synchronously)
+    /// should be marked with <see cref="ThreadSafeAttribute"/>.
+    /// </para>
+    /// <para>
+    /// Several actors can share the same message queue by sharing the same instance of <see cref="IDispatcher"/> object
+    /// (see <see cref="Actor(IDispacther)"/>).
+    /// </para>
+    /// </summary>
     [Actor(AttributeInheritance = MulticastInheritance.Strict)]
     public abstract class Actor : IDispatcherObject
     {

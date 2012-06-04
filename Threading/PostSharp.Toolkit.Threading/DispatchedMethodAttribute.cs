@@ -24,8 +24,8 @@ using PostSharp.Reflection;
 namespace PostSharp.Toolkit.Threading
 {
     /// <summary>
-    /// Custom attribute that, when applied on a method, specifies that it should be executed in UI thread. 
-    /// When applied on a method it automatically applies <see cref="DispatcherObjectAspect"/> on object implementing the method. 
+    /// Custom attribute that, when applied on a method, specifies that it should be executed in UI thread.
+    /// Supports Windows.Forms and WPF.
     /// </summary>
     [AttributeUsage( AttributeTargets.Method )]
     [ProvideAspectRole( StandardRoles.Threading )]
@@ -55,7 +55,8 @@ namespace PostSharp.Toolkit.Threading
             MethodInfo methodInfo = (MethodInfo) method;
 
 
-            if ( this.IsAsync && methodInfo.ReturnType != typeof(void) )
+            if ( this.IsAsync &&
+                (methodInfo.ReturnType != typeof(void) || methodInfo.GetParameters().Any(p => p.ParameterType.IsByRef)))
             {
                 ThreadingMessageSource.Instance.Write(method, SeverityType.Error, "THR001", method.DeclaringType.Name, method.Name);
                 
