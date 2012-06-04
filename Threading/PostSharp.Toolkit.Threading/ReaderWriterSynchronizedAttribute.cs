@@ -64,7 +64,7 @@ namespace PostSharp.Toolkit.Threading
 
         public ReaderWriterLockSlim Lock
         {
-            get { return LazyInitializer.EnsureInitialized( ref this.@lock, () => new ReaderWriterLockSlim( LockRecursionPolicy.SupportsRecursion ) ); }
+            get { return LazyInitializer.EnsureInitialized( ref this.@lock, () => new ReaderWriterLockSlim( LockRecursionPolicy.NoRecursion ) ); }
         }
 
 
@@ -99,7 +99,7 @@ namespace PostSharp.Toolkit.Threading
             if (runningConstructors != null && runningConstructors.Contains(args.Instance)) return;
 
             ReaderWriterLockSlim myLock = ((IReaderWriterSynchronized)args.Instance).Lock;
-            if (myLock.IsReadLockHeld) return;
+            if (myLock.IsReadLockHeld || myLock.IsUpgradeableReadLockHeld || myLock.IsWriteLockHeld) return;
 
             Dictionary<ReaderWriterLockSlim, ReadCheckNode> myRunningMethods = runningMethods;
             ReadCheckNode node;

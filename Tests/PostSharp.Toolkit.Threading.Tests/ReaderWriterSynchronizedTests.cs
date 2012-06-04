@@ -107,8 +107,6 @@ namespace PostSharp.Toolkit.Threading.Tests
             //rw.Read( 100 );
         }
 
-        
-
         [Test]
         public void ReaderWriterObserverEventTest()
         {
@@ -156,6 +154,24 @@ namespace PostSharp.Toolkit.Threading.Tests
         }
 
         [Test]
+        public void TestReadTwoFieldsWithReadLock()
+        {
+            new ReaderWriterEntity().ReadTwoFieldsWithReadLock();
+        }
+
+        [Test]
+        public void TestReadTwoFieldsWithUpgradeableReadLock()
+        {
+            new ReaderWriterEntity().ReadTwoFieldsWithUpgredeableReadLock();
+        }
+
+        [Test]
+        public void TestReadTwoFieldsWithWriteLock()
+        {
+            new ReaderWriterEntity().ReadTwoFieldsWithWriteLock();
+        }
+
+        [Test]
         [ExpectedException(typeof(LockNotHeldException))]
         public void TestReadTwoFieldsIndirectly()
         {
@@ -172,6 +188,13 @@ namespace PostSharp.Toolkit.Threading.Tests
         public void TestReadOneField()
         {
             new ReaderWriterEntity().ReadOneField();
+        }
+
+        [Test]
+        public void AcquireWriteLockFromUpgradeableRead_DoesNotThrow()
+        {
+            ReaderWriterWithUpgradeableReadlockClass rw = new ReaderWriterWithUpgradeableReadlockClass();
+            rw.ReadAndWrite( 2100 );
         }
     }
 
@@ -203,6 +226,24 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             Thread.Sleep(timespan);
             this.field = value;
+        }
+
+        [ReaderLock]
+        public int ReadTwoFieldsWithReadLock()
+        {
+            return field + field2;
+        }
+
+        [WriterLock]
+        public int ReadTwoFieldsWithWriteLock()
+        {
+            return field + field2;
+        }
+
+        [UpgradeableReaderLock]
+        public int ReadTwoFieldsWithUpgredeableReadLock()
+        {
+            return field + field2;
         }
 
         public void WriteWithoutLock()
@@ -285,6 +326,26 @@ namespace PostSharp.Toolkit.Threading.Tests
             {
                 this.OnWrite();
             }
+        }
+    }
+
+    [ReaderWriterSynchronized]
+    public class ReaderWriterWithUpgradeableReadlockClass
+    {
+        private int field;
+
+        [UpgradeableReaderLock]
+        public int ReadAndWrite(int value)
+        {
+            this.Write( value );
+            return this.field;
+        }
+
+
+        [WriterLock]
+        public void Write(int value)
+        {
+            this.field = value;
         }
     }
 

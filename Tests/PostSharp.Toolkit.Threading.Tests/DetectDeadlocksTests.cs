@@ -12,7 +12,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Win32.SafeHandles;
 using NUnit.Framework;
-using PostSharp.Toolkit.Threading.DeadlockDetection;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {
@@ -27,28 +26,28 @@ namespace PostSharp.Toolkit.Threading.Tests
             object lock2 = new object();
             Barrier barrier = new Barrier(2);
             Action t1 = () =>
-                            {
-                                lock (lock1)
-                                {
-                                    barrier.SignalAndWait();
-                                    lock (lock2)
-                                    {
-                                        Thread.Sleep(100);
-                                    }
-                                }
-                            };
+                {
+                    lock (lock1)
+                    {
+                        barrier.SignalAndWait();
+                        lock (lock2)
+                        {
+                            Thread.Sleep(100);
+                        }
+                    }
+                };
 
             Action t2 = () =>
-                            {
-                                lock (lock2)
-                                {
-                                    barrier.SignalAndWait();
-                                    lock (lock1)
-                                    {
-                                        Thread.Sleep(100);
-                                    }
-                                }
-                            };
+                {
+                    lock (lock2)
+                    {
+                        barrier.SignalAndWait();
+                        lock (lock1)
+                        {
+                            Thread.Sleep(100);
+                        }
+                    }
+                };
 
             TestHelpers.InvokeSimultaneouslyAndWaitForDeadlockDetection(t1, t2);
         }
@@ -60,28 +59,28 @@ namespace PostSharp.Toolkit.Threading.Tests
             object lock2 = new object();
 
             Action t1 = () =>
-                            {
-                                lock (lock1)
-                                {
-                                    Thread.Sleep(500);
-                                    lock (lock2)
-                                    {
-                                        Thread.Sleep(500);
-                                    }
-                                }
-                            };
+                {
+                    lock (lock1)
+                    {
+                        Thread.Sleep(500);
+                        lock (lock2)
+                        {
+                            Thread.Sleep(500);
+                        }
+                    }
+                };
 
             Action t2 = () =>
-                            {
-                                lock (lock1)
-                                {
-                                    Thread.Sleep(500);
-                                    lock (lock2)
-                                    {
-                                        Thread.Sleep(500);
-                                    }
-                                }
-                            };
+                {
+                    lock (lock1)
+                    {
+                        Thread.Sleep(500);
+                        lock (lock2)
+                        {
+                            Thread.Sleep(500);
+                        }
+                    }
+                };
 
             TestHelpers.InvokeSimultaneouslyAndWaitForDeadlockDetection(t1, t2);
         }
@@ -94,24 +93,24 @@ namespace PostSharp.Toolkit.Threading.Tests
             Mutex mutex2 = new Mutex();
 
             Action t1 = () =>
-                            {
-                                mutex1.WaitOne();
-                                barrier.SignalAndWait();
-                                mutex2.WaitOne();
-                                Thread.Sleep(100);
-                                mutex2.ReleaseMutex();
-                                mutex1.ReleaseMutex();
-                            };
+                {
+                    mutex1.WaitOne();
+                    barrier.SignalAndWait();
+                    mutex2.WaitOne();
+                    Thread.Sleep(100);
+                    mutex2.ReleaseMutex();
+                    mutex1.ReleaseMutex();
+                };
 
             Action t2 = () =>
-                            {
-                                mutex2.WaitOne();
-                                barrier.SignalAndWait();
-                                mutex1.WaitOne();
-                                Thread.Sleep(100);
-                                mutex1.ReleaseMutex();
-                                mutex2.ReleaseMutex();
-                            };
+                {
+                    mutex2.WaitOne();
+                    barrier.SignalAndWait();
+                    mutex1.WaitOne();
+                    Thread.Sleep(100);
+                    mutex1.ReleaseMutex();
+                    mutex2.ReleaseMutex();
+                };
 
 
             Task.Factory.StartNew(
@@ -132,24 +131,24 @@ namespace PostSharp.Toolkit.Threading.Tests
             Mutex mutex1 = new Mutex();
             Mutex mutex2 = new Mutex();
             Action t1 = () =>
-                            {
-                                mutex1.WaitOne();
-                                barrier.SignalAndWait();
-                                mutex2.WaitOne();
-                                Thread.Sleep(100);
-                                mutex2.ReleaseMutex();
-                                mutex1.ReleaseMutex();
-                            };
+                {
+                    mutex1.WaitOne();
+                    barrier.SignalAndWait();
+                    mutex2.WaitOne();
+                    Thread.Sleep(100);
+                    mutex2.ReleaseMutex();
+                    mutex1.ReleaseMutex();
+                };
 
             Action t2 = () =>
-                            {
-                                mutex2.WaitOne();
-                                barrier.SignalAndWait();
-                                mutex1.WaitOne();
-                                Thread.Sleep(100);
-                                mutex1.ReleaseMutex();
-                                mutex2.ReleaseMutex();
-                            };
+                {
+                    mutex2.WaitOne();
+                    barrier.SignalAndWait();
+                    mutex1.WaitOne();
+                    Thread.Sleep(100);
+                    mutex1.ReleaseMutex();
+                    mutex2.ReleaseMutex();
+                };
 
             TestHelpers.InvokeSimultaneouslyAndWaitForDeadlockDetection(t1, t2);
         }
@@ -162,23 +161,24 @@ namespace PostSharp.Toolkit.Threading.Tests
             Barrier barrier = new Barrier(2);
             int i = 0;
 
-            Action t1 = () => rw.Read(() =>
-                                           {
-                                               barrier.SignalAndWait();
-                                               lock (rw)
-                                               {
-                                                   i = 1;
-                                               }
-                                           });
+            Action t1 = () => rw.Read(
+                () =>
+                {
+                    barrier.SignalAndWait();
+                    lock (rw)
+                    {
+                        i = 1;
+                    }
+                });
 
             Action t2 = () =>
-                            {
-                                lock (rw)
-                                {
-                                    barrier.SignalAndWait();
-                                    rw.Write(i, () => { });
-                                }
-                            };
+                {
+                    lock (rw)
+                    {
+                        barrier.SignalAndWait();
+                        rw.Write(i, () => { });
+                    }
+                };
 
             TestHelpers.InvokeSimultaneouslyAndWaitForDeadlockDetection(t1, t2);
         }
@@ -191,23 +191,24 @@ namespace PostSharp.Toolkit.Threading.Tests
             Barrier barrier = new Barrier(2);
             int i = 0;
 
-            Action t1 = () => rw.Read(() =>
-            {
-                barrier.SignalAndWait();
-                lock (rw)
-                {
-                    i = 1;
-                }
-            });
-
-            Action t2 = () =>
-            {
-                lock (rw)
+            Action t1 = () => rw.Read(
+                () =>
                 {
                     barrier.SignalAndWait();
-                    rw.Write(i, () => { });
-                }
-            };
+                    lock (rw)
+                    {
+                        i = 1;
+                    }
+                });
+
+            Action t2 = () =>
+                {
+                    lock (rw)
+                    {
+                        barrier.SignalAndWait();
+                        rw.Write(i, () => { });
+                    }
+                };
 
             TestHelpers.InvokeSimultaneouslyAndWaitForDeadlockDetection(t1, t2);
         }
@@ -220,23 +221,24 @@ namespace PostSharp.Toolkit.Threading.Tests
             Barrier barrier = new Barrier(2);
             int i = 0;
 
-            Action t1 = () => rw.Read(() =>
-                                           {
-                                               barrier.SignalAndWait();
-                                               lock (rw)
-                                               {
-                                                   i = 1;
-                                               }
-                                           });
+            Action t1 = () => rw.Read(
+                () =>
+                {
+                    barrier.SignalAndWait();
+                    lock (rw)
+                    {
+                        i = 1;
+                    }
+                });
 
             Action t2 = () =>
-                            {
-                                lock (rw)
-                                {
-                                    barrier.SignalAndWait();
-                                    rw.Write(i, () => { });
-                                }
-                            };
+                {
+                    lock (rw)
+                    {
+                        barrier.SignalAndWait();
+                        rw.Write(i, () => { });
+                    }
+                };
 
             TestHelpers.InvokeSimultaneouslyAndWaitForDeadlockDetection(t1, t2);
         }
@@ -247,24 +249,26 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             ReaderWriterWithObserverMethodClass rw = new ReaderWriterWithObserverMethodClass();
             Barrier barrier = new Barrier(2);
-            rw.Write(100, () =>
-            {
-                Task t = new Task(
-                    () =>
-                    {
-                        lock (rw)
-                        {
-                            barrier.SignalAndWait();
-                            rw.Write(1, () => { });
-                        }
-                    });
-                t.Start();
-                barrier.SignalAndWait();
-                lock (rw)
+            rw.Write(
+                100,
+                () =>
                 {
+                    Task t = new Task(
+                        () =>
+                        {
+                            lock (rw)
+                            {
+                                barrier.SignalAndWait();
+                                rw.Write(1, () => { });
+                            }
+                        });
+                    t.Start();
+                    barrier.SignalAndWait();
+                    lock (rw)
+                    {
 
-                }
-            });
+                    }
+                });
 
             //rw.Read( 100 );
         }
@@ -277,27 +281,96 @@ namespace PostSharp.Toolkit.Threading.Tests
             Barrier barrier = new Barrier(2);
 
             rw.OnWrite += () =>
-            {
-                Task t = new Task(
-                    () =>
-                    {
-                        lock (rw)
-                        {
-                            barrier.SignalAndWait();
-                            rw.Write(1);
-                        }
-                    });
-                t.Start();
-                barrier.SignalAndWait();
-                lock (rw)
                 {
+                    Task t = new Task(
+                        () =>
+                        {
+                            lock (rw)
+                            {
+                                barrier.SignalAndWait();
+                                rw.Write(1);
+                            }
+                        });
+                    t.Start();
+                    barrier.SignalAndWait();
+                    lock (rw)
+                    {
 
-                }
-            };
+                    }
+                };
 
             rw.Write(100);
 
             //rw.Read( 100 );
+        }
+
+        [Test]
+        public void ReaderWriter_When2CycleDetected_DoesNotThrows()
+        {
+            ReaderWriterLock rwl = new ReaderWriterLock();
+            Barrier barrier = new Barrier(2);
+
+            Action t1 = () =>
+                {
+                    rwl.AcquireReaderLock(Timeout.Infinite);
+                    barrier.SignalAndWait();
+                    rwl.UpgradeToWriterLock(Timeout.Infinite);
+                    rwl.ReleaseWriterLock();
+                };
+
+            Action t2 = () =>
+                {
+                    rwl.AcquireReaderLock(Timeout.Infinite);
+                    barrier.SignalAndWait();
+                    Thread.Sleep(500);
+                    rwl.ReleaseReaderLock();
+                };
+
+            TestHelpers.InvokeSimultaneouslyAndWait(t1, t2);
+        }
+
+        [Test]
+        public void ReaderWriter_WhenUpgradedWriteLockReleased_EdgesDeleteFromGraph()
+        {
+            ReaderWriterLock rwl = new ReaderWriterLock();
+            Barrier barrier = new Barrier(3);
+            Barrier barrier2 = new Barrier(3);
+            
+
+            Task t1 = new Task( () =>
+                {
+                    rwl.AcquireReaderLock(Timeout.Infinite);
+                    rwl.UpgradeToWriterLock(Timeout.Infinite);
+                    rwl.ReleaseWriterLock();
+                    barrier.SignalAndWait();
+                    barrier2.SignalAndWait();
+                    lock ( rwl )
+                    {
+                        Thread.Sleep(100);
+                    }
+                });
+
+            Task t2 = new Task( () =>
+                {
+                    barrier.SignalAndWait();
+                    lock ( rwl )
+                    {
+                        barrier2.SignalAndWait();
+                        rwl.AcquireWriterLock( Timeout.Infinite );
+                    }
+
+                });
+
+            t1.Start();
+            t2.Start();
+
+            barrier.SignalAndWait();
+            rwl.AcquireReaderLock( Timeout.Infinite );
+            barrier2.SignalAndWait();
+            Thread.Sleep( 500 );
+            rwl.ReleaseReaderLock();
+
+            Task.WaitAll( new[] { t1, t2 } );
         }
 
         [ReaderWriterSynchronized]
@@ -320,9 +393,6 @@ namespace PostSharp.Toolkit.Threading.Tests
                 this.field = value;
             }
         }
-
-
-
 
         public class ReaderWriterSlimClass
         {

@@ -46,12 +46,20 @@ namespace PostSharp.Toolkit.Threading
                                                       TypedBinding = WriterReadLockBinding.Instance
                                                   };
 
-                DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnUpgradeableReadEnter( args );
+                if (!@lock.IsUpgradeableReadLockHeld)
+                {
+                    eventArgs.MethodExecutionTag = new ExitReaderLockLockCookie();
+                    DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnUpgradeableReadEnter( args );
+                }
                 DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnWriterLockEnter( args );
             }
             else
             {
-                @lock.EnterUpgradeableReadLock();
+                if (!@lock.IsUpgradeableReadLockHeld)
+                {
+                    eventArgs.MethodExecutionTag = new ExitReaderLockLockCookie();
+                    @lock.EnterUpgradeableReadLock();
+                }
                 @lock.EnterWriteLock();
             }
         }
@@ -69,11 +77,17 @@ namespace PostSharp.Toolkit.Threading
                 MethodExecutionArgs args = new MethodExecutionArgs( @lock, Arguments.Empty );
 
                 DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnWriterLockExit( args );
-                DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnUpgradeableReadLockExit( args );
+                if (eventArgs.MethodExecutionTag is ExitReaderLockLockCookie)
+                {
+                    DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnUpgradeableReadLockExit( args );
+                }
             }
 
             @lock.ExitWriteLock();
-            @lock.ExitUpgradeableReadLock();
+            if (eventArgs.MethodExecutionTag is ExitReaderLockLockCookie)
+            {
+                @lock.ExitUpgradeableReadLock();
+            }
         }
 
         private sealed class WriterReadLockBinding : MethodBinding
@@ -85,6 +99,11 @@ namespace PostSharp.Toolkit.Threading
                 
                 ((ReaderWriterLockSlim) instance).EnterWriteLock();
             }
+        }
+
+        private sealed class ExitReaderLockLockCookie
+        {
+
         }
     }
 }
