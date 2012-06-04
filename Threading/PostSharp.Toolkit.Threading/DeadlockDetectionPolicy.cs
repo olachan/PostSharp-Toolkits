@@ -20,6 +20,31 @@ using PostSharp.Toolkit.Threading.DeadlockDetection;
 
 namespace PostSharp.Toolkit.Threading
 {
+    /// <summary>
+    /// Detects deadlocks occurring because of circular wait conditions.
+    /// </summary>
+    /// <remarks>
+    /// 	<para>
+    ///         The <see cref="DeadlockDetectionPolicy"/> works by building, in real time, a graph
+    ///         of dependencies between threads and waiting objects. All synchronization aspects of 
+    ///         threading toolkit are supportd moreover some .NET synchronization primitives cooperate 
+    ///         properly with <see cref="DeadlockDetectionPolicy"/>. Methods that are supported: 
+    ///         Mutex.WaitOne, Mutex.WaitAll, Mutex.Release, Monitor.Enter, Monitor.Exit, Thread.Join,
+    ///         all methods of ReaderWriterLockSlim, all methods of ReaderWriterLock except 
+    ///         ReaderWriterLock.ReleaseLock, ReaderWriterLock.RestoreLock.
+    ///     </para>
+    /// 	<para>
+    ///         When synchronization objects wait for more then 200ms deadlock detection is performed. 
+    ///         It analyzes the dependency graph for cycles and throw a <see cref="DeadlockException"/> 
+    ///         in all threads in cycle if a deadlock is detected.
+    ///     </para>
+    ///     <para>
+    ///         Some actions on synchronization primitives make it imposible to track deadlocks such actions are 
+    ///         ReaderWriterLock.RestoreLock and changing Mutex WaitHandle. In case of onvoking such methods 
+    ///         synchronization primitive is added to list of ignored primitives and is excluded from 
+    ///         deadlock detection mechanizm.
+    ///     </para>
+    /// </remarks>
     [Serializable]
     public sealed class DeadlockDetectionPolicy : AssemblyLevelAspect, IAspectProvider
     {
@@ -376,7 +401,7 @@ namespace PostSharp.Toolkit.Threading
                 DeadlockMonitor.ExecuteAction(() => DeadlockMonitor.ExitAcquired(args.Instance, ResourceType.Read));
             }
 
-            [OnMethodEntryAdvice, MulticastPointcut( MemberName = "TryEnterReadLock" )]
+            [OnMethodExitAdvice, MulticastPointcut(MemberName = "TryEnterReadLock")]
             public void OnTryEnterReadLock( MethodExecutionArgs args )
             {
                 DeadlockMonitor.ExecuteAction(
@@ -384,13 +409,12 @@ namespace PostSharp.Toolkit.Threading
                         {
                             if ( (bool) args.ReturnValue )
                             {
-                                DeadlockMonitor.EnterAcquired(
-                                    args.Arguments[0], ResourceType.Read );
+                                DeadlockMonitor.EnterAcquired( args.Instance, ResourceType.Read );
                             }
                         } );
             }
 
-            [OnMethodEntryAdvice, MulticastPointcut( MemberName = "TryEnterUpgradeableReadLock" )]
+            [OnMethodExitAdvice, MulticastPointcut(MemberName = "TryEnterUpgradeableReadLock")]
             public void OnTryEnterUpgradeableReadLock( MethodExecutionArgs args )
             {
                 DeadlockMonitor.ExecuteAction(
@@ -398,13 +422,12 @@ namespace PostSharp.Toolkit.Threading
                         {
                             if ( (bool) args.ReturnValue )
                             {
-                                DeadlockMonitor.EnterAcquired(
-                                    args.Arguments[0], ResourceType.Read );
+                                DeadlockMonitor.EnterAcquired( args.Instance, ResourceType.Read);
                             }
                         } );
             }
 
-            [OnMethodEntryAdvice, MulticastPointcut( MemberName = "TryEnterWriteLock" )]
+            [OnMethodExitAdvice, MulticastPointcut( MemberName = "TryEnterWriteLock" )]
             public void OnTryEnterWriteLock( MethodExecutionArgs args )
             {
                 DeadlockMonitor.ExecuteAction(
@@ -412,10 +435,15 @@ namespace PostSharp.Toolkit.Threading
                         {
                             if ( (bool) args.ReturnValue )
                             {
-                                DeadlockMonitor.EnterAcquired(
-                                    args.Arguments[0], ResourceType.Read );
+                                DeadlockMonitor.EnterAcquired( args.Instance, ResourceType.Read);
                             }
                         } );
+            }
+
+            [OnMethodEntryAdvice, MulticastPointcut(MemberName = "regex:ReleaseLock|RestoreLock")]
+            public void OnReleaseRestoreLock(MethodExecutionArgs args)
+            {
+                DeadlockMonitor.ExecuteAction( () => DeadlockMonitor.IgnoreResource(args.Instance, ResourceType.Read) );
             }
 
 

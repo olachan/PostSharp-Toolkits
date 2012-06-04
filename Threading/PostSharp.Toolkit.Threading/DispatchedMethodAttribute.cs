@@ -23,6 +23,10 @@ using PostSharp.Reflection;
 
 namespace PostSharp.Toolkit.Threading
 {
+    /// <summary>
+    /// Custom attribute that, when applied on a method, specifies that it should be executed in UI thread. 
+    /// When applied on a method it automatically applies <see cref="DispatcherObjectAspect"/> on object implementing the method. 
+    /// </summary>
     [AttributeUsage( AttributeTargets.Method )]
     [ProvideAspectRole( StandardRoles.Threading )]
     [Serializable]
@@ -101,6 +105,9 @@ namespace PostSharp.Toolkit.Threading
             }
         }
 
+        /// <summary>
+        /// Custom attribute that, when applied on a class tries to find <see cref="SynchronizationContext"/> or for current object.
+        /// </summary>
         [IntroduceInterface( typeof(IDispatcherObject), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore
             )]
         [ProvideAspectRole( StandardRoles.Threading )]
