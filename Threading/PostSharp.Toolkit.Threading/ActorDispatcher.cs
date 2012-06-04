@@ -34,7 +34,9 @@ namespace PostSharp.Toolkit.Threading
 
                     action.Invoke();
                    
+#pragma warning disable 420
                 } while (Interlocked.Decrement(ref this.workItemsCount) > 0);
+#pragma warning restore 420
             }
             finally
             {
@@ -54,7 +56,9 @@ namespace PostSharp.Toolkit.Threading
 
         void IDispatcher.BeginInvoke(IAction action)
         {
+#pragma warning disable 420
             if (Interlocked.Increment(ref this.workItemsCount) == 1)
+#pragma warning restore 420
             {
                 new Task(this.ProcessQueue).Start();
             }

@@ -29,7 +29,7 @@ namespace PostSharp.Toolkit.Threading
     [Serializable]
     [CompositionAspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     [IntroduceInterface( typeof(IReaderWriterSynchronized), OverrideAction = InterfaceOverrideAction.Ignore )]
-    [MulticastAttributeUsage( MulticastTargets.Class, Inheritance = MulticastInheritance.Strict )]
+    [MulticastAttributeUsage( MulticastTargets.Class, Inheritance = MulticastInheritance.Strict, AllowMultiple = false)]
     // [AspectRoleDependency(AspectDependencyAction.Conflict, ThreadingToolkitAspectRoles.ThreadingModel)]
     [ProvideAspectRole(ThreadingToolkitAspectRoles.ThreadingModel)]
     public sealed class ReaderWriterSynchronizedAttribute : InstanceLevelAspect, IReaderWriterSynchronized

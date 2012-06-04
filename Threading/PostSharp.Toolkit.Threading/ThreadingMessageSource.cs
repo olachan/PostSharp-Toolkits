@@ -33,6 +33,10 @@ namespace PostSharp.Toolkit.Threading
                         return "ReaderWriterSynchronizedAttribute cannot be applied to type {0} becouse it contains public field {0}.{1} not marked as ThreadSafe.";
                     case 8:
                         return "ThreadUnsafeObject cannot be applied to type {0} becouse it contains public field {0}.{1} not marked as ThreadSafe.";
+                    case 9:
+                        return "ActorAttribute cannot be applied to type {0} becouse it contains method {0}.{1} not returning void or containing out/ref parameters.";
+                    case 10:
+                        return "Aspect DeadlockDetectionPolicy must be added to the current assembly only.";
                     default:
                         return null;
                 }

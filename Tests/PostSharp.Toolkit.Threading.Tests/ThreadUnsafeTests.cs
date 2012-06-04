@@ -303,7 +303,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         }
 
 
-        [ThreadUnsafeObject( ThreadUnsafePolicy.Static )]
+        // [ThreadUnsafeObject( ThreadUnsafePolicy.Static )]
         public class SingleThreadedStaticMethodsDerivedObject : SingleThreadedStaticMethodsObject
         {
             public static void DerivedStaticTypeDependentMethod()
@@ -317,7 +317,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             }
         }
 
-        [ThreadUnsafeObject]
+        // [ThreadUnsafeObject]
         public class SingleThreadedMethodsDerivedObject : SingleThreadedMethodsObject
         {
             public void DerivedInstanceDependentMethod()

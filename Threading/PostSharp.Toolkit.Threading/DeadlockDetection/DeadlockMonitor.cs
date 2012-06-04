@@ -17,43 +17,6 @@ using ThreadState = System.Threading.ThreadState;
 
 namespace PostSharp.Toolkit.Threading.DeadlockDetection
 {
-    /// <summary>
-    /// Detects deadlocks occurring because of circular wait conditions.
-    /// </summary>
-    /// <remarks>
-    /// 	<para>
-    ///         The <see cref="DeadlockMonitor"/> works by building, in real time, a graph
-    ///         of dependencies between threads and waiting objects. Waiting objects have to
-    ///         cooperate with the <see cref="DeadlockMonitor"/> to add and remove edges
-    ///         to the graph. Currently, the only synchronization objects cooperating with
-    ///         <see cref="DeadlockMonitor"/> are <see cref="MonitoredReaderWriterLockSlim"/> and 
-    ///         <b>WpfDispatchAttribute</b>. Therefore,
-    ///         deadlocks occurring because of other objects will not be detected.
-    ///     </para>
-    /// 	<para>
-    ///         Synchronization objects update the wait graph by calling methods <see cref="EnterWaiting"/> 
-    ///         (before starting to wait), <see cref="ConvertWaitingToAcquired"/> (when a synchronization object has been
-    ///         acquired after waiting), <see cref="EnterAcquired"/> (when a
-    ///         synchronization object has been acquired without waiting), <see cref="ExitWaiting"/> 
-    ///         (after waiting, when the synchronization object has not
-    ///         been acquired), or <see cref="ExitAcquired"/> (after the synchronization
-    ///         object has been released).
-    ///     </para>
-    /// 	<para>
-    ///         Synchronization objects are expected to wait only a defined amount of time.
-    ///         When this amount of time has elapsed, they should cause a deadlock detection
-    ///         by invoking the <see cref="DetectDeadlocks"/> methods. This method will
-    ///         analyze the dependency graph for cycles and throw a <see cref="DeadlockException"/> if 
-    ///         a deadlock is detected. Additionally, all threads
-    ///         that participate in the deadlock will be interrupted using <see cref="Thread.Interrupt"/>.
-    ///     </para>
-    /// </remarks>
-    /// <notes>
-    ///     Synchronization objects can have locks of many roles. For instance, a 
-    ///     <see cref="ReaderWriterLockSlim"/> object has to be represented with three roles:
-    ///     <em>read</em>, <em>write</em> and <em>upgradeable read</em>. Individual roles of
-    ///     synchronization objects are considered as separate nodes in the dependency graph.
-    /// </notes>
     internal static class DeadlockMonitor
     {
         private static readonly Graph graph = new Graph();
