@@ -33,6 +33,9 @@ namespace PostSharp.Toolkit.Threading
     [MulticastAttributeUsage( MulticastTargets.Method, TargetExternalMemberAttributes = MulticastAttributes.Internal, AllowMultiple = false)]
     public sealed class DispatchedMethodAttribute : MethodInterceptionAspect, IAspectProvider
     {
+
+        // TODO: Share code with ActorAttribute. Support async/await as ActorAttribute does (actually, there should be a single shared implementation).
+
         private static readonly TypeLevelAspectRepository typeLevelAspects;
 
         static DispatchedMethodAttribute()

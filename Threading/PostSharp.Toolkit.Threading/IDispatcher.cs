@@ -7,10 +7,13 @@
 
 #endregion
 
+using System.Threading;
+
 namespace PostSharp.Toolkit.Threading
 {
     public interface IDispatcher
     {
+        SynchronizationContext SynchronizationContext { get; }
         bool CheckAccess();
         void Invoke( IAction action );
         void BeginInvoke( IAction action );

@@ -32,7 +32,7 @@ namespace PostSharp.Toolkit.Threading
             }
         }
 
-        class SendOrPostCallbackAction : IAction
+        private sealed class SendOrPostCallbackAction : IAction
         {
             private readonly SendOrPostCallback callback;
             private readonly object state;

@@ -34,6 +34,8 @@ namespace PostSharp.Toolkit.Threading
     public sealed class ActorAttribute : TypeLevelAspect, IAspectProvider
     {
 
+        // TODO: Share code with [DispatchedMethod]. This aspect should probably be refactored as an IAspectProvider of DispatchedMethod.
+
         public override bool CompileTimeValidate(Type type)
         {
             bool result = base.CompileTimeValidate(type);
@@ -124,7 +126,7 @@ namespace PostSharp.Toolkit.Threading
         }
 
         [Serializable]
-        public class StateMachineEnhancements : TypeLevelAspect
+        public sealed class StateMachineEnhancements : TypeLevelAspect
         {
 
             static Action<Action> callYieldDelegate;

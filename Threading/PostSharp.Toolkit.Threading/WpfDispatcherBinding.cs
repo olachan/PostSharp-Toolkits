@@ -20,14 +20,32 @@ namespace PostSharp.Toolkit.Threading
         private static Action<object, Action> beginInvokeDelegate;
         private static Type dispatcherType;
 
-
-        internal class DispatcherWrapper : IDispatcher
+        private sealed class DispatcherWrapper : IDispatcher
         {
             private readonly object dispatcher;
+            private SynchronizationContext synchronizationContext;
 
             public DispatcherWrapper(object dispatcher)
             {
                 this.dispatcher = dispatcher;
+
+                // TODO: Call BeginInvoke with highest priority (choose another LINQ signature).
+                WpfDispatcherBinding.BeginInvoke( dispatcher, () => this.synchronizationContext = SynchronizationContext.Current );
+            }
+
+            public SynchronizationContext SynchronizationContext
+            {
+                get
+                {
+                    // Create a temporary SynchronizationContext (bound to the proper Dispatcher anyway) in case we have not received it yet.
+                    if ( this.synchronizationContext == null )
+                    {
+                        this.synchronizationContext = (SynchronizationContext) Activator.CreateInstance( Type.GetType( "System.Windows.Threading.DispatcherSynchronizationContext, WindowsBase"),
+                                                                                                         this.dispatcher );
+                            
+                    }
+                    return null;
+                }
             }
 
             public bool CheckAccess()
@@ -134,7 +152,7 @@ namespace PostSharp.Toolkit.Threading
             var objectParameterExpression = Expression.Parameter(typeof(object));
             var castExpression = Expression.Convert(objectParameterExpression, dispatcherType);
 
-            MethodCallExpression checkAccessCall = Expression.Call(castExpression, "CheckAccess", new Type[0]);
+            MethodCallExpression checkAccessCall = Expression.Call(castExpression, "CheckAccess", Type.EmptyTypes);
             checkAccessDelegate = Expression.Lambda<Func<object, bool>>(checkAccessCall, objectParameterExpression).Compile();
 
             ParameterExpression actionParameterExpression = Expression.Parameter(typeof(Delegate));

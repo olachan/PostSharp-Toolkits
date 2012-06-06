@@ -20,6 +20,11 @@ namespace PostSharp.Toolkit.Threading
             this.synchronizationContext = synchronizationContext;
         }
 
+        public SynchronizationContext SynchronizationContext
+        {
+            get { return this.synchronizationContext; }
+        }
+
         public bool CheckAccess()
         {
             return SynchronizationContext.Current == this.synchronizationContext;

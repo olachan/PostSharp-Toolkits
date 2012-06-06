@@ -5,12 +5,9 @@ using System.Threading.Tasks;
 
 namespace PostSharp.Toolkit.Threading
 {
-    public interface IActorDispatcher : IDispatcher
-    {
-        SynchronizationContext SynchronizationContext { get; }
-    }
+    
 
-    public sealed class ActorDispatcher : IActorDispatcher
+    public sealed class ActorDispatcher : IDispatcher
     {
         private readonly ConcurrentQueue<IAction> workItems = new ConcurrentQueue<IAction>();
         private volatile Thread currentThread;
