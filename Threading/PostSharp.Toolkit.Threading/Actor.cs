@@ -40,14 +40,14 @@ namespace PostSharp.Toolkit.Threading
     {
         // TODO: Compatibility with async/await: methods returning a Task should be handled properly.
 
-        private readonly IDispatcher dispatcher;
+        private readonly IActorDispatcher dispatcher;
 
         protected Actor()
             : this(null)
         {
         }
 
-        protected Actor(IDispatcher dispatcher)
+        protected Actor(IActorDispatcher dispatcher)
         {
             this.dispatcher = dispatcher ?? new ActorDispatcher();
         }
@@ -56,6 +56,12 @@ namespace PostSharp.Toolkit.Threading
         IDispatcher IDispatcherObject.Dispatcher
         {
             get { return this.dispatcher; }
+        }
+
+        public IActorDispatcher Dispatcher 
+        {
+            [ThreadSafe]
+            get { return this.dispatcher; } 
         }
 
        

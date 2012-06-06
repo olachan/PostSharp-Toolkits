@@ -5,22 +5,29 @@ using System.Threading.Tasks;
 
 namespace PostSharp.Toolkit.Threading
 {
-    public sealed class ActorDispatcher : IDispatcher
+    public interface IActorDispatcher : IDispatcher
+    {
+        SynchronizationContext SynchronizationContext { get; }
+    }
+
+    public sealed class ActorDispatcher : IActorDispatcher
     {
         private readonly ConcurrentQueue<IAction> workItems = new ConcurrentQueue<IAction>();
         private volatile Thread currentThread;
         private volatile int workItemsCount;
-        private readonly DispatcherSynchronizationContext synchronizationContext;
+        private readonly SynchronizationContext synchronizationContext;
 
         public ActorDispatcher()
         {
             this.synchronizationContext = new DispatcherSynchronizationContext( this );
         }
 
-        public DispatcherSynchronizationContext SynchronizationContext
+        public SynchronizationContext SynchronizationContext
         {
             get { return this.synchronizationContext; }
         }
+
+        
 
         private void ProcessQueue()
         {
@@ -67,7 +74,7 @@ namespace PostSharp.Toolkit.Threading
 
         void IDispatcher.Invoke(IAction action)
         {
-            throw new NotSupportedException();
+            throw new NotSupportedException("Synchronous execution of an actor method is not supported.");
         }
 
         void IDispatcher.BeginInvoke(IAction action)
