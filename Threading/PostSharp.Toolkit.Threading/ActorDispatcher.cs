@@ -10,6 +10,18 @@ namespace PostSharp.Toolkit.Threading
         private readonly ConcurrentQueue<IAction> workItems = new ConcurrentQueue<IAction>();
         private volatile Thread currentThread;
         private volatile int workItemsCount;
+        private readonly DispatcherSynchronizationContext synchronizationContext;
+
+        public ActorDispatcher()
+        {
+            this.synchronizationContext = new DispatcherSynchronizationContext( this );
+        }
+
+        public DispatcherSynchronizationContext SynchronizationContext
+        {
+            get { return this.synchronizationContext; }
+        }
+
         private void ProcessQueue()
         {
             // We cannot do a CAS and exit the method is this.currentThread is not null, because this field is set
@@ -17,6 +29,9 @@ namespace PostSharp.Toolkit.Threading
             // guarantees there is a single running thread.
             this.currentThread = Thread.CurrentThread;
 
+            // Set the SynchronizationContext to ensure await goes back to the right context.
+            SynchronizationContext oldSynchronizationContext = System.Threading.SynchronizationContext.Current;
+            System.Threading.SynchronizationContext.SetSynchronizationContext( this.SynchronizationContext );
 
             try
             {
@@ -41,6 +56,7 @@ namespace PostSharp.Toolkit.Threading
             finally
             {
                 this.currentThread = null;
+                System.Threading.SynchronizationContext.SetSynchronizationContext(oldSynchronizationContext);
             }
         }
 

@@ -35,4 +35,6 @@ namespace PostSharp.Toolkit.Threading
             this.synchronizationContext.Post( WorkItem.SendOrPostCallbackDelegate, action );
         }
     }
+
+    
 }

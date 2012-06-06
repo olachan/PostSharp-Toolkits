@@ -2,7 +2,7 @@
 // @ExpectedMessage(PS0060)
 namespace PostSharp.Toolkit.Threading.BuildTests.ThreadUnsafe
 {
-    namespace ThreadUnsafeOnStaticMethod
+    namespace ThreadUnsafeOnClassWithPublicFields
     {
         class Program
         {
@@ -15,7 +15,7 @@ namespace PostSharp.Toolkit.Threading.BuildTests.ThreadUnsafe
         }
 
         [ThreadUnsafeObject]
-        class ThreadUnsafeCklass
+        class SomeClass
         {
             [ThreadUnsafeMethod]
             private static void StaticThreadUnsafe()
