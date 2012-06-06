@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -44,7 +45,11 @@ namespace PostSharp.Toolkit.Threading
     ///         synchronization primitive is added to list of ignored primitives and is excluded from 
     ///         deadlock detection mechanizm.
     ///     </para>
+    ///     <para>
+    ///         This aspect shall be applied to the code only if the project is built with debugging symbols <c>DEBUG</c> or <c>DEBUG_THREADING</c>.
+    ///     </para>
     /// </remarks>
+    [Conditional( "DEBUG" ), Conditional( "DEBUG_THREADING" )]
     [Serializable]
     public sealed class DeadlockDetectionPolicy : AssemblyLevelAspect, IAspectProvider
     {
@@ -270,10 +275,16 @@ namespace PostSharp.Toolkit.Threading
                         timeout =>
                             {
                                 bool lockTaken = false;
-                                Monitor.TryEnter( args.Arguments[0], timeout, ref lockTaken );
-                                if ( args.Arguments.Count > 1 )
+                                try
                                 {
-                                    args.Arguments.SetArgument( 1, lockTaken );
+                                    Monitor.TryEnter(args.Arguments[0], timeout, ref lockTaken);
+                                }
+                                finally
+                                {
+                                    if (args.Arguments.Count > 1)
+                                    {
+                                        args.Arguments.SetArgument(1, lockTaken);
+                                    }
                                 }
 
                                 return lockTaken;
@@ -295,13 +306,20 @@ namespace PostSharp.Toolkit.Threading
                                     timeout =>
                                         {
                                             bool lockTaken = false;
-                                            Monitor.TryEnter( args.Arguments[0], timeout, ref lockTaken );
-
-                                            if ( (args.Arguments.Count == 2 && args.Arguments[1] is bool) ||
-                                                 (args.Arguments.Count == 3 && args.Arguments[2] is bool) )
+                                            try
                                             {
-                                                args.Arguments.SetArgument( args.Arguments.Count - 1, lockTaken );
+                                                Monitor.TryEnter(args.Arguments[0], timeout, ref lockTaken);
                                             }
+                                            finally
+                                            {
+                                                if ((args.Arguments.Count == 2 && args.Arguments[1] is bool) ||
+                                                 (args.Arguments.Count == 3 && args.Arguments[2] is bool))
+                                                {
+                                                    args.Arguments.SetArgument(args.Arguments.Count - 1, lockTaken);
+                                                }
+                                            }
+
+                                            
                                             return lockTaken;
                                         },
                                     () => DeadlockMonitor.ConvertWaitingToAcquired( args.Arguments[0], ResourceType.Lock ),
