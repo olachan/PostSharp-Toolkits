@@ -16,6 +16,8 @@ using PostSharp.Toolkit.Threading.DeadlockDetection;
 
 namespace PostSharp.Toolkit.Threading
 {
+    // TODO: Make this MSIL-serialized (as well as other locks)
+
     /// <summary>
     /// Custom attribute that, when applied on a method, specifies that it should be executed in
     /// a reader lock.
@@ -35,6 +37,10 @@ namespace PostSharp.Toolkit.Threading
         /// <param name="eventArgs"></param>
         public override void OnEntry( MethodExecutionArgs eventArgs )
         {
+            // TODO: Should probably check for recursion from another type of lock.
+            // because ReaderWriterLockSlim does not support recursion by default (I think).
+            // do not remove this item before adding tests for recursion.
+
             ReaderWriterLockSlim @lock = ((IReaderWriterSynchronized) eventArgs.Instance).Lock;
             if ( this.UseDeadlockDetection )
             {

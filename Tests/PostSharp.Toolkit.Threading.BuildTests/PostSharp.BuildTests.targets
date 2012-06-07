@@ -47,20 +47,16 @@
     <Source Include="$(Source)"/>
   </ItemGroup>
 
+
   <PropertyGroup>
-    <PostSharpDirectory>..\..\..</PostSharpDirectory>
-    
+
     <TargetFramework>NET</TargetFramework>
-  </PropertyGroup>
-
-  
-
-  <PropertyGroup>
 
     <!-- Set path to MSBuild -->
-    <MSBuild40>$(MSBuildBinPath)\msbuild.exe /p:PostSharpBuild=$(PostSharpBuild) /p:PostSharpAttachDebugger=$(PostSharpAttachDebugger)</MSBuild40>
+    <MSBuild40>$(MSBuildBinPath)\msbuild.exe /nologo /p:PostSharpBuild=$(PostSharpBuild) /p:PostSharpAttachDebugger=$(PostSharpAttachDebugger)</MSBuild40>
     <MSBuild40 Condition="'$(PostSharpTrace)'!=''">$(MSBuild40) /p:PostSharpTrace=$(PostSharpTrace)</MSBuild40>
     <MSBuild40 Condition="'$(PostSharpTrace)'!='' OR '$(Verbose)'!=''">$(MSBuild40) /v:diag</MSBuild40>
+    <MSBuild40 Condition="'$(PostSharpTrace)'=='' AND '$(Verbose)'==''">$(MSBuild40) /v:minimal</MSBuild40>
     <MSBuild40 Condition="'$(PostSharpProperties)'!=''">$(MSBuild40) /p:PostSharpProperties=$(PostSharpProperties)</MSBuild40>
 
   </PropertyGroup>
@@ -70,6 +66,7 @@
     <BuildProjectReferences>false</BuildProjectReferences>
     <AssemblyName>$(TestAssemblyName)</AssemblyName>
     <OutputPath>bin\$(_SourceRelativeDir)\$(AssemblyName)\$(TargetFramework)\$(Configuration)</OutputPath>
+    
     <!--    <PostSharpOutput>$(OutputPath)\$(AssemblyName).exe</PostSharpOutput> -->
     <OutputFile>$(AssemblyName).exe</OutputFile>
     <PostSharpMetricsFile>$(MSBuildProjectDirectory)\$(OutputPath)\Metrics.txt</PostSharpMetricsFile>
@@ -88,7 +85,7 @@
 
   <Target Name="PrepareTest"  Condition="'$(IsTest)'=='True'">
 
-    <Message Importance="high" Text="Building '$(Source)', TargetFramework=$(TargetFramework)..."/>
+    <Message Importance="high" Text=" =============== Building '$(Source)', TargetFramework=$(TargetFramework) =================="/>
 
     <GetFrameworkSdkPath>
       <Output
@@ -106,7 +103,7 @@
 
     <PropertyGroup>
 
-      <PeVerify>"$(SdkPath)\Bin\NETFX 4.0 Tools\x64\peverify.exe"</PeVerify>
+      <PeVerify>"$(SdkPath)\Bin\NETFX 4.0 Tools\x64\peverify.exe" /nologo</PeVerify>
 
       <!-- Override output paths -->
       <_SourceRelativeDir>$(SourceRelativeDir)</_SourceRelativeDir>

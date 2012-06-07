@@ -26,6 +26,7 @@ namespace PostSharp.Toolkit.Threading
     [AspectTypeDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute))]
     public class ObserverLockAttribute : Aspect, IEventLevelAspectBuildSemantics, IMethodLevelAspectBuildSemantics
     {
+        static readonly object restoreWriteLockSentinel = new object();
         internal bool UseDeadlockDetection { get; private set; }
 
         [OnEventInvokeHandlerAdvice, MethodPointcut("SelectEvents")]
@@ -74,7 +75,7 @@ namespace PostSharp.Toolkit.Threading
             ReaderWriterLockSlim @lock = ((IReaderWriterSynchronized) eventArgs.Instance).Lock;
             if (@lock.IsWriteLockHeld)
             {
-                eventArgs.MethodExecutionTag = new RestoreWriteLockCookie();
+                eventArgs.MethodExecutionTag = restoreWriteLockSentinel;
             }
 
             this.Enter( @lock );
@@ -117,7 +118,7 @@ namespace PostSharp.Toolkit.Threading
         {
             ReaderWriterLockSlim @lock = ((IReaderWriterSynchronized) eventArgs.Instance).Lock;
 
-            this.Exit( eventArgs.MethodExecutionTag is RestoreWriteLockCookie, @lock);
+            this.Exit( eventArgs.MethodExecutionTag == restoreWriteLockSentinel, @lock);
         }
 
         private void Exit( bool reEnterWriteLock, ReaderWriterLockSlim @lock )
@@ -159,10 +160,6 @@ namespace PostSharp.Toolkit.Threading
             }
         }
 
-        private sealed class RestoreWriteLockCookie
-        {
-             
-        }
 
         public void CompileTimeInitialize( EventInfo targetEvent, AspectInfo aspectInfo )
         {

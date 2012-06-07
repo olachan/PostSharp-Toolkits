@@ -11,7 +11,7 @@ using System.Threading;
 
 namespace PostSharp.Toolkit.Threading
 {
-    internal class SynchronizationContextWrapper : IDispatcher
+    internal sealed class SynchronizationContextWrapper : IDispatcher
     {
         private readonly SynchronizationContext synchronizationContext;
 

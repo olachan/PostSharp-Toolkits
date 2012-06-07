@@ -22,5 +22,7 @@ namespace PostSharp.Toolkit.Threading
         /// Static methods are not thread-safe as well.
         /// </summary>
         Static
+
+        // TODO: Affined
     }
 }

@@ -18,7 +18,7 @@ namespace PostSharp.Toolkit.Threading
     {
         private readonly HashSet<Type> aspects = new HashSet<Type>();
 
-        public IEnumerable<AspectInstance> GetAspect( Type type, Func<Type, AspectInstance> createAspect )
+        public AspectInstance GetAspect( Type type, Func<Type, AspectInstance> createAspect )
         {
             Assembly currentAssembly = type.Assembly;
             Type rootType = type;
@@ -34,8 +34,10 @@ namespace PostSharp.Toolkit.Threading
             {
                 this.aspects.Add( rootType );
 
-                yield return createAspect( rootType );
+                return createAspect( rootType );
             }
+
+            return null;
         }
     }
 }

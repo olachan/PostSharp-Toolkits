@@ -84,6 +84,8 @@ namespace PostSharp.Toolkit.Threading
         {
             if (!initialized)
             {
+
+                // TODO: This is the case for LazyInitializer.
                 lock (syncRoot)
                 {
                     if (!initialized)

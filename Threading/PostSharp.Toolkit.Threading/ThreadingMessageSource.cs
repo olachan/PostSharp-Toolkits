@@ -37,6 +37,8 @@ namespace PostSharp.Toolkit.Threading
                         return "ActorAttribute cannot be applied to type {0} becouse it contains method {0}.{1} not returning void or containing out/ref parameters.";
                     case 10:
                         return "Aspect DeadlockDetectionPolicy must be added to the current assembly only.";
+                    case 11:
+                        return "Cannot find the field representing the 'this' instance in type {0}.";
                     default:
                         return null;
                 }

@@ -101,6 +101,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             waitHandle.Set();
         }
 
+        [ThreadSafe]
         public override string ToString()
         {
             return string.Format( "Actor Count={0}", this.Count );
