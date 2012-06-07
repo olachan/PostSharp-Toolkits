@@ -47,7 +47,7 @@ namespace PostSharp.Toolkit.Threading
             }
 
             // Check that all fields are private or protected. [ERROR]
-            foreach (var publicField in type.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)) // .Where( f => f.GetCustomAttributes( typeof(ThreadSafeAttribute), false ).Length == 0 )
+            foreach (var publicField in type.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where( f => f.GetCustomAttributes( typeof(ThreadSafeAttribute), false ).Length == 0 ))
             {
                 ThreadingMessageSource.Instance.Write(type, SeverityType.Error, "THR005", type.Name, publicField.Name);
                 result = false;
