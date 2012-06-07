@@ -40,41 +40,44 @@ namespace PostSharp.Toolkit.Threading.Tests
             const int n = 1000000;
             ActorClass[] actors = new ActorClass[Environment.ProcessorCount - 1];
 
-            for (int i = 0; i < actors.Length; i++)
+            for ( int i = 0; i < actors.Length; i++ )
             {
                 actors[i] = new ActorClass();
             }
 
 
-            for (int i = 0; i < n; i++)
+            for ( int i = 0; i < n; i++ )
             {
-                for (int j = 0; j < actors.Length; j++)
+                for ( int j = 0; j < actors.Length; j++ )
                 {
                     actors[j].Fast();
                 }
             }
 
             ManualResetEvent[] readyHandles = new ManualResetEvent[actors.Length];
-            for (int i = 0; i < actors.Length; i++)
+            for ( int i = 0; i < actors.Length; i++ )
             {
-                actors[i].Set(readyHandles[i] = new ManualResetEvent(false));
+                actors[i].Set( readyHandles[i] = new ManualResetEvent( false ) );
             }
 
-            if ( !WaitHandle.WaitAll(readyHandles, 20000) )
+            if ( !WaitHandle.WaitAll( readyHandles, 20000 ) )
                 throw new TimeoutException();
         }
     }
 
     internal class ActorClass : Actor
     {
+        public CountdownEvent CountdownEvent { [ThreadSafe]
+        get; [ThreadSafe]
+        set; }
 
-        public CountdownEvent CountdownEvent { [ThreadSafe] get; [ThreadSafe] set; }
-
-        public int Count { [ThreadSafe] get; [ThreadSafe] set; }
+        public int Count { [ThreadSafe]
+        get; [ThreadSafe]
+        set; }
 
         public ActorClass()
         {
-             CountdownEvent = new CountdownEvent( 10 );
+            this.CountdownEvent = new CountdownEvent( 10 );
         }
 
         public void Foo()
@@ -87,7 +90,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             this.Count++;
 
             Thread.Sleep( 100 );
-            CountdownEvent.Signal();
+            this.CountdownEvent.Signal();
             Monitor.Exit( this );
         }
 
@@ -96,7 +99,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             this.Count++;
         }
 
-        public void Set(ManualResetEvent waitHandle)
+        public void Set( ManualResetEvent waitHandle )
         {
             waitHandle.Set();
         }

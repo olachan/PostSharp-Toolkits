@@ -13,7 +13,6 @@ using PostSharp.Aspects;
 using PostSharp.Aspects.Dependencies;
 using PostSharp.Aspects.Internals;
 using PostSharp.Extensibility;
-using PostSharp.Toolkit.Threading.DeadlockDetection;
 
 namespace PostSharp.Toolkit.Threading
 {
@@ -28,7 +27,7 @@ namespace PostSharp.Toolkit.Threading
     [Serializable]
     [MulticastAttributeUsage( MulticastTargets.Method, TargetMemberAttributes = MulticastAttributes.Instance )]
     [ProvideAspectRole( StandardRoles.Threading )]
-    [AspectTypeDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute))]
+    [AspectTypeDependency( AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute) )]
     public sealed class WriterLockAttribute : ReaderWriterLockAttribute
     {
         /// <summary>
@@ -46,7 +45,7 @@ namespace PostSharp.Toolkit.Threading
                                                       TypedBinding = WriterReadLockBinding.Instance
                                                   };
 
-                if (!@lock.IsUpgradeableReadLockHeld)
+                if ( !@lock.IsUpgradeableReadLockHeld )
                 {
                     eventArgs.MethodExecutionTag = new ExitReaderLockLockCookie();
                     DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnUpgradeableReadEnter( args );
@@ -55,7 +54,7 @@ namespace PostSharp.Toolkit.Threading
             }
             else
             {
-                if (!@lock.IsUpgradeableReadLockHeld)
+                if ( !@lock.IsUpgradeableReadLockHeld )
                 {
                     eventArgs.MethodExecutionTag = new ExitReaderLockLockCookie();
                     @lock.EnterUpgradeableReadLock();
@@ -77,14 +76,14 @@ namespace PostSharp.Toolkit.Threading
                 MethodExecutionArgs args = new MethodExecutionArgs( @lock, Arguments.Empty );
 
                 DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnWriterLockExit( args );
-                if (eventArgs.MethodExecutionTag is ExitReaderLockLockCookie)
+                if ( eventArgs.MethodExecutionTag is ExitReaderLockLockCookie )
                 {
                     DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnUpgradeableReadLockExit( args );
                 }
             }
 
             @lock.ExitWriteLock();
-            if (eventArgs.MethodExecutionTag is ExitReaderLockLockCookie)
+            if ( eventArgs.MethodExecutionTag is ExitReaderLockLockCookie )
             {
                 @lock.ExitUpgradeableReadLock();
             }
@@ -96,14 +95,12 @@ namespace PostSharp.Toolkit.Threading
 
             public override void Invoke( ref object instance, Arguments arguments, object reserved )
             {
-                
                 ((ReaderWriterLockSlim) instance).EnterWriteLock();
             }
         }
 
         private sealed class ExitReaderLockLockCookie
         {
-
         }
     }
 }

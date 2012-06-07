@@ -1,8 +1,16 @@
-﻿using System;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
-
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 using PostSharp.Aspects.Dependencies;
@@ -21,22 +29,22 @@ namespace PostSharp.Toolkit.Threading
     /// the <see cref="IReaderWriterSynchronized"/> interface.</para>
     /// </remarks>
     [Serializable]
-    [MulticastAttributeUsage(MulticastTargets.Method | MulticastTargets.Event, TargetMemberAttributes = MulticastAttributes.Instance, AllowMultiple = false)]
-    [ProvideAspectRole(StandardRoles.Threading)]
-    [AspectTypeDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute))]
+    [MulticastAttributeUsage( MulticastTargets.Method | MulticastTargets.Event, TargetMemberAttributes = MulticastAttributes.Instance, AllowMultiple = false )]
+    [ProvideAspectRole( StandardRoles.Threading )]
+    [AspectTypeDependency( AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute) )]
     public class ObserverLockAttribute : Aspect, IEventLevelAspectBuildSemantics, IMethodLevelAspectBuildSemantics
     {
-        static readonly object restoreWriteLockSentinel = new object();
+        private static readonly object restoreWriteLockSentinel = new object();
         internal bool UseDeadlockDetection { get; private set; }
 
-        [OnEventInvokeHandlerAdvice, MethodPointcut("SelectEvents")]
-        public void OnInvoke(EventInterceptionArgs args)
+        [OnEventInvokeHandlerAdvice, MethodPointcut( "SelectEvents" )]
+        public void OnInvoke( EventInterceptionArgs args )
         {
-            ReaderWriterLockSlim @lock = ((IReaderWriterSynchronized)args.Instance).Lock;
+            ReaderWriterLockSlim @lock = ((IReaderWriterSynchronized) args.Instance).Lock;
 
             bool reEnterWriteLock = @lock.IsWriteLockHeld;
 
-            this.Enter(@lock);
+            this.Enter( @lock );
 
             try
             {
@@ -44,22 +52,22 @@ namespace PostSharp.Toolkit.Threading
             }
             finally
             {
-                this.Exit(reEnterWriteLock, @lock);
+                this.Exit( reEnterWriteLock, @lock );
             }
         }
 
-        private IEnumerable<object> SelectEvents(object target)
+        private IEnumerable<object> SelectEvents( object target )
         {
-            if (target is EventInfo)
+            if ( target is EventInfo )
             {
                 yield return target;
             }
         }
 
-        private IEnumerable<object> SelectMethods(object target)
+        private IEnumerable<object> SelectMethods( object target )
         {
             MethodBase method = target as MethodBase;
-            if (method != null && !(method.IsSpecialName && (method.Name.StartsWith("add_") || method.Name.StartsWith("remove_"))))
+            if ( method != null && !(method.IsSpecialName && (method.Name.StartsWith( "add_" ) || method.Name.StartsWith( "remove_" ))) )
             {
                 yield return target;
             }
@@ -69,11 +77,11 @@ namespace PostSharp.Toolkit.Threading
         /// Handler executed before execution of the method to which the current custom attribute is applied.
         /// </summary>
         /// <param name="eventArgs"></param>
-        [OnMethodEntryAdvice, MethodPointcut("SelectMethods")]
+        [OnMethodEntryAdvice, MethodPointcut( "SelectMethods" )]
         public void OnEntry( MethodExecutionArgs eventArgs )
         {
             ReaderWriterLockSlim @lock = ((IReaderWriterSynchronized) eventArgs.Instance).Lock;
-            if (@lock.IsWriteLockHeld)
+            if ( @lock.IsWriteLockHeld )
             {
                 eventArgs.MethodExecutionTag = restoreWriteLockSentinel;
             }
@@ -98,7 +106,7 @@ namespace PostSharp.Toolkit.Threading
             {
                 if ( this.UseDeadlockDetection )
                 {
-                    MethodInterceptionArgs args = new MethodInterceptionArgsImpl( @lock, Arguments.Empty ) { TypedBinding = WriterReadLockBinding.Instance };
+                    MethodInterceptionArgs args = new MethodInterceptionArgsImpl( @lock, Arguments.Empty ) {TypedBinding = WriterReadLockBinding.Instance};
 
                     DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnReaderLockEnter( args );
                 }
@@ -113,21 +121,21 @@ namespace PostSharp.Toolkit.Threading
         /// Handler executed after execution of the method to which the current custom attribute is applied.
         /// </summary>
         /// <param name="eventArgs"></param>
-        [OnMethodExitAdvice(Master = "OnEntry")]
+        [OnMethodExitAdvice( Master = "OnEntry" )]
         public void OnExit( MethodExecutionArgs eventArgs )
         {
             ReaderWriterLockSlim @lock = ((IReaderWriterSynchronized) eventArgs.Instance).Lock;
 
-            this.Exit( eventArgs.MethodExecutionTag == restoreWriteLockSentinel, @lock);
+            this.Exit( eventArgs.MethodExecutionTag == restoreWriteLockSentinel, @lock );
         }
 
         private void Exit( bool reEnterWriteLock, ReaderWriterLockSlim @lock )
         {
-            if (reEnterWriteLock)
+            if ( reEnterWriteLock )
             {
                 if ( this.UseDeadlockDetection )
                 {
-                    MethodInterceptionArgs args = new MethodInterceptionArgsImpl( @lock, Arguments.Empty ) { TypedBinding = WriterReadLockBinding.Instance };
+                    MethodInterceptionArgs args = new MethodInterceptionArgsImpl( @lock, Arguments.Empty ) {TypedBinding = WriterReadLockBinding.Instance};
 
                     DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnWriterLockEnter( args );
                 }
@@ -155,7 +163,6 @@ namespace PostSharp.Toolkit.Threading
 
             public override void Invoke( ref object instance, Arguments arguments, object reserved )
             {
-                
                 ((ReaderWriterLockSlim) instance).EnterWriteLock();
             }
         }
@@ -163,13 +170,13 @@ namespace PostSharp.Toolkit.Threading
 
         public void CompileTimeInitialize( EventInfo targetEvent, AspectInfo aspectInfo )
         {
-            Attribute[] attributes = GetCustomAttributes(targetEvent.DeclaringType.Assembly, typeof(DeadlockDetectionPolicy));
+            Attribute[] attributes = GetCustomAttributes( targetEvent.DeclaringType.Assembly, typeof(DeadlockDetectionPolicy) );
             this.UseDeadlockDetection = attributes.Length > 0;
         }
 
         public void CompileTimeInitialize( MethodBase method, AspectInfo aspectInfo )
         {
-            Attribute[] attributes = GetCustomAttributes(method.DeclaringType.Assembly, typeof(DeadlockDetectionPolicy));
+            Attribute[] attributes = GetCustomAttributes( method.DeclaringType.Assembly, typeof(DeadlockDetectionPolicy) );
             this.UseDeadlockDetection = attributes.Length > 0;
         }
     }

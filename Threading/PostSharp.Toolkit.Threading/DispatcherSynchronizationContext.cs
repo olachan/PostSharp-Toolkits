@@ -1,7 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
 using System.Threading;
 
 namespace PostSharp.Toolkit.Threading
@@ -15,12 +20,12 @@ namespace PostSharp.Toolkit.Threading
             this.dispatcher = dispatcher;
         }
 
-        public override void Post(SendOrPostCallback d, object state)
+        public override void Post( SendOrPostCallback d, object state )
         {
             this.dispatcher.BeginInvoke( new SendOrPostCallbackAction( d, state ) );
         }
 
-        public override void Send(SendOrPostCallback d, object state)
+        public override void Send( SendOrPostCallback d, object state )
         {
             if ( this.dispatcher.CheckAccess() )
             {
@@ -46,9 +51,8 @@ namespace PostSharp.Toolkit.Threading
 
             public void Invoke()
             {
-                callback(this.state);
+                this.callback( this.state );
             }
         }
-
     }
 }

@@ -12,10 +12,9 @@ using System.ComponentModel;
 using System.Threading;
 using System.Windows;
 using System.Windows.Forms;
+using System.Windows.Media;
 using System.Windows.Threading;
-
 using NUnit.Framework;
-using Brushes = System.Windows.Media.Brushes;
 using FormsApplication = System.Windows.Forms.Application;
 
 namespace PostSharp.Toolkit.Threading.Tests
@@ -28,14 +27,14 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             DispatchWpfObject window = null;
 
-            ManualResetEventSlim ready = new ManualResetEventSlim(false);
+            ManualResetEventSlim ready = new ManualResetEventSlim( false );
             Thread windowThread = new Thread(
                 () =>
                     {
-                        window = new DispatchWpfObject(ready);
+                        window = new DispatchWpfObject( ready );
                         window.Show();
                         Dispatcher.Run();
-                    });
+                    } );
 
             windowThread.SetApartmentState( ApartmentState.STA );
             windowThread.Start();
@@ -54,12 +53,12 @@ namespace PostSharp.Toolkit.Threading.Tests
         [Test]
         public void WinFormsMethods_AreDispatchedCorrectly()
         {
-            form = null;
+            this.form = null;
             ManualResetEventSlim ready = new ManualResetEventSlim( false );
             Thread windowThread = new Thread( () =>
                                                   {
-                                                      form = new DispatchWinFormsObject( ready );
-                                                      FormsApplication.Run( form );
+                                                      this.form = new DispatchWinFormsObject( ready );
+                                                      FormsApplication.Run( this.form );
                                                   } );
 
             windowThread.SetApartmentState( ApartmentState.STA );
@@ -67,9 +66,9 @@ namespace PostSharp.Toolkit.Threading.Tests
 
             ready.Wait();
 
-            form.AddControl();
+            this.form.AddControl();
 
-            form.Invoke( new Action( form.Close ) );
+            this.form.Invoke( new Action( this.form.Close ) );
 
             windowThread.Join();
         }
@@ -88,16 +87,16 @@ namespace PostSharp.Toolkit.Threading.Tests
                 this.Width = 0;
                 this.Height = 0;
                 this.ShowInTaskbar = false;
-                SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
+                this.SetStyle( ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true );
             }
 
             // overriden so window does not show during tests
-            protected override void OnPaint(PaintEventArgs e)
+            protected override void OnPaint( PaintEventArgs e )
             {
             }
 
             // overriden so window does not show during tests
-            protected override void OnPaintBackground(PaintEventArgs e)
+            protected override void OnPaintBackground( PaintEventArgs e )
             {
             }
 

@@ -11,12 +11,11 @@ using System;
 using System.Reflection;
 using PostSharp.Aspects;
 using PostSharp.Extensibility;
-using PostSharp.Toolkit.Threading.DeadlockDetection;
 
 namespace PostSharp.Toolkit.Threading
 {
     [Serializable]
-    [MulticastAttributeUsage( MulticastTargets.Method, TargetMemberAttributes = MulticastAttributes.Instance, AllowMultiple = false)]
+    [MulticastAttributeUsage( MulticastTargets.Method, TargetMemberAttributes = MulticastAttributes.Instance, AllowMultiple = false )]
     public abstract class ReaderWriterLockAttribute : OnMethodBoundaryAspect
     {
         private bool useDeadlockDetection;
@@ -31,6 +30,5 @@ namespace PostSharp.Toolkit.Threading
             Attribute[] attributes = GetCustomAttributes( method.DeclaringType.Assembly, typeof(DeadlockDetectionPolicy) );
             this.useDeadlockDetection = attributes.Length > 0;
         }
-
     }
 }

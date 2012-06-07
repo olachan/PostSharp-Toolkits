@@ -9,7 +9,6 @@
 
 using System;
 using System.Runtime.Serialization;
-using PostSharp.Toolkit.Threading.DeadlockDetection;
 
 namespace PostSharp.Toolkit.Threading
 {

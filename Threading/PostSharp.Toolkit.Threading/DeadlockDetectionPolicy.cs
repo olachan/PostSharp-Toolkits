@@ -57,7 +57,7 @@ namespace PostSharp.Toolkit.Threading
         {
             if ( assembly != PostSharpEnvironment.CurrentProject.GetTargetAssembly( false ) )
             {
-                ThreadingMessageSource.Instance.Write(assembly, SeverityType.Error, "THR010");
+                ThreadingMessageSource.Instance.Write( assembly, SeverityType.Error, "THR010" );
                 return false;
             }
             return true;
@@ -95,14 +95,14 @@ namespace PostSharp.Toolkit.Threading
 
                     while ( !result )
                     {
-                        if (timeout > initialTimeout || timeout == Timeout.Infinite)
+                        if ( timeout > initialTimeout || timeout == Timeout.Infinite )
                         {
                             DeadlockMonitor.DetectDeadlocksInternal( Thread.CurrentThread );
                         }
 
                         result = getResult( timeout );
 
-                        timeout = timeout == initialTimeout ? secondTimeout : Timeout.Infinite ;
+                        timeout = timeout == initialTimeout ? secondTimeout : Timeout.Infinite;
                     }
 
                     convertWaitingToAcquired();
@@ -277,13 +277,13 @@ namespace PostSharp.Toolkit.Threading
                                 bool lockTaken = false;
                                 try
                                 {
-                                    Monitor.TryEnter(args.Arguments[0], timeout, ref lockTaken);
+                                    Monitor.TryEnter( args.Arguments[0], timeout, ref lockTaken );
                                 }
                                 finally
                                 {
-                                    if (args.Arguments.Count > 1)
+                                    if ( args.Arguments.Count > 1 )
                                     {
-                                        args.Arguments.SetArgument(1, lockTaken);
+                                        args.Arguments.SetArgument( 1, lockTaken );
                                     }
                                 }
 
@@ -308,18 +308,18 @@ namespace PostSharp.Toolkit.Threading
                                             bool lockTaken = false;
                                             try
                                             {
-                                                Monitor.TryEnter(args.Arguments[0], timeout, ref lockTaken);
+                                                Monitor.TryEnter( args.Arguments[0], timeout, ref lockTaken );
                                             }
                                             finally
                                             {
-                                                if ((args.Arguments.Count == 2 && args.Arguments[1] is bool) ||
-                                                 (args.Arguments.Count == 3 && args.Arguments[2] is bool))
+                                                if ( (args.Arguments.Count == 2 && args.Arguments[1] is bool) ||
+                                                     (args.Arguments.Count == 3 && args.Arguments[2] is bool) )
                                                 {
-                                                    args.Arguments.SetArgument(args.Arguments.Count - 1, lockTaken);
+                                                    args.Arguments.SetArgument( args.Arguments.Count - 1, lockTaken );
                                                 }
                                             }
 
-                                            
+
                                             return lockTaken;
                                         },
                                     () => DeadlockMonitor.ConvertWaitingToAcquired( args.Arguments[0], ResourceType.Lock ),
@@ -384,7 +384,7 @@ namespace PostSharp.Toolkit.Threading
             }
 
             [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "EnterUpgradeableReadLock" )]
-            public void OnUpgradeableReadEnter(MethodInterceptionArgs args)
+            public void OnUpgradeableReadEnter( MethodInterceptionArgs args )
             {
                 DeadlockMonitor.ExecuteAction( () => OnEnter( args, ResourceType.UpgradeableRead ) );
             }
@@ -395,10 +395,10 @@ namespace PostSharp.Toolkit.Threading
                 DeadlockMonitor.ExecuteAction( () => OnEnter( args, ResourceType.Write ) );
             }
 
-            [OnMethodInvokeAdvice, MulticastPointcut(MemberName = "UpgradeToWriterLock")]
-            public void OnUpgradeToWriterLock(MethodInterceptionArgs args)
+            [OnMethodInvokeAdvice, MulticastPointcut( MemberName = "UpgradeToWriterLock" )]
+            public void OnUpgradeToWriterLock( MethodInterceptionArgs args )
             {
-                DeadlockMonitor.ExecuteAction(() => OnEnter(args, ResourceType.Write, false));
+                DeadlockMonitor.ExecuteAction( () => OnEnter( args, ResourceType.Write, false ) );
             }
 
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "regex:^ExitReadLock|^ReleaseReaderLock" )]
@@ -410,16 +410,16 @@ namespace PostSharp.Toolkit.Threading
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "ExitUpgradeableReadLock" )]
             public void OnUpgradeableReadLockExit( MethodExecutionArgs args )
             {
-                DeadlockMonitor.ExecuteAction(() => DeadlockMonitor.ExitAcquired(args.Instance, ResourceType.Read));
+                DeadlockMonitor.ExecuteAction( () => DeadlockMonitor.ExitAcquired( args.Instance, ResourceType.Read ) );
             }
 
             [OnMethodEntryAdvice, MulticastPointcut( MemberName = "regex:^ExitWriteLock|^ReleaseWriterLock" )]
             public void OnWriterLockExit( MethodExecutionArgs args )
             {
-                DeadlockMonitor.ExecuteAction(() => DeadlockMonitor.ExitAcquired(args.Instance, ResourceType.Read));
+                DeadlockMonitor.ExecuteAction( () => DeadlockMonitor.ExitAcquired( args.Instance, ResourceType.Read ) );
             }
 
-            [OnMethodExitAdvice, MulticastPointcut(MemberName = "TryEnterReadLock")]
+            [OnMethodExitAdvice, MulticastPointcut( MemberName = "TryEnterReadLock" )]
             public void OnTryEnterReadLock( MethodExecutionArgs args )
             {
                 DeadlockMonitor.ExecuteAction(
@@ -432,7 +432,7 @@ namespace PostSharp.Toolkit.Threading
                         } );
             }
 
-            [OnMethodExitAdvice, MulticastPointcut(MemberName = "TryEnterUpgradeableReadLock")]
+            [OnMethodExitAdvice, MulticastPointcut( MemberName = "TryEnterUpgradeableReadLock" )]
             public void OnTryEnterUpgradeableReadLock( MethodExecutionArgs args )
             {
                 DeadlockMonitor.ExecuteAction(
@@ -440,7 +440,7 @@ namespace PostSharp.Toolkit.Threading
                         {
                             if ( (bool) args.ReturnValue )
                             {
-                                DeadlockMonitor.EnterAcquired( args.Instance, ResourceType.Read);
+                                DeadlockMonitor.EnterAcquired( args.Instance, ResourceType.Read );
                             }
                         } );
             }
@@ -453,19 +453,19 @@ namespace PostSharp.Toolkit.Threading
                         {
                             if ( (bool) args.ReturnValue )
                             {
-                                DeadlockMonitor.EnterAcquired( args.Instance, ResourceType.Read);
+                                DeadlockMonitor.EnterAcquired( args.Instance, ResourceType.Read );
                             }
                         } );
             }
 
-            [OnMethodEntryAdvice, MulticastPointcut(MemberName = "regex:ReleaseLock|RestoreLock")]
-            public void OnReleaseRestoreLock(MethodExecutionArgs args)
+            [OnMethodEntryAdvice, MulticastPointcut( MemberName = "regex:ReleaseLock|RestoreLock" )]
+            public void OnReleaseRestoreLock( MethodExecutionArgs args )
             {
-                DeadlockMonitor.ExecuteAction( () => DeadlockMonitor.IgnoreResource(args.Instance, ResourceType.Read) );
+                DeadlockMonitor.ExecuteAction( () => DeadlockMonitor.IgnoreResource( args.Instance, ResourceType.Read ) );
             }
 
 
-            internal static void OnEnter( MethodInterceptionArgs args, ResourceType type , bool addAcquierdEdge = true)
+            internal static void OnEnter( MethodInterceptionArgs args, ResourceType type, bool addAcquierdEdge = true )
             {
                 Func<int, bool> acquireLock;
 
@@ -513,13 +513,11 @@ namespace PostSharp.Toolkit.Threading
                 }
 
                 LockAspectHelper.NoTimeoutAcquire(
-                    () => DeadlockMonitor.EnterWaiting(args.Instance, ResourceType.Read),
+                    () => DeadlockMonitor.EnterWaiting( args.Instance, ResourceType.Read ),
                     acquireLock,
-                    addAcquierdEdge ? () => DeadlockMonitor.ConvertWaitingToAcquired(args.Instance, ResourceType.Read) : (Action)(() => { }),
-                    () => DeadlockMonitor.ExitWaiting(args.Instance, ResourceType.Read));
+                    addAcquierdEdge ? () => DeadlockMonitor.ConvertWaitingToAcquired( args.Instance, ResourceType.Read ) : (Action) (() => { }),
+                    () => DeadlockMonitor.ExitWaiting( args.Instance, ResourceType.Read ) );
             }
         }
-
-       
     }
 }

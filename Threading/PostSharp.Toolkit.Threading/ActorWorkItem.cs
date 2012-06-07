@@ -1,3 +1,12 @@
+#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
 using System;
 using PostSharp.Aspects;
 
@@ -9,7 +18,7 @@ namespace PostSharp.Toolkit.Threading
         {
         }
 
-        protected override void OnException(Exception e, ref bool handled)
+        protected override void OnException( Exception e, ref bool handled )
         {
             ((Actor) this.Instance).CallOnException( e, ref handled );
         }

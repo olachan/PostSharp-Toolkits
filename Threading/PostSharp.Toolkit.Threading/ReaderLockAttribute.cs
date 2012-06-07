@@ -12,7 +12,6 @@ using System.Threading;
 using PostSharp.Aspects;
 using PostSharp.Aspects.Dependencies;
 using PostSharp.Aspects.Internals;
-using PostSharp.Toolkit.Threading.DeadlockDetection;
 
 namespace PostSharp.Toolkit.Threading
 {
@@ -28,7 +27,7 @@ namespace PostSharp.Toolkit.Threading
     /// </remarks>
     [Serializable]
     [ProvideAspectRole( StandardRoles.Threading )]
-    [AspectTypeDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute))]
+    [AspectTypeDependency( AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute) )]
     public sealed class ReaderLockAttribute : ReaderWriterLockAttribute
     {
         /// <summary>

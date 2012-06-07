@@ -1,4 +1,13 @@
-﻿using System;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
+using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -14,7 +23,7 @@ namespace PostSharp.Toolkit.Threading
     {
         private static Func<Thread, object> dispatcherProvider;
         private static object syncRoot = new object();
-        private static bool initialized = false;
+        private static bool initialized;
         private static Func<object, bool> checkAccessDelegate;
         private static Action<object, Action> invokeDelegate;
         private static Action<object, Action> beginInvokeDelegate;
@@ -25,7 +34,7 @@ namespace PostSharp.Toolkit.Threading
             private readonly object dispatcher;
             private SynchronizationContext synchronizationContext;
 
-            public DispatcherWrapper(object dispatcher)
+            public DispatcherWrapper( object dispatcher )
             {
                 this.dispatcher = dispatcher;
 
@@ -40,9 +49,10 @@ namespace PostSharp.Toolkit.Threading
                     // Create a temporary SynchronizationContext (bound to the proper Dispatcher anyway) in case we have not received it yet.
                     if ( this.synchronizationContext == null )
                     {
-                        this.synchronizationContext = (SynchronizationContext) Activator.CreateInstance( Type.GetType( "System.Windows.Threading.DispatcherSynchronizationContext, WindowsBase"),
-                                                                                                         this.dispatcher );
-                            
+                        this.synchronizationContext =
+                            (SynchronizationContext)
+                            Activator.CreateInstance( Type.GetType( "System.Windows.Threading.DispatcherSynchronizationContext, WindowsBase" ),
+                                                      this.dispatcher );
                     }
                     return null;
                 }
@@ -50,45 +60,44 @@ namespace PostSharp.Toolkit.Threading
 
             public bool CheckAccess()
             {
-                return WpfDispatcherBinding.CheckAccess(this.dispatcher);
+                return WpfDispatcherBinding.CheckAccess( this.dispatcher );
             }
 
-            public void Invoke(IAction action)
+            public void Invoke( IAction action )
             {
-                WpfDispatcherBinding.Invoke(this.dispatcher, action.Invoke);
+                WpfDispatcherBinding.Invoke( this.dispatcher, action.Invoke );
             }
 
-            public void BeginInvoke(IAction action)
+            public void BeginInvoke( IAction action )
             {
-                WpfDispatcherBinding.BeginInvoke(this.dispatcher, action.Invoke);
+                WpfDispatcherBinding.BeginInvoke( this.dispatcher, action.Invoke );
             }
         }
 
 
-        internal static bool CheckAccess(object dispatcher)
+        internal static bool CheckAccess( object dispatcher )
         {
-            return checkAccessDelegate(dispatcher);
+            return checkAccessDelegate( dispatcher );
         }
 
-        internal static void Invoke(object dispatcher, Action action)
+        internal static void Invoke( object dispatcher, Action action )
         {
-            invokeDelegate(dispatcher, action);
+            invokeDelegate( dispatcher, action );
         }
 
-        internal static void BeginInvoke(object dispatcher, Action action)
+        internal static void BeginInvoke( object dispatcher, Action action )
         {
-            beginInvokeDelegate(dispatcher, action);
+            beginInvokeDelegate( dispatcher, action );
         }
 
-        internal static IDispatcher TryFindWpfDispatcher(Thread thread)
+        internal static IDispatcher TryFindWpfDispatcher( Thread thread )
         {
-            if (!initialized)
+            if ( !initialized )
             {
-
                 // TODO: This is the case for LazyInitializer.
-                lock (syncRoot)
+                lock ( syncRoot )
                 {
-                    if (!initialized)
+                    if ( !initialized )
                     {
                         Initialize();
                         initialized = true;
@@ -96,15 +105,15 @@ namespace PostSharp.Toolkit.Threading
                 }
             }
 
-            if (dispatcherProvider == null)
+            if ( dispatcherProvider == null )
             {
                 return null;
             }
 
-            object dispatcher = dispatcherProvider(Thread.CurrentThread);
-            if (dispatcher != null)
+            object dispatcher = dispatcherProvider( Thread.CurrentThread );
+            if ( dispatcher != null )
             {
-                return new DispatcherWrapper(dispatcher);
+                return new DispatcherWrapper( dispatcher );
             }
 
             return null;
@@ -114,20 +123,18 @@ namespace PostSharp.Toolkit.Threading
         {
             Assembly windowsBaseAssembly = TryFindWindowsBaseAssembly();
 
-            
-            
-            if (windowsBaseAssembly != null)
+
+            if ( windowsBaseAssembly != null )
             {
-                dispatcherType = windowsBaseAssembly.GetType("System.Windows.Threading.Dispatcher");
-                ParameterExpression pe = Expression.Parameter(typeof(Thread));
-                MethodCallExpression exp = Expression.Call(dispatcherType, "FromThread", new Type[0], pe);
-                dispatcherProvider = Expression.Lambda<Func<Thread, object>>(exp, pe).Compile();
+                dispatcherType = windowsBaseAssembly.GetType( "System.Windows.Threading.Dispatcher" );
+                ParameterExpression pe = Expression.Parameter( typeof(Thread) );
+                MethodCallExpression exp = Expression.Call( dispatcherType, "FromThread", new Type[0], pe );
+                dispatcherProvider = Expression.Lambda<Func<Thread, object>>( exp, pe ).Compile();
 
                 BuildDispatcherCallDelegates();
             }
         }
 
-        
 
         private static Assembly TryFindWindowsBaseAssembly()
         {
@@ -135,15 +142,15 @@ namespace PostSharp.Toolkit.Threading
             const string windowsBaseAssemblyName =
                 "WindowsBase, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
 
-            var windowsBaseAssembly = AppDomain.CurrentDomain.GetAssemblies().SingleOrDefault(a => a.FullName == windowsBaseAssemblyName);
+            Assembly windowsBaseAssembly = AppDomain.CurrentDomain.GetAssemblies().SingleOrDefault( a => a.FullName == windowsBaseAssemblyName );
 
-            if (windowsBaseAssembly == null)
+            if ( windowsBaseAssembly == null )
             {
                 //Maybe it's not loaded yet but referenced and will be loaded in a moment
                 AssemblyName assemblyName =
-                    AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetReferencedAssemblies()).SingleOrDefault(
-                     a => a.FullName == windowsBaseAssemblyName);
-                windowsBaseAssembly = Assembly.Load(assemblyName);
+                    AppDomain.CurrentDomain.GetAssemblies().SelectMany( a => a.GetReferencedAssemblies() ).SingleOrDefault(
+                        a => a.FullName == windowsBaseAssemblyName );
+                windowsBaseAssembly = Assembly.Load( assemblyName );
             }
 
             return windowsBaseAssembly;
@@ -151,20 +158,20 @@ namespace PostSharp.Toolkit.Threading
 
         private static void BuildDispatcherCallDelegates()
         {
-            var objectParameterExpression = Expression.Parameter(typeof(object));
-            var castExpression = Expression.Convert(objectParameterExpression, dispatcherType);
+            ParameterExpression objectParameterExpression = Expression.Parameter( typeof(object) );
+            UnaryExpression castExpression = Expression.Convert( objectParameterExpression, dispatcherType );
 
-            MethodCallExpression checkAccessCall = Expression.Call(castExpression, "CheckAccess", Type.EmptyTypes);
-            checkAccessDelegate = Expression.Lambda<Func<object, bool>>(checkAccessCall, objectParameterExpression).Compile();
+            MethodCallExpression checkAccessCall = Expression.Call( castExpression, "CheckAccess", Type.EmptyTypes );
+            checkAccessDelegate = Expression.Lambda<Func<object, bool>>( checkAccessCall, objectParameterExpression ).Compile();
 
-            ParameterExpression actionParameterExpression = Expression.Parameter(typeof(Delegate));
-            var paramsExpression = Expression.Constant(new object[0]);
+            ParameterExpression actionParameterExpression = Expression.Parameter( typeof(Delegate) );
+            ConstantExpression paramsExpression = Expression.Constant( new object[0] );
 
-            MethodCallExpression invokeCall = Expression.Call(castExpression, "Invoke", new Type[0], actionParameterExpression, paramsExpression);
-            invokeDelegate = Expression.Lambda<Action<object, Action>>(invokeCall, objectParameterExpression, actionParameterExpression).Compile();
+            MethodCallExpression invokeCall = Expression.Call( castExpression, "Invoke", new Type[0], actionParameterExpression, paramsExpression );
+            invokeDelegate = Expression.Lambda<Action<object, Action>>( invokeCall, objectParameterExpression, actionParameterExpression ).Compile();
 
-            MethodCallExpression beginInvokeCall = Expression.Call(castExpression, "BeginInvoke", new Type[0], actionParameterExpression, paramsExpression);
-            beginInvokeDelegate = Expression.Lambda<Action<object, Action>>(beginInvokeCall, objectParameterExpression, actionParameterExpression).Compile();
+            MethodCallExpression beginInvokeCall = Expression.Call( castExpression, "BeginInvoke", new Type[0], actionParameterExpression, paramsExpression );
+            beginInvokeDelegate = Expression.Lambda<Action<object, Action>>( beginInvokeCall, objectParameterExpression, actionParameterExpression ).Compile();
         }
     }
 }

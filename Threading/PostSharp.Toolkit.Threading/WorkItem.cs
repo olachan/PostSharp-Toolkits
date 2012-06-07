@@ -51,13 +51,12 @@ namespace PostSharp.Toolkit.Threading
             {
                 bool handled = false;
                 this.OnException( e, ref handled );
-                if (!handled) throw;
+                if ( !handled ) throw;
             }
         }
 
-        protected virtual void OnException( Exception e, ref bool handled)
+        protected virtual void OnException( Exception e, ref bool handled )
         {
-            
         }
 
         public static readonly SendOrPostCallback SendOrPostCallbackDelegate = SendOrPostCallback;

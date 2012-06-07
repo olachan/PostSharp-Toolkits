@@ -1,12 +1,19 @@
-﻿using System;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace PostSharp.Toolkit.Threading
 {
-    
-
     public sealed class ActorDispatcher : IDispatcher
     {
         private readonly ConcurrentQueue<IAction> workItems = new ConcurrentQueue<IAction>();
@@ -24,7 +31,6 @@ namespace PostSharp.Toolkit.Threading
             get { return this.synchronizationContext; }
         }
 
-        
 
         private void ProcessQueue()
         {
@@ -34,8 +40,8 @@ namespace PostSharp.Toolkit.Threading
             this.currentThread = Thread.CurrentThread;
 
             // Set the SynchronizationContext to ensure await goes back to the right context.
-            SynchronizationContext oldSynchronizationContext = System.Threading.SynchronizationContext.Current;
-            System.Threading.SynchronizationContext.SetSynchronizationContext( this.SynchronizationContext );
+            SynchronizationContext oldSynchronizationContext = SynchronizationContext.Current;
+            SynchronizationContext.SetSynchronizationContext( this.SynchronizationContext );
 
             try
             {
@@ -43,7 +49,7 @@ namespace PostSharp.Toolkit.Threading
                 do
                 {
                     IAction action;
-                    while (!this.workItems.TryDequeue(out action))
+                    while ( !this.workItems.TryDequeue( out action ) )
                     {
                         spinWait.SpinOnce();
                     }
@@ -52,15 +58,15 @@ namespace PostSharp.Toolkit.Threading
                     // Rather interrupt and requeue a ProcessQueue task. Use Stopwatch
 
                     action.Invoke();
-                   
+
 #pragma warning disable 420
-                } while (Interlocked.Decrement(ref this.workItemsCount) > 0);
+                } while ( Interlocked.Decrement( ref this.workItemsCount ) > 0 );
 #pragma warning restore 420
             }
             finally
             {
                 this.currentThread = null;
-                System.Threading.SynchronizationContext.SetSynchronizationContext(oldSynchronizationContext);
+                SynchronizationContext.SetSynchronizationContext( oldSynchronizationContext );
             }
         }
 
@@ -69,23 +75,21 @@ namespace PostSharp.Toolkit.Threading
             return this.currentThread == Thread.CurrentThread;
         }
 
-        void IDispatcher.Invoke(IAction action)
+        void IDispatcher.Invoke( IAction action )
         {
-            throw new NotSupportedException("Synchronous execution of an actor method is not supported.");
+            throw new NotSupportedException( "Synchronous execution of an actor method is not supported." );
         }
 
-        void IDispatcher.BeginInvoke(IAction action)
+        void IDispatcher.BeginInvoke( IAction action )
         {
 #pragma warning disable 420
-            if (Interlocked.Increment(ref this.workItemsCount) == 1)
+            if ( Interlocked.Increment( ref this.workItemsCount ) == 1 )
 #pragma warning restore 420
             {
-                new Task(this.ProcessQueue).Start();
+                new Task( this.ProcessQueue ).Start();
             }
 
-            this.workItems.Enqueue(action);
-
-
+            this.workItems.Enqueue( action );
         }
     }
 }

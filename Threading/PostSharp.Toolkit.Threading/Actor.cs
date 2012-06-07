@@ -35,7 +35,7 @@ namespace PostSharp.Toolkit.Threading
     /// (see <see cref="Actor(IDispacther)"/>).
     /// </para>
     /// </summary>
-    [Actor(AttributeInheritance = MulticastInheritance.Strict)]
+    [Actor( AttributeInheritance = MulticastInheritance.Strict )]
     public abstract class Actor : IDispatcherObject
     {
         // TODO: Compatibility with async/await: methods returning a Task should be handled properly.
@@ -43,11 +43,11 @@ namespace PostSharp.Toolkit.Threading
         private readonly IDispatcher dispatcher;
 
         protected Actor()
-            : this(null)
+            : this( null )
         {
         }
 
-        protected Actor(IDispatcher dispatcher)
+        protected Actor( IDispatcher dispatcher )
         {
             this.dispatcher = dispatcher ?? new ActorDispatcher();
         }
@@ -58,30 +58,26 @@ namespace PostSharp.Toolkit.Threading
             get { return this.dispatcher; }
         }
 
-        public IDispatcher Dispatcher 
+        public IDispatcher Dispatcher
         {
             [ThreadSafe]
-            get { return this.dispatcher; } 
+            get { return this.dispatcher; }
         }
 
-       
+
         [ThreadSafe]
-        internal virtual void CallOnException(Exception exception, ref bool handled)
+        internal virtual void CallOnException( Exception exception, ref bool handled )
         {
             this.OnException( exception, ref handled );
         }
 
-        protected virtual void OnException(Exception exception, ref bool handled)
+        protected virtual void OnException( Exception exception, ref bool handled )
         {
         }
 
 
-        public bool IsDisposed
-        {
-            [ThreadSafe]
-            get;
-            private set;
-        }
+        public bool IsDisposed { [ThreadSafe]
+        get; private set; }
 
         [ThreadSafe]
         public virtual void Dispose()
@@ -90,9 +86,9 @@ namespace PostSharp.Toolkit.Threading
         }
 
         [ThreadSafe]
-        public override bool Equals(object obj)
+        public override bool Equals( object obj )
         {
-            return base.Equals(obj);
+            return base.Equals( obj );
         }
 
         [ThreadSafe]

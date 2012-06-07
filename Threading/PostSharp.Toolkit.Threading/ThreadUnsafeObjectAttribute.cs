@@ -20,7 +20,6 @@ using PostSharp.Aspects.Configuration;
 using PostSharp.Aspects.Dependencies;
 using PostSharp.Aspects.Serialization;
 using PostSharp.Extensibility;
-using PostSharp.Reflection;
 
 namespace PostSharp.Toolkit.Threading
 {
@@ -46,15 +45,18 @@ namespace PostSharp.Toolkit.Threading
     /// </para>
     /// </remarks>
     [Conditional( "DEBUG" ), Conditional( "DEBUG_THREADING" )]
-    [MulticastAttributeUsage(MulticastTargets.Class | MulticastTargets.Struct, PersistMetaData = true, Inheritance = MulticastInheritance.Strict, AllowMultiple = false)]
+    [MulticastAttributeUsage( MulticastTargets.Class | MulticastTargets.Struct, PersistMetaData = true, Inheritance = MulticastInheritance.Strict,
+        AllowMultiple = false )]
     [AspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     //[AspectRoleDependency(AspectDependencyAction.Conflict, ThreadingToolkitAspectRoles.ThreadingModel)]
     //[AspectTypeDependencyAttribute(AspectDependencyAction.Commute, typeof(ThreadUnsafeObjectAttribute))]
-    [ProvideAspectRole(ThreadingToolkitAspectRoles.ThreadingModel)]
+    [ProvideAspectRole( ThreadingToolkitAspectRoles.ThreadingModel )]
     public sealed class ThreadUnsafeObjectAttribute : TypeLevelAspect
     {
         private readonly ThreadUnsafePolicy policy;
-        private static readonly ConcurrentDictionary<object, ThreadHandle> locks = new ConcurrentDictionary<object, ThreadHandle>( IdentityComparer<object>.Instance );
+
+        private static readonly ConcurrentDictionary<object, ThreadHandle> locks =
+            new ConcurrentDictionary<object, ThreadHandle>( IdentityComparer<object>.Instance );
 
         [ThreadStatic] private static HashSet<object> runningConstructors;
         [ThreadStatic] private static Dictionary<object, int> runningThreadSafeMethods;
@@ -77,34 +79,41 @@ namespace PostSharp.Toolkit.Threading
 
         public override bool CompileTimeValidate( Type type )
         {
-            bool result = base.CompileTimeValidate(type);
+            bool result = base.CompileTimeValidate( type );
 
             // [ThreadUnsafeMethod] cannot be used on static methods. [Error]
-            IEnumerable<MethodInfo> staticThreadUnsafeMethods = type.GetMethods( BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic ).Where(m => m.GetCustomAttributes(typeof(ThreadUnsafeMethodAttribute), false).Length != 0);
+            IEnumerable<MethodInfo> staticThreadUnsafeMethods =
+                type.GetMethods( BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic ).Where(
+                    m => m.GetCustomAttributes( typeof(ThreadUnsafeMethodAttribute), false ).Length != 0 );
 
-            foreach ( var staticThreadUnsafeMethod in staticThreadUnsafeMethods )
+            foreach ( MethodInfo staticThreadUnsafeMethod in staticThreadUnsafeMethods )
             {
-                ThreadingMessageSource.Instance.Write(staticThreadUnsafeMethod, SeverityType.Error, "THR002",  staticThreadUnsafeMethod.DeclaringType.Name, staticThreadUnsafeMethod.Name );
+                ThreadingMessageSource.Instance.Write( staticThreadUnsafeMethod, SeverityType.Error, "THR002", staticThreadUnsafeMethod.DeclaringType.Name,
+                                                       staticThreadUnsafeMethod.Name );
 
                 result = false;
             }
 
             // [ThreadUnsafeMethod] should not be used if policy is "Static". [Warning]
-            if (this.Policy == ThreadUnsafePolicy.Static)
+            if ( this.Policy == ThreadUnsafePolicy.Static )
             {
                 IEnumerable<MethodInfo> threadUnsafeMethods = type
-                    .GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-                    .Where(m => m.GetCustomAttributes(typeof(ThreadUnsafeMethodAttribute), false).Length != 0);
-                foreach ( var threadUnsafeMethod in threadUnsafeMethods )
+                    .GetMethods( BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic )
+                    .Where( m => m.GetCustomAttributes( typeof(ThreadUnsafeMethodAttribute), false ).Length != 0 );
+                foreach ( MethodInfo threadUnsafeMethod in threadUnsafeMethods )
                 {
-                    ThreadingMessageSource.Instance.Write(threadUnsafeMethod, SeverityType.Warning, "THR003", threadUnsafeMethod.DeclaringType.Name, threadUnsafeMethod.Name);
+                    ThreadingMessageSource.Instance.Write( threadUnsafeMethod, SeverityType.Warning, "THR003", threadUnsafeMethod.DeclaringType.Name,
+                                                           threadUnsafeMethod.Name );
                 }
             }
 
             // All instance fields should be private or protected unless marked as [ThreadSafe]. [Error]
-            foreach (var publicField in type.GetFields(BindingFlags.Public | BindingFlags.Instance).Where(f => f.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0))
+            foreach (
+                FieldInfo publicField in
+                    type.GetFields( BindingFlags.Public | BindingFlags.Instance ).Where(
+                        f => f.GetCustomAttributes( typeof(ThreadSafeAttribute), false ).Length == 0 ) )
             {
-                ThreadingMessageSource.Instance.Write(type, SeverityType.Error, "THR008", type.Name, publicField.Name);
+                ThreadingMessageSource.Instance.Write( type, SeverityType.Error, "THR008", type.Name, publicField.Name );
                 result = false;
             }
 
@@ -117,51 +126,52 @@ namespace PostSharp.Toolkit.Threading
             return result;
         }
 
-        [OnMethodEntryAdvice, MethodPointcut("SelectInstanceMethods")]
+        [OnMethodEntryAdvice, MethodPointcut( "SelectInstanceMethods" )]
         public void OnEnterInstanceMethod( MethodExecutionArgs args )
         {
             TryEnterLock( this.policy, args );
         }
 
-        private IEnumerable<MethodBase> SelectInstanceMethods(Type type)
+        private IEnumerable<MethodBase> SelectInstanceMethods( Type type )
         {
             return
-                type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
-                    .Where(m => m.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0)
-                    .Where(m => ReflectionHelper.IsInternalOrPublic(m, true) || m.GetCustomAttributes(typeof(ThreadUnsafeMethodAttribute), false).Length != 0);
+                type.GetMethods( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly )
+                    .Where( m => m.GetCustomAttributes( typeof(ThreadSafeAttribute), false ).Length == 0 )
+                    .Where(
+                        m => ReflectionHelper.IsInternalOrPublic( m, true ) || m.GetCustomAttributes( typeof(ThreadUnsafeMethodAttribute), false ).Length != 0 );
         }
 
         private static void TryEnterLock( ThreadUnsafePolicy policy, MethodExecutionArgs args )
         {
             object syncObject;
 
-            syncObject = GetSyncObject(policy, args.Instance, args.Method.DeclaringType);
+            syncObject = GetSyncObject( policy, args.Instance, args.Method.DeclaringType );
 
-            if (runningThreadSafeMethods != null && runningThreadSafeMethods.ContainsKey(syncObject)) return;
+            if ( runningThreadSafeMethods != null && runningThreadSafeMethods.ContainsKey( syncObject ) ) return;
 
-            ThreadHandle currentThread = new ThreadHandle(Thread.CurrentThread);
+            ThreadHandle currentThread = new ThreadHandle( Thread.CurrentThread );
 
-            ThreadHandle actualThread = locks.AddOrUpdate(syncObject, o => currentThread,
-                               ( o, thread ) =>
-                                   {
-                                       if ( thread.Thread != currentThread.Thread )
-                                           throw new ThreadUnsafeException();
+            ThreadHandle actualThread = locks.AddOrUpdate( syncObject, o => currentThread,
+                                                           ( o, thread ) =>
+                                                               {
+                                                                   if ( thread.Thread != currentThread.Thread )
+                                                                       throw new ThreadUnsafeException();
 
-                                       // Same thread, but different ThreadHandle: we are in a nested call on the same thread.
-                                       return thread;
-                                   } );
+                                                                   // Same thread, but different ThreadHandle: we are in a nested call on the same thread.
+                                                                   return thread;
+                                                               } );
 
 
-            if (actualThread == currentThread)
+            if ( actualThread == currentThread )
             {
                 args.MethodExecutionTag = syncObject;
             }
         }
 
-        private static object GetSyncObject(ThreadUnsafePolicy policy, object instance, Type type)
+        private static object GetSyncObject( ThreadUnsafePolicy policy, object instance, Type type )
         {
             object syncObject;
-            if ( policy == ThreadUnsafePolicy.Instance && instance != null)
+            if ( policy == ThreadUnsafePolicy.Instance && instance != null )
             {
                 syncObject = instance;
             }
@@ -192,9 +202,9 @@ namespace PostSharp.Toolkit.Threading
         {
             if ( this.policy == ThreadUnsafePolicy.Instance ) return null;
 
-            return type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
-                    .Where(m => m.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0)
-                    .Where(m => ReflectionHelper.IsInternalOrPublic(m, true) || m.GetCustomAttributes(typeof(ThreadUnsafeMethodAttribute), false).Length != 0);
+            return type.GetMethods( BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly )
+                .Where( m => m.GetCustomAttributes( typeof(ThreadSafeAttribute), false ).Length == 0 )
+                .Where( m => ReflectionHelper.IsInternalOrPublic( m, true ) || m.GetCustomAttributes( typeof(ThreadUnsafeMethodAttribute), false ).Length != 0 );
         }
 
 
@@ -212,26 +222,26 @@ namespace PostSharp.Toolkit.Threading
 
         public bool CheckFieldAccess { get; set; }
 
-        [OnMethodEntryAdvice, MethodPointcut("SelectConstructors")]
-        public void OnEnterConstructor(MethodExecutionArgs args)
+        [OnMethodEntryAdvice, MethodPointcut( "SelectConstructors" )]
+        public void OnEnterConstructor( MethodExecutionArgs args )
         {
             HashSet<object> myPendingConstructors = runningConstructors;
-            if (runningConstructors == null) runningConstructors = myPendingConstructors = new HashSet<object>();
-            myPendingConstructors.Add(args.Instance);
+            if ( runningConstructors == null ) runningConstructors = myPendingConstructors = new HashSet<object>();
+            myPendingConstructors.Add( args.Instance );
         }
 
-        [OnMethodExitAdvice(Master = "OnEnterConstructor")]
-        public void OnExitConstructor(MethodExecutionArgs args)
+        [OnMethodExitAdvice( Master = "OnEnterConstructor" )]
+        public void OnExitConstructor( MethodExecutionArgs args )
         {
-            runningConstructors.Remove(args.Instance);
+            runningConstructors.Remove( args.Instance );
         }
 
-        public IEnumerable<MethodBase> SelectConstructors(Type type)
+        public IEnumerable<MethodBase> SelectConstructors( Type type )
         {
-            if (this.CheckFieldAccess)
+            if ( this.CheckFieldAccess )
             {
-                return type.GetConstructors(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                    .Union(new[] { type.TypeInitializer });
+                return type.GetConstructors( BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic )
+                    .Union( new[] {type.TypeInitializer} );
             }
             else
             {
@@ -239,40 +249,40 @@ namespace PostSharp.Toolkit.Threading
             }
         }
 
-        [OnLocationSetValueAdvice, MethodPointcut("SelectFields")]
-        public void OnFieldSet(LocationInterceptionArgs args)
+        [OnLocationSetValueAdvice, MethodPointcut( "SelectFields" )]
+        public void OnFieldSet( LocationInterceptionArgs args )
         {
             //If a thread-unsafe field is accessed in a way which ignores checks (e.g. from static method or other isntance), an exception should be thrown
 
-            if (runningConstructors != null && runningConstructors.Contains(args.Instance)) return;
+            if ( runningConstructors != null && runningConstructors.Contains( args.Instance ) ) return;
 
             //Fields marked with ThreadSafe have already been exluded
 
-            object key = GetRunningThreadSafeMethodsKey(args.Instance, args.Location.DeclaringType);
-            if (runningThreadSafeMethods == null || !runningThreadSafeMethods.ContainsKey(key))
+            object key = this.GetRunningThreadSafeMethodsKey( args.Instance, args.Location.DeclaringType );
+            if ( runningThreadSafeMethods == null || !runningThreadSafeMethods.ContainsKey( key ) )
             {
-                object sync = GetSyncObject(this.policy, args.Instance, args.Location.DeclaringType);
+                object sync = GetSyncObject( this.policy, args.Instance, args.Location.DeclaringType );
 
                 ThreadHandle threadHandle;
-                if (!locks.TryGetValue(sync, out threadHandle) || threadHandle.Thread != Thread.CurrentThread)
+                if ( !locks.TryGetValue( sync, out threadHandle ) || threadHandle.Thread != Thread.CurrentThread )
                 {
                     throw new LockNotHeldException(
-                        "Fields not marked with ThreadSafe attribute can only be accessed from monitored ThreadUnsafe methods or methods marked as ThreadSafe.");
+                        "Fields not marked with ThreadSafe attribute can only be accessed from monitored ThreadUnsafe methods or methods marked as ThreadSafe." );
                 }
             }
 
             args.ProceedSetValue();
         }
 
-        public IEnumerable<FieldInfo> SelectFields(Type type)
+        public IEnumerable<FieldInfo> SelectFields( Type type )
         {
-            if (this.CheckFieldAccess)
+            if ( this.CheckFieldAccess )
             {
                 BindingFlags flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic;
                 flags |= (this.policy == ThreadUnsafePolicy.Instance) ? BindingFlags.Instance : BindingFlags.Static;
                 return
-                    type.GetFields(flags).Where(
-                        f => f.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0);
+                    type.GetFields( flags ).Where(
+                        f => f.GetCustomAttributes( typeof(ThreadSafeAttribute), false ).Length == 0 );
             }
             else
             {
@@ -281,13 +291,12 @@ namespace PostSharp.Toolkit.Threading
         }
 
 
-
-        [OnMethodEntryAdvice, MethodPointcut("SelectThreadSafeMethods")]
-        public void OnEnterThreadSafeMethod(MethodExecutionArgs args)
+        [OnMethodEntryAdvice, MethodPointcut( "SelectThreadSafeMethods" )]
+        public void OnEnterThreadSafeMethod( MethodExecutionArgs args )
         {
             runningThreadSafeMethods = runningThreadSafeMethods ?? new Dictionary<object, int>();
-            object key = GetRunningThreadSafeMethodsKey(args.Instance, args.Method.DeclaringType);
-            if (!runningThreadSafeMethods.ContainsKey(key))
+            object key = this.GetRunningThreadSafeMethodsKey( args.Instance, args.Method.DeclaringType );
+            if ( !runningThreadSafeMethods.ContainsKey( key ) )
             {
                 runningThreadSafeMethods[key] = 1;
             }
@@ -297,14 +306,14 @@ namespace PostSharp.Toolkit.Threading
             }
         }
 
-        [OnMethodExitAdvice(Master = "OnEnterThreadSafeMethod")]
-        public void OnExitThreadSafeMethod(MethodExecutionArgs args)
+        [OnMethodExitAdvice( Master = "OnEnterThreadSafeMethod" )]
+        public void OnExitThreadSafeMethod( MethodExecutionArgs args )
         {
-            object key = GetRunningThreadSafeMethodsKey(args.Instance, args.Method.DeclaringType);
+            object key = this.GetRunningThreadSafeMethodsKey( args.Instance, args.Method.DeclaringType );
             int count = runningThreadSafeMethods[key] - 1;
-            if (count == 0)
+            if ( count == 0 )
             {
-                runningThreadSafeMethods.Remove(key);
+                runningThreadSafeMethods.Remove( key );
             }
             else
             {
@@ -312,28 +321,27 @@ namespace PostSharp.Toolkit.Threading
             }
         }
 
-        private object GetRunningThreadSafeMethodsKey(object instance, Type declaringType)
+        private object GetRunningThreadSafeMethodsKey( object instance, Type declaringType )
         {
-            return (policy == ThreadUnsafePolicy.Static || instance == null) ? declaringType : instance;
+            return (this.policy == ThreadUnsafePolicy.Static || instance == null) ? declaringType : instance;
         }
 
-        private IEnumerable<MethodBase> SelectThreadSafeMethods(Type type)
+        private IEnumerable<MethodBase> SelectThreadSafeMethods( Type type )
         {
             return
-                type.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
-                        .Where(m => m.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length > 0);
+                type.GetMethods( BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly )
+                    .Where( m => m.GetCustomAttributes( typeof(ThreadSafeAttribute), false ).Length > 0 );
         }
 
 
-        sealed class ThreadHandle
+        private sealed class ThreadHandle
         {
             public readonly Thread Thread;
 
-            public ThreadHandle(Thread thread)
+            public ThreadHandle( Thread thread )
             {
                 this.Thread = thread;
             }
         }
-
     }
 }

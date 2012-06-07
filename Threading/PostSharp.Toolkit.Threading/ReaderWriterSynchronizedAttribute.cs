@@ -29,9 +29,9 @@ namespace PostSharp.Toolkit.Threading
     [Serializable]
     [CompositionAspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     [IntroduceInterface( typeof(IReaderWriterSynchronized), OverrideAction = InterfaceOverrideAction.Ignore )]
-    [MulticastAttributeUsage( MulticastTargets.Class, Inheritance = MulticastInheritance.Strict, AllowMultiple = false)]
+    [MulticastAttributeUsage( MulticastTargets.Class, Inheritance = MulticastInheritance.Strict, AllowMultiple = false )]
     // [AspectRoleDependency(AspectDependencyAction.Conflict, ThreadingToolkitAspectRoles.ThreadingModel)]
-    [ProvideAspectRole(ThreadingToolkitAspectRoles.ThreadingModel)]
+    [ProvideAspectRole( ThreadingToolkitAspectRoles.ThreadingModel )]
     public sealed class ReaderWriterSynchronizedAttribute : InstanceLevelAspect, IReaderWriterSynchronized
     {
         [NonSerialized] private ReaderWriterLockSlim @lock;
@@ -40,14 +40,17 @@ namespace PostSharp.Toolkit.Threading
         [ThreadStatic] private static Dictionary<ReaderWriterLockSlim, ReadCheckNode> runningMethods;
 
 
-        public override bool CompileTimeValidate(Type type)
+        public override bool CompileTimeValidate( Type type )
         {
-            bool result = base.CompileTimeValidate(type);
+            bool result = base.CompileTimeValidate( type );
 
             // All fields should be private or protected unless marked as [ThreadSafe]. [Error]
-            foreach (var publicField in type.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(f => f.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0))
+            foreach (
+                FieldInfo publicField in
+                    type.GetFields( BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static ).Where(
+                        f => f.GetCustomAttributes( typeof(ThreadSafeAttribute), false ).Length == 0 ) )
             {
-                ThreadingMessageSource.Instance.Write(type, SeverityType.Error, "THR007", type.Name, publicField.Name);
+                ThreadingMessageSource.Instance.Write( type, SeverityType.Error, "THR007", type.Name, publicField.Name );
                 result = false;
             }
 
@@ -84,26 +87,26 @@ namespace PostSharp.Toolkit.Threading
             runningConstructors.Remove( args.Instance );
         }
 
-        [OnLocationSetValueAdvice, MethodPointcut("SelectFields")]
-        public void OnFieldSet(LocationInterceptionArgs args)
+        [OnLocationSetValueAdvice, MethodPointcut( "SelectFields" )]
+        public void OnFieldSet( LocationInterceptionArgs args )
         {
-            if (runningConstructors != null && runningConstructors.Contains(args.Instance)) return;
+            if ( runningConstructors != null && runningConstructors.Contains( args.Instance ) ) return;
 
-            if (!((IReaderWriterSynchronized)args.Instance).Lock.IsWriteLockHeld)
-                throw new LockNotHeldException(string.Format("A writer lock is necessary to access field '{0}'.", args.Location.Name));
+            if ( !((IReaderWriterSynchronized) args.Instance).Lock.IsWriteLockHeld )
+                throw new LockNotHeldException( string.Format( "A writer lock is necessary to access field '{0}'.", args.Location.Name ) );
         }
 
-        [OnLocationGetValueAdvice(Master = "OnFieldSet")]
-        public void OnFieldGet(LocationInterceptionArgs args)
+        [OnLocationGetValueAdvice( Master = "OnFieldSet" )]
+        public void OnFieldGet( LocationInterceptionArgs args )
         {
-            if (runningConstructors != null && runningConstructors.Contains(args.Instance)) return;
+            if ( runningConstructors != null && runningConstructors.Contains( args.Instance ) ) return;
 
-            ReaderWriterLockSlim myLock = ((IReaderWriterSynchronized)args.Instance).Lock;
-            if (myLock.IsReadLockHeld || myLock.IsUpgradeableReadLockHeld || myLock.IsWriteLockHeld) return;
+            ReaderWriterLockSlim myLock = ((IReaderWriterSynchronized) args.Instance).Lock;
+            if ( myLock.IsReadLockHeld || myLock.IsUpgradeableReadLockHeld || myLock.IsWriteLockHeld ) return;
 
             Dictionary<ReaderWriterLockSlim, ReadCheckNode> myRunningMethods = runningMethods;
             ReadCheckNode node;
-            if (myRunningMethods == null || !myRunningMethods.TryGetValue( myLock, out node ))
+            if ( myRunningMethods == null || !myRunningMethods.TryGetValue( myLock, out node ) )
             {
                 // The field is read from outside an instance method of the current instance.
                 // This can happen. This would not be a good practice, but this should be checked using an architectural constraint.
@@ -113,32 +116,31 @@ namespace PostSharp.Toolkit.Threading
             }
 
             if ( node.Count > 0 )
-                throw new LockNotHeldException("A reader lock is necessary to access more than one field.");
+                throw new LockNotHeldException( "A reader lock is necessary to access more than one field." );
 
             node.Count = 1;
         }
 
-        [OnMethodEntryAdvice, MethodPointcut("SelectMethods")]
+        [OnMethodEntryAdvice, MethodPointcut( "SelectMethods" )]
         public void OnEnterMethod( MethodExecutionArgs args )
         {
-            ReaderWriterLockSlim myLock = ((IReaderWriterSynchronized)args.Instance).Lock;
+            ReaderWriterLockSlim myLock = ((IReaderWriterSynchronized) args.Instance).Lock;
 
             Dictionary<ReaderWriterLockSlim, ReadCheckNode> myRunningMethods = runningMethods ??
                                                                                (runningMethods = new Dictionary<ReaderWriterLockSlim, ReadCheckNode>());
-            if ( !myRunningMethods.ContainsKey( myLock ))
+            if ( !myRunningMethods.ContainsKey( myLock ) )
             {
                 myRunningMethods.Add( myLock, new ReadCheckNode() );
                 args.MethodExecutionTag = myLock;
             }
-
         }
 
-        [OnMethodExitAdvice(Master = "OnEnterMethod")]
-        public void OnExitMethod(MethodExecutionArgs args)
+        [OnMethodExitAdvice( Master = "OnEnterMethod" )]
+        public void OnExitMethod( MethodExecutionArgs args )
         {
             if ( args.MethodExecutionTag != null )
             {
-                runningMethods.Remove((ReaderWriterLockSlim) args.MethodExecutionTag);
+                runningMethods.Remove( (ReaderWriterLockSlim) args.MethodExecutionTag );
             }
         }
 
@@ -168,13 +170,13 @@ namespace PostSharp.Toolkit.Threading
             }
         }
 
-        public IEnumerable<MethodInfo> SelectMethods(Type type)
+        public IEnumerable<MethodInfo> SelectMethods( Type type )
         {
-            if (this.CheckFieldAccess)
+            if ( this.CheckFieldAccess )
             {
                 return
-                    type.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(
-                        f => f.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0);
+                    type.GetMethods( BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic ).Where(
+                        f => f.GetCustomAttributes( typeof(ThreadSafeAttribute), false ).Length == 0 );
             }
             else
             {
@@ -182,8 +184,8 @@ namespace PostSharp.Toolkit.Threading
             }
         }
 
-       
-        class ReadCheckNode
+
+        private class ReadCheckNode
         {
             public int Count;
         }

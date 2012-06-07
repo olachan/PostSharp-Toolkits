@@ -11,26 +11,25 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using PostSharp.Toolkit.Threading.DeadlockDetection;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {
     public static class TestHelpers
     {
-        public static void InvokeSimultaneouslyAndWait(Action action1, Action action2)
+        public static void InvokeSimultaneouslyAndWait( Action action1, Action action2 )
         {
             try
             {
-                Task t1 = new Task(action1);
-                Task t2 = new Task(action2);
+                Task t1 = new Task( action1 );
+                Task t2 = new Task( action2 );
                 t1.Start();
                 t2.Start();
-                Task.WaitAll(new[] { t1, t2 });
+                Task.WaitAll( new[] {t1, t2} );
             }
-            catch (AggregateException aggregateException)
+            catch ( AggregateException aggregateException )
             {
-                Thread.Sleep(200); //Make sure the second running task is over as well
-                if (aggregateException.InnerExceptions.Count == 1)
+                Thread.Sleep( 200 ); //Make sure the second running task is over as well
+                if ( aggregateException.InnerExceptions.Count == 1 )
                 {
                     throw aggregateException.InnerException;
                 }
@@ -38,20 +37,20 @@ namespace PostSharp.Toolkit.Threading.Tests
             }
         }
 
-        public static void InvokeSimultaneouslyAndWaitForDeadlockDetection(Action action1, Action action2, int timeout = Timeout.Infinite)
+        public static void InvokeSimultaneouslyAndWaitForDeadlockDetection( Action action1, Action action2, int timeout = Timeout.Infinite )
         {
             Exception firstException = null;
-            Task t1 = new Task(action1);
-            Task t2 = new Task(action2);
+            Task t1 = new Task( action1 );
+            Task t2 = new Task( action2 );
             t1.Start();
             t2.Start();
             try
             {
-                t1.Wait(timeout);
+                t1.Wait( timeout );
             }
-            catch (AggregateException aggregateException)
+            catch ( AggregateException aggregateException )
             {
-                if (!(aggregateException.InnerExceptions.Count == 1 && aggregateException.InnerException is DeadlockException))
+                if ( !(aggregateException.InnerExceptions.Count == 1 && aggregateException.InnerException is DeadlockException) )
                 {
                     throw;
                 }
@@ -60,17 +59,17 @@ namespace PostSharp.Toolkit.Threading.Tests
 
             try
             {
-                t2.Wait(timeout);
+                t2.Wait( timeout );
             }
-            catch (AggregateException aggregateException)
+            catch ( AggregateException aggregateException )
             {
-                if (!(aggregateException.InnerExceptions.Count == 1 && aggregateException.InnerException is DeadlockException))
+                if ( !(aggregateException.InnerExceptions.Count == 1 && aggregateException.InnerException is DeadlockException) )
                 {
                     throw;
                 }
             }
 
-            if (firstException != null)
+            if ( firstException != null )
             {
                 throw firstException;
             }

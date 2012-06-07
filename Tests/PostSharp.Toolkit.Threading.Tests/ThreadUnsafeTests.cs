@@ -9,7 +9,6 @@
 
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 using NUnit.Framework;
 
 namespace PostSharp.Toolkit.Threading.Tests
@@ -54,7 +53,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         public void TypeDependentStaticMethodInvokedTwice_Exception()
         {
             TestHelpers.InvokeSimultaneouslyAndWait( SingleThreadedStaticMethodsObject.StaticTypeDependentMethod,
-                                         SingleThreadedStaticMethodsObject.StaticTypeDependentMethod );
+                                                     SingleThreadedStaticMethodsObject.StaticTypeDependentMethod );
         }
 
         [Test]
@@ -62,7 +61,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         public void TwoTypeDependentStaticMethodInvoked_Exception()
         {
             TestHelpers.InvokeSimultaneouslyAndWait( SingleThreadedStaticMethodsObject.StaticTypeDependentMethod,
-                                         SingleThreadedStaticMethodsObject.StaticTypeDependentMethod2 );
+                                                     SingleThreadedStaticMethodsObject.StaticTypeDependentMethod2 );
         }
 
         [Test]
@@ -70,42 +69,43 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             SingleThreadedMethodsObject o1 = new SingleThreadedMethodsObject();
             TestHelpers.InvokeSimultaneouslyAndWait( () => TestHelpers.Swallow<NotSupportedException>( o1.Exception ),
-                                         () =>
-                                             {
-                                                 Thread.Sleep( 200 );
-                                                 TestHelpers.Swallow<NotSupportedException>( o1.Exception );
-                                             } );
+                                                     () =>
+                                                         {
+                                                             Thread.Sleep( 200 );
+                                                             TestHelpers.Swallow<NotSupportedException>( o1.Exception );
+                                                         } );
             TestHelpers.InvokeSimultaneouslyAndWait( () => TestHelpers.Swallow<NotSupportedException>( o1.Exception ),
-                                         () =>
-                                             {
-                                                 Thread.Sleep( 200 );
-                                                 TestHelpers.Swallow<NotSupportedException>( o1.InstanceDependentMethod );
-                                             } );
+                                                     () =>
+                                                         {
+                                                             Thread.Sleep( 200 );
+                                                             TestHelpers.Swallow<NotSupportedException>( o1.InstanceDependentMethod );
+                                                         } );
         }
 
         [Test]
         public void StaticMethodThrowsException_MonitorProperlyReleased()
         {
             TestHelpers.InvokeSimultaneouslyAndWait( () => TestHelpers.Swallow<NotSupportedException>( SingleThreadedMethodsObject.StaticException ),
-                                         () =>
-                                             {
-                                                 Thread.Sleep( 200 );
-                                                 TestHelpers.Swallow<NotSupportedException>( SingleThreadedMethodsObject.StaticException );
-                                             } );
+                                                     () =>
+                                                         {
+                                                             Thread.Sleep( 200 );
+                                                             TestHelpers.Swallow<NotSupportedException>( SingleThreadedMethodsObject.StaticException );
+                                                         } );
             TestHelpers.InvokeSimultaneouslyAndWait( () => TestHelpers.Swallow<NotSupportedException>( SingleThreadedMethodsObject.StaticException ),
-                                         () =>
-                                             {
-                                                 Thread.Sleep( 200 );
-                                                 TestHelpers.Swallow<NotSupportedException>( SingleThreadedStaticMethodsObject.StaticTypeDependentMethod );
-                                             } );
+                                                     () =>
+                                                         {
+                                                             Thread.Sleep( 200 );
+                                                             TestHelpers.Swallow<NotSupportedException>(
+                                                                 SingleThreadedStaticMethodsObject.StaticTypeDependentMethod );
+                                                         } );
         }
 
         [Test]
         public void SingleThreadedClassGetter_MultipleAccessesDoNotThrow()
         {
-            var o = new SingleThreadedClassObject();
+            SingleThreadedClassObject o = new SingleThreadedClassObject();
             int x;
-            TestHelpers.InvokeSimultaneouslyAndWait(() => { x = o.TestProperty; }, () => { x = o.TestProperty; });
+            TestHelpers.InvokeSimultaneouslyAndWait( () => { x = o.TestProperty; }, () => { x = o.TestProperty; } );
         }
 
         [Test]
@@ -114,71 +114,71 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             SingleThreadedClassObject o = new SingleThreadedClassObject();
             TestHelpers.InvokeSimultaneouslyAndWait( () => { o.TestProperty = 3; },
-                                         () => { o.TestProperty = 3; } );
+                                                     () => { o.TestProperty = 3; } );
         }
 
         [Test]
         public void ThreadSafeMethod_InvokedFromTwoThreads_DoesNotThrow()
         {
             SingleThreadedMethodsObject o = new SingleThreadedMethodsObject();
-            TestHelpers.InvokeSimultaneouslyAndWait(o.ThreadSafeMethod, o.ThreadSafeMethod);
+            TestHelpers.InvokeSimultaneouslyAndWait( o.ThreadSafeMethod, o.ThreadSafeMethod );
         }
 
         [Test]
         public void PrivateThreadUnsafeMethod_InvokedFromThreadSafeInTwoThreads_DoesNotThrow()
         {
             SingleThreadedMethodsObject o = new SingleThreadedMethodsObject();
-            TestHelpers.InvokeSimultaneouslyAndWait(o.ThreadSafeMethodInvokingThreadUnsafePrivateMethod, o.ThreadSafeMethodInvokingThreadUnsafePrivateMethod);
+            TestHelpers.InvokeSimultaneouslyAndWait( o.ThreadSafeMethodInvokingThreadUnsafePrivateMethod, o.ThreadSafeMethodInvokingThreadUnsafePrivateMethod );
         }
 
         [Test]
         public void PrivateThreadSafeMethod_InvokedFromTwoThreads_DoesNotThrow()
         {
             SingleThreadedMethodsObject o = new SingleThreadedMethodsObject();
-            TestHelpers.InvokeSimultaneouslyAndWait(o.ThreadSafeMethodInvokingThreadSafePrivateMethod, o.ThreadSafeMethodInvokingThreadSafePrivateMethod);
+            TestHelpers.InvokeSimultaneouslyAndWait( o.ThreadSafeMethodInvokingThreadSafePrivateMethod, o.ThreadSafeMethodInvokingThreadSafePrivateMethod );
         }
 
         [Test]
         public void NonThreadSafeField_ModifiedFromThreadSafeMethod_DoesNotThrow()
         {
-            var o = new ThreadUnsafeWithFieldAccessCheckObject();
+            ThreadUnsafeWithFieldAccessCheckObject o = new ThreadUnsafeWithFieldAccessCheckObject();
             o.ChangeNonThreadSafeFieldFromThreadSafe();
         }
 
         [Test]
         public void ThreadSafeField_ModifiedFromThreadSafeMethod_DoesNotThrow()
         {
-            var o = new ThreadUnsafeWithFieldAccessCheckObject();
+            ThreadUnsafeWithFieldAccessCheckObject o = new ThreadUnsafeWithFieldAccessCheckObject();
             o.ChangeThreadSafeFieldFromThreadSafe();
         }
 
         [Test]
-        [ExpectedException(typeof(LockNotHeldException))]
+        [ExpectedException( typeof(LockNotHeldException) )]
         public void NonThreadSafeField_ModifiedFromStaticUnsafeMethod_Throws()
         {
-            var o = new ThreadUnsafeWithFieldAccessCheckObject();
-            ThreadUnsafeWithFieldAccessCheckObject.ChangeNonThreadSafeField(o);
+            ThreadUnsafeWithFieldAccessCheckObject o = new ThreadUnsafeWithFieldAccessCheckObject();
+            ThreadUnsafeWithFieldAccessCheckObject.ChangeNonThreadSafeField( o );
         }
 
         [Test]
-        [ExpectedException(typeof(LockNotHeldException))]
+        [ExpectedException( typeof(LockNotHeldException) )]
         public void NonThreadSafeField_ModifiedFromStaticSafeMethod_Throws()
         {
-            var o = new ThreadUnsafeWithFieldAccessCheckObject();
-            ThreadUnsafeWithFieldAccessCheckObject.ChangeNonThreadSafeFieldFromThreadSafe(o);
+            ThreadUnsafeWithFieldAccessCheckObject o = new ThreadUnsafeWithFieldAccessCheckObject();
+            ThreadUnsafeWithFieldAccessCheckObject.ChangeNonThreadSafeFieldFromThreadSafe( o );
         }
 
         [Test]
         public void ThreadSafeField_ModifiedFromStaticMethod_DoesNotThrow()
         {
-            var o = new ThreadUnsafeWithFieldAccessCheckObject();
-            ThreadUnsafeWithFieldAccessCheckObject.ChangeThreadSafeField(o);
+            ThreadUnsafeWithFieldAccessCheckObject o = new ThreadUnsafeWithFieldAccessCheckObject();
+            ThreadUnsafeWithFieldAccessCheckObject.ChangeThreadSafeField( o );
         }
 
         [Test]
         public void ThreadSafeStaticField_Modified_NeverThrows()
         {
-            var o = new ThreadUnsafeWithFieldAccessCheckStaticClass();
+            ThreadUnsafeWithFieldAccessCheckStaticClass o = new ThreadUnsafeWithFieldAccessCheckStaticClass();
             o.ChangeThreadSafeStaticField();
             ThreadUnsafeWithFieldAccessCheckStaticClass.ChangeThreadSafeStaticFieldStatic();
         }
@@ -190,7 +190,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         }
 
         [Test]
-        [ExpectedException(typeof(LockNotHeldException))]
+        [ExpectedException( typeof(LockNotHeldException) )]
         public void NonThreadSafeStaticField_ModifiedExternaly_Throws()
         {
             ThreadUnsafeWithFieldAccessCheckStaticClass.NonThreadSafeStaticField++;
@@ -225,12 +225,12 @@ namespace PostSharp.Toolkit.Threading.Tests
                 get
                 {
                     Thread.Sleep( 200 );
-                    return _testProperty;
+                    return this._testProperty;
                 }
                 set
                 {
                     Thread.Sleep( 200 );
-                    _testProperty = value;
+                    this._testProperty = value;
                 }
             }
         }
@@ -255,7 +255,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             [ThreadSafe]
             public void ThreadSafeMethod()
             {
-                Thread.Sleep(200);
+                Thread.Sleep( 200 );
             }
 
             [ThreadUnsafeMethod]
@@ -266,7 +266,7 @@ namespace PostSharp.Toolkit.Threading.Tests
 
             private void ThreadSafePrivateMethod()
             {
-                Thread.Sleep(200);
+                Thread.Sleep( 200 );
             }
 
             [ThreadSafe]
@@ -331,53 +331,53 @@ namespace PostSharp.Toolkit.Threading.Tests
             }
         }
 
-        [ThreadUnsafeObject(CheckFieldAccess = true)]
+        [ThreadUnsafeObject( CheckFieldAccess = true )]
         public class ThreadUnsafeWithFieldAccessCheckObject
         {
-            [ThreadSafe]
-            private int threadSafeField = 11;
+            [ThreadSafe] private int threadSafeField = 11;
 
             private int nonThreadSafeField = 12;
 
-            public int ThreadSafeProperty { [ThreadSafe]get; [ThreadSafe]set; }
+            public int ThreadSafeProperty { [ThreadSafe]
+            get; [ThreadSafe]
+            set; }
 
             public int NonThreadSafeProperty { get; set; }
 
             [ThreadSafe]
             public void ChangeThreadSafeFieldFromThreadSafe()
             {
-                threadSafeField++;
+                this.threadSafeField++;
             }
 
             [ThreadSafe]
             public void ChangeNonThreadSafeFieldFromThreadSafe()
             {
-                nonThreadSafeField++;
+                this.nonThreadSafeField++;
             }
 
-            public static void ChangeThreadSafeField(ThreadUnsafeWithFieldAccessCheckObject obj)
+            public static void ChangeThreadSafeField( ThreadUnsafeWithFieldAccessCheckObject obj )
             {
                 ++obj.threadSafeField;
             }
 
-            public static void ChangeNonThreadSafeField(ThreadUnsafeWithFieldAccessCheckObject obj)
+            public static void ChangeNonThreadSafeField( ThreadUnsafeWithFieldAccessCheckObject obj )
             {
                 ++obj.nonThreadSafeField;
             }
 
-            public static void ChangeNonThreadSafeFieldFromThreadSafe(ThreadUnsafeWithFieldAccessCheckObject obj)
+            public static void ChangeNonThreadSafeFieldFromThreadSafe( ThreadUnsafeWithFieldAccessCheckObject obj )
             {
                 ++obj.nonThreadSafeField;
             }
         }
 
-        [ThreadUnsafeObject(ThreadUnsafePolicy.Static, CheckFieldAccess = true)]
+        [ThreadUnsafeObject( ThreadUnsafePolicy.Static, CheckFieldAccess = true )]
         public class ThreadUnsafeWithFieldAccessCheckStaticClass
         {
             public static int NonThreadSafeStaticField = 21;
 
-            [ThreadSafe]
-            public static int ThreadSafeStaticField = 22;
+            [ThreadSafe] public static int ThreadSafeStaticField = 22;
 
             public void ChangeThreadSafeStaticField()
             {
