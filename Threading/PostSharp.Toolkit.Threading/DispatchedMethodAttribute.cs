@@ -33,6 +33,7 @@ namespace PostSharp.Toolkit.Threading
     [ProvideAspectRole( StandardRoles.Threading )]
     [Serializable]
     [MulticastAttributeUsage( MulticastTargets.Method, TargetExternalMemberAttributes = MulticastAttributes.Internal, AllowMultiple = false )]
+    [RequirePostSharp("PostSharp.Toolkit.Threading.Weaver", "PostSharp.Toolkit.Threading")]
     public sealed class DispatchedMethodAttribute : MethodLevelAspect, IAspectProvider
     {
         private static readonly TypeLevelAspectRepository typeLevelAspects;
@@ -151,6 +152,7 @@ namespace PostSharp.Toolkit.Threading
         [Internal]
         public sealed class AsyncStateMachineAspect : TypeLevelAspect
         {
+            /*
             private static Action<Action> callYieldDelegate;
             private static Action<object> callMoveNextDelegate;
 
@@ -228,6 +230,7 @@ namespace PostSharp.Toolkit.Threading
                     args.FlowBehavior = FlowBehavior.Return;
                 }
             }
+             */
         }
 
 
