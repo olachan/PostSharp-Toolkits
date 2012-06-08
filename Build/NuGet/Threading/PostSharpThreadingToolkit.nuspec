@@ -17,10 +17,12 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <tags>postsharp sharcrafters aop aspect toolkit toolkits threading synchronization lock locks</tags>
     <dependencies>
-      <dependency id="PostSharp" version="2.1.6.14" />
+      <dependency id="PostSharp" version="2.1.7.1" />
     </dependencies>
   </metadata>
   <files>
     <file src="Release\PostSharp.Toolkit.Threading.dll" target="lib"/>
+    <file src="Release\PostSharp.Toolkit.Threading.Weaver.dll" target="tools"/>
+    <file src="_SRC_\Tools\*.ps1" target="tools"/>
   </files>
 </package>
