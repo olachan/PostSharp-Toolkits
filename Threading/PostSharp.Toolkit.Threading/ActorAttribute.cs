@@ -28,7 +28,7 @@ namespace PostSharp.Toolkit.Threading
     // [AspectRoleDependency(AspectDependencyAction.Conflict, ThreadingToolkitAspectRoles.ThreadingModel)]
     [ProvideAspectRole( ThreadingToolkitAspectRoles.ThreadingModel )]
     [Internal]
-    [RequirePostSharp("PostSharp.Toolkit.Threading.Weaver", "PostSharp.Toolkit.Threading")]
+    [RequirePostSharp("PostSharp.Toolkit.Threading.Weaver", "PostSharp.Toolkit.Threading", AssemblyReferenceOnly = true)]
     public sealed class ActorAttribute : TypeLevelAspect, IAspectProvider
     {
         public override bool CompileTimeValidate( Type type )
