@@ -8,6 +8,7 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -20,6 +21,7 @@ using PostSharp.Aspects.Configuration;
 using PostSharp.Aspects.Dependencies;
 using PostSharp.Aspects.Serialization;
 using PostSharp.Extensibility;
+using PostSharp.Reflection;
 
 namespace PostSharp.Toolkit.Threading
 {
@@ -51,7 +53,7 @@ namespace PostSharp.Toolkit.Threading
     //[AspectRoleDependency(AspectDependencyAction.Conflict, ThreadingToolkitAspectRoles.ThreadingModel)]
     //[AspectTypeDependencyAttribute(AspectDependencyAction.Commute, typeof(ThreadUnsafeObjectAttribute))]
     [ProvideAspectRole( ThreadingToolkitAspectRoles.ThreadingModel )]
-    public sealed class ThreadUnsafeObjectAttribute : TypeLevelAspect
+    public sealed class ThreadUnsafeObjectAttribute : TypeLevelAspect, IAspectProvider
     {
         private readonly ThreadUnsafePolicy policy;
 
@@ -60,6 +62,7 @@ namespace PostSharp.Toolkit.Threading
 
         [ThreadStatic] private static HashSet<object> runningConstructors;
         [ThreadStatic] private static Dictionary<object, int> runningThreadSafeMethods;
+        private readonly Thread affinedThread;
 
 
         public ThreadUnsafeObjectAttribute() : this( ThreadUnsafePolicy.Instance )
@@ -74,6 +77,12 @@ namespace PostSharp.Toolkit.Threading
         public ThreadUnsafeObjectAttribute( ThreadUnsafePolicy policy )
         {
             this.policy = policy;
+        }
+
+        private ThreadUnsafeObjectAttribute(ThreadUnsafePolicy policy, Thread affinedThread)
+        {
+            this.policy = policy;
+            this.affinedThread = affinedThread;
         }
 
 
@@ -129,11 +138,15 @@ namespace PostSharp.Toolkit.Threading
         [OnMethodEntryAdvice, MethodPointcut( "SelectInstanceMethods" )]
         public void OnEnterInstanceMethod( MethodExecutionArgs args )
         {
+            if (IsContextThreadSafe(args.Instance)) return;
+
             TryEnterLock( this.policy, args );
         }
 
         private IEnumerable<MethodBase> SelectInstanceMethods( Type type )
         {
+            if (policy == ThreadUnsafePolicy.ThreadAffined) return null;
+
             return
                 type.GetMethods( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly )
                     .Where( m => m.GetCustomAttributes( typeof(ThreadSafeAttribute), false ).Length == 0 )
@@ -141,12 +154,12 @@ namespace PostSharp.Toolkit.Threading
                         m => ReflectionHelper.IsInternalOrPublic( m, true ) || m.GetCustomAttributes( typeof(ThreadUnsafeMethodAttribute), false ).Length != 0 );
         }
 
-        private static void TryEnterLock( ThreadUnsafePolicy policy, MethodExecutionArgs args )
+        private void TryEnterLock( ThreadUnsafePolicy policy, MethodExecutionArgs args )
         {
             object syncObject;
 
-            syncObject = GetSyncObject( policy, args.Instance, args.Method.DeclaringType );
-
+            syncObject = GetSyncObject(policy, args.Instance, args.Method.DeclaringType);
+            
             if ( runningThreadSafeMethods != null && runningThreadSafeMethods.ContainsKey( syncObject ) ) return;
 
             ThreadHandle currentThread = new ThreadHandle( Thread.CurrentThread );
@@ -155,7 +168,7 @@ namespace PostSharp.Toolkit.Threading
                                                            ( o, thread ) =>
                                                                {
                                                                    if ( thread.Thread != currentThread.Thread )
-                                                                       throw new ThreadUnsafeException();
+                                                                       throw new ThreadUnsafeException(ThreadUnsafeErrorType.SimultaneousAccess);
 
                                                                    // Same thread, but different ThreadHandle: we are in a nested call on the same thread.
                                                                    return thread;
@@ -171,7 +184,7 @@ namespace PostSharp.Toolkit.Threading
         private static object GetSyncObject( ThreadUnsafePolicy policy, object instance, Type type )
         {
             object syncObject;
-            if ( policy == ThreadUnsafePolicy.Instance && instance != null )
+            if ( policy != ThreadUnsafePolicy.Static && instance != null )
             {
                 syncObject = instance;
             }
@@ -200,17 +213,25 @@ namespace PostSharp.Toolkit.Threading
 
         private IEnumerable<MethodBase> SelectStaticMethods( Type type )
         {
-            if ( this.policy == ThreadUnsafePolicy.Instance ) return null;
+            if ( this.policy != ThreadUnsafePolicy.Static ) return null;
 
             return type.GetMethods( BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly )
                 .Where( m => m.GetCustomAttributes( typeof(ThreadSafeAttribute), false ).Length == 0 )
                 .Where( m => ReflectionHelper.IsInternalOrPublic( m, true ) || m.GetCustomAttributes( typeof(ThreadUnsafeMethodAttribute), false ).Length != 0 );
         }
 
+        private static bool IsContextThreadSafe(object key)
+        {
+            if (runningThreadSafeMethods == null) return false;
+
+            return (key != null && runningThreadSafeMethods.ContainsKey(key));
+        }
 
         [OnMethodEntryAdvice, MethodPointcut( "SelectStaticMethods" )]
         public void OnEnterStaticMethod( MethodExecutionArgs args )
         {
+            if (IsContextThreadSafe(args.Method.DeclaringType)) return;
+
             TryEnterLock( ThreadUnsafePolicy.Static, args );
         }
 
@@ -249,26 +270,26 @@ namespace PostSharp.Toolkit.Threading
             }
         }
 
-        [OnLocationSetValueAdvice, MethodPointcut( "SelectFields" )]
-        public void OnFieldSet( LocationInterceptionArgs args )
+        [OnLocationSetValueAdvice, MethodPointcut("SelectFields")]
+        public void OnFieldSet(LocationInterceptionArgs args)
         {
-            //If a thread-unsafe field is accessed in a way which ignores checks (e.g. from static method or other isntance), an exception should be thrown
+            //If a thread-unsafe field is accessed in a way which ignores checks (e.g. from static method or other instance), an exception should be thrown
 
-            if ( runningConstructors != null && runningConstructors.Contains( args.Instance ) ) return;
+            if (runningConstructors != null && runningConstructors.Contains(args.Instance)) return;
 
             //Fields marked with ThreadSafe have already been exluded
 
-            object key = this.GetRunningThreadSafeMethodsKey( args.Instance, args.Location.DeclaringType );
-            if ( runningThreadSafeMethods == null || !runningThreadSafeMethods.ContainsKey( key ) )
-            {
-                object sync = GetSyncObject( this.policy, args.Instance, args.Location.DeclaringType );
+            object key = this.GetRunningThreadSafeMethodsKey(args.Instance, args.Location.DeclaringType);
+            if (IsContextThreadSafe(key)) return;
 
-                ThreadHandle threadHandle;
-                if ( !locks.TryGetValue( sync, out threadHandle ) || threadHandle.Thread != Thread.CurrentThread )
-                {
-                    throw new LockNotHeldException(
-                        "Fields not marked with ThreadSafe attribute can only be accessed from monitored ThreadUnsafe methods or methods marked as ThreadSafe." );
-                }
+
+            object sync = GetSyncObject(this.policy, args.Instance, args.Location.DeclaringType);
+
+            ThreadHandle threadHandle;
+            if (!locks.TryGetValue(sync, out threadHandle) || threadHandle.Thread != Thread.CurrentThread)
+            {
+                throw new LockNotHeldException(
+                    "Fields not marked with ThreadSafe attribute can only be accessed from monitored ThreadUnsafe methods or methods marked as ThreadSafe.");
             }
 
             args.ProceedSetValue();
@@ -276,10 +297,10 @@ namespace PostSharp.Toolkit.Threading
 
         public IEnumerable<FieldInfo> SelectFields( Type type )
         {
-            if ( this.CheckFieldAccess )
+            if ( this.CheckFieldAccess && policy != ThreadUnsafePolicy.ThreadAffined)
             {
                 BindingFlags flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic;
-                flags |= (this.policy == ThreadUnsafePolicy.Instance) ? BindingFlags.Instance : BindingFlags.Static;
+                flags |= (this.policy == ThreadUnsafePolicy.Static) ? BindingFlags.Instance | BindingFlags.Static : BindingFlags.Instance;
                 return
                     type.GetFields( flags ).Where(
                         f => f.GetCustomAttributes( typeof(ThreadSafeAttribute), false ).Length == 0 );
@@ -323,7 +344,8 @@ namespace PostSharp.Toolkit.Threading
 
         private object GetRunningThreadSafeMethodsKey( object instance, Type declaringType )
         {
-            return (this.policy == ThreadUnsafePolicy.Static || instance == null) ? declaringType : instance;
+            return GetSyncObject(this.policy, instance, declaringType);
+            //return (this.policy == ThreadUnsafePolicy.Static || instance == null) ? declaringType : instance;
         }
 
         private IEnumerable<MethodBase> SelectThreadSafeMethods( Type type )
@@ -334,14 +356,106 @@ namespace PostSharp.Toolkit.Threading
         }
 
 
+        IEnumerable<AspectInstance> IAspectProvider.ProvideAspects(object targetElement)
+        {
+            if (this.policy == ThreadUnsafePolicy.ThreadAffined)
+            {
+                //Unfortunately, cannot have IInstanceScopedAspect on ThreadUnsafeObject itself
+
+                yield return
+                    new AspectInstance(targetElement, new ThreadAffinedAspect(null, this.CheckFieldAccess));
+            }
+        }
+
         private sealed class ThreadHandle
         {
             public readonly Thread Thread;
 
-            public ThreadHandle( Thread thread )
+            public ThreadHandle(Thread thread)
             {
                 this.Thread = thread;
             }
         }
+
+        #region ThreadAffinedAspect
+
+        [Serializable]
+        public sealed class ThreadAffinedAspect : TypeLevelAspect, IInstanceScopedAspect
+        {
+            [NonSerialized]
+            private readonly Thread affinedThread;
+
+            private readonly bool checkFieldAccess;
+
+
+            internal ThreadAffinedAspect(Thread affinedThread, bool checkFieldAccess)
+            {
+                this.affinedThread = affinedThread;
+                this.checkFieldAccess = checkFieldAccess;
+            }
+
+            object IInstanceScopedAspect.CreateInstance(AdviceArgs adviceArgs)
+            {
+                return new ThreadAffinedAspect(Thread.CurrentThread, this.checkFieldAccess);
+            }
+
+            void IInstanceScopedAspect.RuntimeInitializeInstance()
+            { }
+
+            [OnMethodEntryAdvice, MethodPointcut("SelectInstanceMethods")]
+            public void OnEnterInstanceMethod(MethodExecutionArgs args)
+            {
+                VerifyThreadAffinity();
+            }
+
+            private void VerifyThreadAffinity()
+            {
+                if (this.affinedThread != Thread.CurrentThread)
+                {
+                    throw new ThreadUnsafeException(ThreadUnsafeErrorType.InvalidThread);
+                }
+            }
+
+            private IEnumerable<MethodBase> SelectInstanceMethods(Type type)
+            {
+                return
+                    type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                        .Where(m => m.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0)
+                        .Where(
+                            m => ReflectionHelper.IsInternalOrPublic(m, true) || m.GetCustomAttributes(typeof(ThreadUnsafeMethodAttribute), false).Length != 0);
+            }
+
+            [OnLocationSetValueAdvice, MethodPointcut("SelectFields")]
+            public void OnFieldSet(LocationInterceptionArgs args)
+            {
+                //If a thread-unsafe field is accessed from non-affined thread in a way which ignores checks
+                //(e.g. from static method or other instance), an exception should be thrown
+
+                //Fields marked with ThreadSafe have already been exluded
+
+                if (!IsContextThreadSafe(args.Instance))
+                {
+                    VerifyThreadAffinity();
+                }
+
+                args.ProceedSetValue();
+            }
+
+            public IEnumerable<FieldInfo> SelectFields(Type type)
+            {
+                if (this.checkFieldAccess)
+                {
+                    return
+                        type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(
+                            f => f.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
+        #endregion
     }
 }

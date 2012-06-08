@@ -21,8 +21,12 @@ namespace PostSharp.Toolkit.Threading
         /// Instance methods are not thread-safe, even on different instances of the class.
         /// Static methods are not thread-safe as well.
         /// </summary>
-        Static
+        Static,
 
-        // TODO: Affined
+        /// <summary>
+        /// Instance methods should only be run in the thread in which the object was created,
+        /// static method are thread-safe
+        /// </summary>
+        ThreadAffined
     }
 }
