@@ -98,7 +98,55 @@ namespace PostSharp.Toolkit.Threading.Tests
         }
 
         [Test]
-        public void ReaderWriteWithObserverMethod_WhenInvoked_DoesNotThrows()
+        public void ReaderLockAcquiredFromWriterMethod_DoesNotThrow()
+        {
+            ReaderWriterAttributeClass rw = new ReaderWriterAttributeClass();
+            rw.Write( 0, () => rw.Read( () => { } ) );
+        }
+
+        [Test]
+        public void ReaderLockAcquiredFromReaderMethod_DoesNotThrow()
+        {
+            ReaderWriterAttributeClass rw = new ReaderWriterAttributeClass();
+            rw.Read(() => rw.Read(() => { }));
+        }
+
+        [Test]
+        public void ReaderLockAcquiredFromUpgradeableMethod_DoesNotThrow()
+        {
+            ReaderWriterAttributeClass rw = new ReaderWriterAttributeClass();
+            rw.UpgradeableRead(() => rw.Read(() => { }));
+        }
+
+        [Test]
+        [ExpectedException(typeof(LockRecursionException))]
+        public void UpgradeableLockLockAcquiredFromReadMethod_DoesThrow()
+        {
+            ReaderWriterAttributeClass rw = new ReaderWriterAttributeClass();
+            rw.Read(() => rw.UpgradeableRead(() => { }));
+        }
+
+        [Test]
+        [ExpectedException(typeof(LockRecursionException))]
+        public void WriteLockLockAcquiredFromReadMethod_DoesThrow()
+        {
+            ReaderWriterAttributeClass rw = new ReaderWriterAttributeClass();
+            rw.Read(() => rw.Write(0, () => { }));
+        }
+
+        [Test]
+        public void ObserverAndReadFromWriteMethod_DoesNotThrow()
+        {
+            ReaderWriterAttributeClass rw = new ReaderWriterAttributeClass();
+            rw.Write(1, () =>
+                { 
+                    rw.Observe( () => { } );
+                    rw.Read( () => { } );
+                } );
+        }
+
+        [Test]
+        public void ReaderWriteWithObserverMethod_WhenInvoked_DoesNotThrow()
         {
             ReaderWriterWithObserverMethodClass rw = new ReaderWriterWithObserverMethodClass();
 
@@ -354,6 +402,43 @@ namespace PostSharp.Toolkit.Threading.Tests
             : base( f )
         {
             this.field = 5;
+        }
+    }
+
+    [ReaderWriterSynchronized]
+    public class ReaderWriterAttributeClass
+    {
+        private int field;
+
+        [ObserverLock]
+        public int Observe(Action action)
+        {
+            action();
+            int value = this.field;
+            return value;
+        }
+
+        [UpgradeableReaderLock]
+        public int UpgradeableRead(Action action)
+        {
+            action();
+            int value = this.field;
+            return value;
+        }
+
+        [ReaderLock]
+        public int Read(Action action)
+        {
+            action();
+            int value = this.field;
+            return value;
+        }
+
+        [WriterLock]
+        public void Write(int value, Action action)
+        {
+            action();
+            this.field = value;
         }
     }
 }

@@ -22,24 +22,33 @@ namespace PostSharp.Toolkit.Threading
     internal static class WpfDispatcherBinding
     {
         private static Func<Thread, object> dispatcherProvider;
+
         private static object syncRoot = new object();
+
         private static bool initialized;
+
         private static Func<object, bool> checkAccessDelegate;
+
         private static Action<object, Action> invokeDelegate;
-        private static Action<object, Action> beginInvokeDelegate;
+
+        private static Delegate beginInvokeDelegate;
+
         private static Type dispatcherType;
+
+        private static Type dispatcherPriorityType;
 
         private sealed class DispatcherWrapper : IDispatcher
         {
             private readonly object dispatcher;
+
             private SynchronizationContext synchronizationContext;
 
             public DispatcherWrapper( object dispatcher )
             {
                 this.dispatcher = dispatcher;
 
-                // TODO: Call BeginInvoke with highest priority (choose another LINQ signature).
-                WpfDispatcherBinding.BeginInvoke( dispatcher, () => this.synchronizationContext = SynchronizationContext.Current );
+                WpfDispatcherBinding.BeginInvoke(
+                    dispatcher, Enum.Parse( dispatcherPriorityType, "Send" ), () => this.synchronizationContext = SynchronizationContext.Current );
             }
 
             public SynchronizationContext SynchronizationContext
@@ -51,8 +60,8 @@ namespace PostSharp.Toolkit.Threading
                     {
                         this.synchronizationContext =
                             (SynchronizationContext)
-                            Activator.CreateInstance( Type.GetType( "System.Windows.Threading.DispatcherSynchronizationContext, WindowsBase" ),
-                                                      this.dispatcher );
+                            Activator.CreateInstance(
+                                Type.GetType( "System.Windows.Threading.DispatcherSynchronizationContext, WindowsBase" ), this.dispatcher );
                     }
                     return null;
                 }
@@ -70,10 +79,9 @@ namespace PostSharp.Toolkit.Threading
 
             public void BeginInvoke( IAction action )
             {
-                WpfDispatcherBinding.BeginInvoke( this.dispatcher, action.Invoke );
+                WpfDispatcherBinding.BeginInvoke( this.dispatcher, Enum.Parse( dispatcherPriorityType, "Send" ), action.Invoke );
             }
         }
-
 
         internal static bool CheckAccess( object dispatcher )
         {
@@ -85,9 +93,10 @@ namespace PostSharp.Toolkit.Threading
             invokeDelegate( dispatcher, action );
         }
 
-        internal static void BeginInvoke( object dispatcher, Action action )
+        internal static void BeginInvoke( object dispatcher, object priority, Action action )
         {
-            beginInvokeDelegate( dispatcher, action );
+            //TODO: consider performance impact of using DynamicInvoke
+            beginInvokeDelegate.DynamicInvoke( dispatcher, priority, action );
         }
 
         internal static IDispatcher TryFindWpfDispatcher( Thread thread )
@@ -123,10 +132,11 @@ namespace PostSharp.Toolkit.Threading
         {
             Assembly windowsBaseAssembly = TryFindWindowsBaseAssembly();
 
-
             if ( windowsBaseAssembly != null )
             {
                 dispatcherType = windowsBaseAssembly.GetType( "System.Windows.Threading.Dispatcher" );
+                dispatcherPriorityType = windowsBaseAssembly.GetType( "System.Windows.Threading.DispatcherPriority" );
+
                 ParameterExpression pe = Expression.Parameter( typeof(Thread) );
                 MethodCallExpression exp = Expression.Call( dispatcherType, "FromThread", new Type[0], pe );
                 dispatcherProvider = Expression.Lambda<Func<Thread, object>>( exp, pe ).Compile();
@@ -135,12 +145,10 @@ namespace PostSharp.Toolkit.Threading
             }
         }
 
-
         private static Assembly TryFindWindowsBaseAssembly()
         {
             //TODO: Maybe we should ignore version number?
-            const string windowsBaseAssemblyName =
-                "WindowsBase, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
+            const string windowsBaseAssemblyName = "WindowsBase, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
 
             Assembly windowsBaseAssembly = AppDomain.CurrentDomain.GetAssemblies().SingleOrDefault( a => a.FullName == windowsBaseAssemblyName );
 
@@ -165,13 +173,19 @@ namespace PostSharp.Toolkit.Threading
             checkAccessDelegate = Expression.Lambda<Func<object, bool>>( checkAccessCall, objectParameterExpression ).Compile();
 
             ParameterExpression actionParameterExpression = Expression.Parameter( typeof(Delegate) );
+            ParameterExpression dispatcherPriorityExpression = Expression.Variable( dispatcherPriorityType, "dispatcherPriority" );
             ConstantExpression paramsExpression = Expression.Constant( new object[0] );
-
+            // ParameterExpression objectDispatcherPriorityExpression = Expression.Parameter(typeof(object) );
             MethodCallExpression invokeCall = Expression.Call( castExpression, "Invoke", new Type[0], actionParameterExpression, paramsExpression );
             invokeDelegate = Expression.Lambda<Action<object, Action>>( invokeCall, objectParameterExpression, actionParameterExpression ).Compile();
 
-            MethodCallExpression beginInvokeCall = Expression.Call( castExpression, "BeginInvoke", new Type[0], actionParameterExpression, paramsExpression );
-            beginInvokeDelegate = Expression.Lambda<Action<object, Action>>( beginInvokeCall, objectParameterExpression, actionParameterExpression ).Compile();
+            MethodCallExpression beginInvokeCall = Expression.Call(
+                castExpression, "BeginInvoke", new Type[0], dispatcherPriorityExpression, actionParameterExpression );
+            //Expression castAndCall = Expression.Block(new[] { dispatcherPriorityExpression, objectDispatcherPriorityExpression },
+            //    Expression.Assign(dispatcherPriorityExpression, Expression.Convert(objectDispatcherPriorityExpression, dispatcherPriorityType)),
+            //    beginInvokeCall );
+            beginInvokeDelegate =
+                Expression.Lambda( beginInvokeCall, objectParameterExpression, dispatcherPriorityExpression, actionParameterExpression ).Compile();
         }
     }
 }

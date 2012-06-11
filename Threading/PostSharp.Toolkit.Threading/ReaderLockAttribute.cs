@@ -9,14 +9,15 @@
 
 using System;
 using System.Threading;
+
 using PostSharp.Aspects;
+using PostSharp.Aspects.Configuration;
 using PostSharp.Aspects.Dependencies;
 using PostSharp.Aspects.Internals;
+using PostSharp.Aspects.Serialization;
 
 namespace PostSharp.Toolkit.Threading
 {
-    // TODO: Make this MSIL-serialized (as well as other locks)
-
     /// <summary>
     /// Custom attribute that, when applied on a method, specifies that it should be executed in
     /// a reader lock.
@@ -28,6 +29,7 @@ namespace PostSharp.Toolkit.Threading
     [Serializable]
     [ProvideAspectRole( StandardRoles.Threading )]
     [AspectTypeDependency( AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute) )]
+    [CompositionAspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     public sealed class ReaderLockAttribute : ReaderWriterLockAttribute
     {
         /// <summary>
@@ -36,17 +38,17 @@ namespace PostSharp.Toolkit.Threading
         /// <param name="eventArgs"></param>
         public override void OnEntry( MethodExecutionArgs eventArgs )
         {
-            // TODO: Should probably check for recursion from another type of lock.
-            // because ReaderWriterLockSlim does not support recursion by default (I think).
-            // do not remove this item before adding tests for recursion.
+            // Recursion support added. When UpgradeableRead or Write method called from Read method exception is thrown.
 
-            ReaderWriterLockSlim @lock = ((IReaderWriterSynchronized) eventArgs.Instance).Lock;
+            ReaderWriterLockSlim @lock = ((IReaderWriterSynchronized)eventArgs.Instance).Lock;
+            if ( @lock.IsWriteLockHeld )
+            {
+                return;
+            }
+
             if ( this.UseDeadlockDetection )
             {
-                MethodInterceptionArgs args = new MethodInterceptionArgsImpl( @lock, Arguments.Empty )
-                                                  {
-                                                      TypedBinding = EnterReadLockBinding.Instance
-                                                  };
+                MethodInterceptionArgs args = new MethodInterceptionArgsImpl( @lock, Arguments.Empty ) { TypedBinding = EnterReadLockBinding.Instance };
 
                 DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnReaderLockEnter( args );
             }
@@ -62,7 +64,12 @@ namespace PostSharp.Toolkit.Threading
         /// <param name="eventArgs"></param>
         public override void OnExit( MethodExecutionArgs eventArgs )
         {
-            ReaderWriterLockSlim @lock = ((IReaderWriterSynchronized) eventArgs.Instance).Lock;
+            ReaderWriterLockSlim @lock = ((IReaderWriterSynchronized)eventArgs.Instance).Lock;
+
+            if ( @lock.IsWriteLockHeld )
+            {
+                return;
+            }
 
             if ( this.UseDeadlockDetection )
             {
@@ -71,7 +78,7 @@ namespace PostSharp.Toolkit.Threading
                 DeadlockDetectionPolicy.ReaderWriterEnhancements.Instance.OnReaderLockExit( args );
             }
 
-            ((IReaderWriterSynchronized) eventArgs.Instance).Lock.ExitReadLock();
+            ((IReaderWriterSynchronized)eventArgs.Instance).Lock.ExitReadLock();
         }
 
         private sealed class EnterReadLockBinding : MethodBinding
@@ -80,7 +87,7 @@ namespace PostSharp.Toolkit.Threading
 
             public override void Invoke( ref object instance, Arguments arguments, object reserved )
             {
-                ((ReaderWriterLockSlim) instance).EnterReadLock();
+                ((ReaderWriterLockSlim)instance).EnterReadLock();
             }
         }
     }
