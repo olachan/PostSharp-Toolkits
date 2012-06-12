@@ -31,7 +31,7 @@ namespace PostSharp.Toolkit.Threading
 
         private static Action<object, Action> invokeDelegate;
 
-        private static Delegate beginInvokeDelegate;
+        private static Action<object, int, Action> beginInvokeDelegate;
 
         private static Type dispatcherType;
 
@@ -48,7 +48,7 @@ namespace PostSharp.Toolkit.Threading
                 this.dispatcher = dispatcher;
 
                 WpfDispatcherBinding.BeginInvoke(
-                    dispatcher, Enum.Parse( dispatcherPriorityType, "Send" ), () => this.synchronizationContext = SynchronizationContext.Current );
+                    dispatcher, (int)Enum.Parse( dispatcherPriorityType, "Send" ), () => this.synchronizationContext = SynchronizationContext.Current );
             }
 
             public SynchronizationContext SynchronizationContext
@@ -79,7 +79,7 @@ namespace PostSharp.Toolkit.Threading
 
             public void BeginInvoke( IAction action )
             {
-                WpfDispatcherBinding.BeginInvoke( this.dispatcher, Enum.Parse( dispatcherPriorityType, "Send" ), action.Invoke );
+                WpfDispatcherBinding.BeginInvoke( this.dispatcher, (int)Enum.Parse( dispatcherPriorityType, "Send" ), action.Invoke );
             }
         }
 
@@ -93,10 +93,9 @@ namespace PostSharp.Toolkit.Threading
             invokeDelegate( dispatcher, action );
         }
 
-        internal static void BeginInvoke( object dispatcher, object priority, Action action )
+        internal static void BeginInvoke( object dispatcher, int priority, Action action )
         {
-            //TODO: consider performance impact of using DynamicInvoke
-            beginInvokeDelegate.DynamicInvoke( dispatcher, priority, action );
+            beginInvokeDelegate( dispatcher, priority, action );
         }
 
         internal static IDispatcher TryFindWpfDispatcher( Thread thread )
@@ -175,17 +174,17 @@ namespace PostSharp.Toolkit.Threading
             ParameterExpression actionParameterExpression = Expression.Parameter( typeof(Delegate) );
             ParameterExpression dispatcherPriorityExpression = Expression.Variable( dispatcherPriorityType, "dispatcherPriority" );
             ConstantExpression paramsExpression = Expression.Constant( new object[0] );
-            // ParameterExpression objectDispatcherPriorityExpression = Expression.Parameter(typeof(object) );
+            ParameterExpression intDispatcherPriorityExpression = Expression.Parameter(typeof(int) );
             MethodCallExpression invokeCall = Expression.Call( castExpression, "Invoke", new Type[0], actionParameterExpression, paramsExpression );
             invokeDelegate = Expression.Lambda<Action<object, Action>>( invokeCall, objectParameterExpression, actionParameterExpression ).Compile();
 
             MethodCallExpression beginInvokeCall = Expression.Call(
                 castExpression, "BeginInvoke", new Type[0], dispatcherPriorityExpression, actionParameterExpression );
-            //Expression castAndCall = Expression.Block(new[] { dispatcherPriorityExpression, objectDispatcherPriorityExpression },
-            //    Expression.Assign(dispatcherPriorityExpression, Expression.Convert(objectDispatcherPriorityExpression, dispatcherPriorityType)),
-            //    beginInvokeCall );
+            Expression castAndCall = Expression.Block(new[] { dispatcherPriorityExpression, intDispatcherPriorityExpression },
+                Expression.Assign(dispatcherPriorityExpression, Expression.Convert(intDispatcherPriorityExpression, dispatcherPriorityType)),
+                beginInvokeCall );
             beginInvokeDelegate =
-                Expression.Lambda( beginInvokeCall, objectParameterExpression, dispatcherPriorityExpression, actionParameterExpression ).Compile();
+                Expression.Lambda<Action<object, int, Action>>(castAndCall, objectParameterExpression, intDispatcherPriorityExpression, actionParameterExpression).Compile();
         }
     }
 }

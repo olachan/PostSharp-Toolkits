@@ -29,7 +29,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                 tasks[i].Start();
             }
 
-            actorClass.CountdownEvent.Wait();
+            Assert.True(actorClass.CountdownEvent.Wait(10000));
 
             Assert.AreEqual( 10, actorClass.Count );
         }
