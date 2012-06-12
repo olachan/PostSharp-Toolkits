@@ -62,7 +62,6 @@ namespace PostSharp.Toolkit.Threading
 
         [ThreadStatic] private static HashSet<object> runningConstructors;
         [ThreadStatic] private static Dictionary<object, int> runningThreadSafeMethods;
-        private readonly Thread affinedThread;
 
 
         public ThreadUnsafeObjectAttribute() : this( ThreadUnsafePolicy.Instance )
@@ -78,13 +77,6 @@ namespace PostSharp.Toolkit.Threading
         {
             this.policy = policy;
         }
-
-        private ThreadUnsafeObjectAttribute(ThreadUnsafePolicy policy, Thread affinedThread)
-        {
-            this.policy = policy;
-            this.affinedThread = affinedThread;
-        }
-
 
         public override bool CompileTimeValidate( Type type )
         {
@@ -380,6 +372,9 @@ namespace PostSharp.Toolkit.Threading
         #region ThreadAffinedAspect
 
         [Serializable]
+        [MulticastAttributeUsage(MulticastTargets.Class | MulticastTargets.Struct, Inheritance = MulticastInheritance.Strict,
+        AllowMultiple = false)]
+        [ProvideAspectRole(ThreadingToolkitAspectRoles.ThreadingModel)]
         public sealed class ThreadAffinedAspect : TypeLevelAspect, IInstanceScopedAspect
         {
             [NonSerialized]
@@ -428,9 +423,6 @@ namespace PostSharp.Toolkit.Threading
             [OnLocationSetValueAdvice, MethodPointcut("SelectFields")]
             public void OnFieldSet(LocationInterceptionArgs args)
             {
-                //If a thread-unsafe field is accessed from non-affined thread in a way which ignores checks
-                //(e.g. from static method or other instance), an exception should be thrown
-
                 //Fields marked with ThreadSafe have already been exluded
 
                 if (!IsContextThreadSafe(args.Instance))
