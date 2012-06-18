@@ -35,7 +35,7 @@ namespace PostSharp.Toolkit.Threading
     [MulticastAttributeUsage( MulticastTargets.Method | MulticastTargets.Event, TargetMemberAttributes = MulticastAttributes.Instance, AllowMultiple = false )]
     [ProvideAspectRole( StandardRoles.Threading )]
     [AspectTypeDependency( AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute) )]
-    [CompositionAspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
+    [AspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     public class ObserverLockAttribute : Aspect, IEventLevelAspectBuildSemantics, IMethodLevelAspectBuildSemantics
     {
         private static readonly object restoreWriteLockSentinel = new object();

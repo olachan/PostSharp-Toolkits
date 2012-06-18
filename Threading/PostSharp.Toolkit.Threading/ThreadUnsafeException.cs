@@ -14,19 +14,29 @@ namespace PostSharp.Toolkit.Threading
     /// </summary>
     public class ThreadUnsafeException : ThreadingException
     {
-        public ThreadUnsafeErrorType ErrorType { get; private set; }
+        public ThreadUnsafeErrorCode ErrorCode { get; private set; }
 
-        public ThreadUnsafeException(ThreadUnsafeErrorType errorType)
-            : base( errorType == ThreadUnsafeErrorType.InvalidThread ?
-                    "An attempt was made to call thread-affined method from another thread"
-                    : "An attempt was made to simultaneously access a single-threaded method from multiple threads." )
+        public ThreadUnsafeException(ThreadUnsafeErrorCode errorCode)
+            : base( GetErrorMessage( errorCode ) )
         {
-            ErrorType = errorType;
+            this.ErrorCode = errorCode;
+        }
+
+        private static string GetErrorMessage( ThreadUnsafeErrorCode errorCode )
+        {
+            return errorCode == ThreadUnsafeErrorCode.InvalidThread ?
+                                                                        "An attempt was made to call thread-affined method from another thread"
+                       : "An attempt was made to simultaneously access a single-threaded method from multiple threads.";
         }
     }
 
-    public enum ThreadUnsafeErrorType
+    public enum ThreadUnsafeErrorCode
     {
+        /// <summary>
+        /// No error.
+        /// </summary>
+        None,
+
         /// <summary>
         /// Single-threaded method was simultaneously accessed from multiple threads
         /// </summary>

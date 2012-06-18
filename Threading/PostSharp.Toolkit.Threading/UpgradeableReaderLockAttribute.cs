@@ -29,7 +29,7 @@ namespace PostSharp.Toolkit.Threading
     [Serializable]
     [ProvideAspectRole( StandardRoles.Threading )]
     [AspectTypeDependency( AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute) )]
-    [CompositionAspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
+    [AspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     public sealed class UpgradeableReaderLockAttribute : ReaderWriterLockAttribute
     {
         /// <summary>

@@ -196,7 +196,7 @@ namespace PostSharp.Toolkit.Threading
                                                            ( o, thread ) =>
                                                                {
                                                                    if ( thread.Thread != currentThread.Thread )
-                                                                       throw new ThreadUnsafeException(ThreadUnsafeErrorType.SimultaneousAccess);
+                                                                       throw new ThreadUnsafeException(ThreadUnsafeErrorCode.SimultaneousAccess);
 
                                                                    // Same thread, but different ThreadHandle: we are in a nested call on the same thread.
                                                                    return thread;
@@ -443,7 +443,7 @@ namespace PostSharp.Toolkit.Threading
             {
                 if (this.affinedThread != Thread.CurrentThread)
                 {
-                    throw new ThreadUnsafeException(ThreadUnsafeErrorType.InvalidThread);
+                    throw new ThreadUnsafeException(ThreadUnsafeErrorCode.InvalidThread);
                 }
             }
 

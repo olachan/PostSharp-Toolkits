@@ -29,7 +29,7 @@ namespace PostSharp.Toolkit.Threading
     /// object is created upon each instantiation of the target class.
     /// </summary>
     [Serializable]
-    [CompositionAspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
+    [AspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
     [IntroduceInterface( typeof(IReaderWriterSynchronized), OverrideAction = InterfaceOverrideAction.Ignore )]
     [MulticastAttributeUsage( MulticastTargets.Class, Inheritance = MulticastInheritance.Strict, AllowMultiple = false )]
     // [AspectRoleDependency(AspectDependencyAction.Conflict, ThreadingToolkitAspectRoles.ThreadingModel)]
