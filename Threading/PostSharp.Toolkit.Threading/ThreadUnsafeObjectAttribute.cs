@@ -118,9 +118,45 @@ namespace PostSharp.Toolkit.Threading
                 result = false;
             }
 
-            // TODO: If policy is "Instance", fields cannot be accessed from a static method unless method or field marked as [ThreadSafe]. [Warning]
+            // If policy is "Instance", fields cannot be accessed from a static method unless method or field marked as [ThreadSafe]. [Warning]
 
-            // TODO: If policy is "Instance", static methods cannot access instance methods that are not public or internal or [ThreadUnsafeMethod]. [Warning]
+            if ( this.policy == ThreadUnsafePolicy.Instance )
+            {
+                IEnumerable<FieldInfo> nonPublicFields =
+                    type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+                    .Where(m => m.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0);
+
+                foreach ( FieldInfo nonPublicField in nonPublicFields )
+                {
+                    foreach ( MethodUsageCodeReference codeReference in ReflectionSearch.GetMethodsUsingDeclaration( nonPublicField ) )
+                    {
+                        if (codeReference.UsingMethod.IsStatic &&
+                            codeReference.UsingMethod.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0)
+                        {
+                            ThreadingMessageSource.Instance.Write(codeReference.UsingMethod, SeverityType.Warning, "THR012", nonPublicField.Name, codeReference.UsingMethod.Name);
+                        }
+                    }
+                }
+
+                // If policy is "Instance", static methods cannot access instance methods that are not public or internal or [ThreadUnsafeMethod]. [Warning]
+
+                IEnumerable<MethodInfo> nonPublicMethods = type.GetMethods( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic )
+                    .Where( m => !ReflectionHelper.IsInternalOrPublic( m, false ) )
+                    .Where( m => m.GetCustomAttributes(typeof(ThreadUnsafeMethodAttribute), false).Length == 0 );
+
+                foreach (MethodInfo nonPublicMethod in nonPublicMethods)
+                {
+                    foreach (MethodUsageCodeReference codeReference in ReflectionSearch.GetMethodsUsingDeclaration(nonPublicMethod))
+                    {
+                        if (codeReference.UsingMethod.IsStatic &&
+                            codeReference.UsingMethod.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0)
+                        {
+                            ThreadingMessageSource.Instance.Write(codeReference.UsingMethod, SeverityType.Warning, "THR013", nonPublicMethod.Name, codeReference.UsingMethod.Name);
+                        }
+                    }
+                }
+            }
+
 
             // TODO: If policy is "Instance", fields of instance A cannot be accessed from an instance method of instance B (A!=B) unless method or field marked as [ThreadSafe]. [Warning]
 

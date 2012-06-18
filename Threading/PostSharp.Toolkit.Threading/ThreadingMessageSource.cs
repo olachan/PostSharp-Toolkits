@@ -51,6 +51,10 @@ namespace PostSharp.Toolkit.Threading
                         return "Aspect DeadlockDetectionPolicy must be added to the current assembly only.";
                     case 11:
                         return "Cannot find the field representing the 'this' instance in type {0}.";
+                    case 12:
+                        return "Not ThreadSafe field {0} accessed from static method {1}";
+                    case 13:
+                        return "Not public or internal or ThreadUnsafeMethod method {0} accessed from static method {1}";
                     default:
                         return null;
                 }

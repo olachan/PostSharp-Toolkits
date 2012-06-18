@@ -48,6 +48,10 @@
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Threading\PostSharp.Toolkit.Threading.Weaver\PostSharp.Toolkit.Threading.Weaver.csproj">
+      <Project>{B30B75A1-16EF-4C3D-A818-7EB7C437D551}</Project>
+      <Name>PostSharp.Toolkit.Threading.Weaver</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Threading\PostSharp.Toolkit.Threading\PostSharp.Toolkit.Threading.csproj">
       <Project>{A3338835-6A17-442C-A7B2-C4F2BDDC06F3}</Project>
       <Name>PostSharp.Toolkit.Threading</Name>
@@ -62,7 +66,12 @@
     <Compile Include="BackgroundMethod\BackgroundMethodOnOutMethod.cs" />
     <Compile Include="Dispatched\DispatchMethodWithOutParam.cs" />
     <Compile Include="Dispatched\DispatchNonVoidMethod.cs" />
+    <Compile Include="ReaderWriterSynchronized\RWSOnClassWithStaticThreadSafeAccessToField.cs" />
+    <Compile Include="ReaderWriterSynchronized\ReaderWriterSynchronizedOnClassWithStaticAccessToField.cs" />
     <Compile Include="ReaderWriterSynchronized\ReaderWriterSynchronizedOnClassWithPublicFields.cs" />
+    <Compile Include="ThreadUnsafe\ThreadUnsafeTSStaticMethodAccess.cs" />
+    <Compile Include="ThreadUnsafe\ThreadUnsafeStaticMethodFieldAccess.cs" />
+    <Compile Include="ThreadUnsafe\ThreadUnsafeStaticMethodAccess.cs" />
     <Compile Include="ThreadUnsafe\ThreadUnsafeOnClassWithPublicField.cs" />
     <Compile Include="ThreadUnsafe\ThreadUnsafeMethodOnStaticPolicy.cs" />
     <Compile Include="ThreadUnsafe\ThreadUnsafeOnStaticMethod.cs" />

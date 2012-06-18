@@ -19,6 +19,7 @@ using PostSharp.Aspects.Configuration;
 using PostSharp.Aspects.Dependencies;
 using PostSharp.Aspects.Serialization;
 using PostSharp.Extensibility;
+using PostSharp.Reflection;
 
 namespace PostSharp.Toolkit.Threading
 {
@@ -57,7 +58,23 @@ namespace PostSharp.Toolkit.Threading
                 result = false;
             }
 
-            // TODO: Fields cannot be accessed from a static method unless the method or the field is marked as [ThreadSafe]. [Warning]
+            // Fields cannot be accessed from a static method unless the method or the field is marked as [ThreadSafe]. [Warning]
+
+            IEnumerable<FieldInfo> nonPublicFields =
+                   type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+                   .Where(m => m.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0);
+
+            foreach (FieldInfo nonPublicField in nonPublicFields)
+            {
+                foreach (MethodUsageCodeReference codeReference in ReflectionSearch.GetMethodsUsingDeclaration(nonPublicField))
+                {
+                    if (codeReference.UsingMethod.IsStatic &&
+                        codeReference.UsingMethod.GetCustomAttributes(typeof(ThreadSafeAttribute), false).Length == 0)
+                    {
+                        ThreadingMessageSource.Instance.Write(codeReference.UsingMethod, SeverityType.Warning, "THR012", nonPublicField.Name, codeReference.UsingMethod.Name);
+                    }
+                }
+            }
 
             return result;
         }

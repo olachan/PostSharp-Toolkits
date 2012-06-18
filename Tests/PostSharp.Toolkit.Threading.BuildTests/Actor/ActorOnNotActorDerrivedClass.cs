@@ -12,7 +12,7 @@ namespace PostSharp.Toolkit.Threading.BuildTests.Actor
                 return 0;
             }
 
-           
+
         }
 
         [Actor]
