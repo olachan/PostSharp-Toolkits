@@ -34,7 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="nunit.framework">
-      <HintPath>..\..\packages\NUnit.2.5.10.11092\lib\nunit.framework.dll</HintPath>
+      <HintPath>..\..\packages\NUnit.2.6.0.12054\lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="PostSharp, Version=2.1.0.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
       <HintPath>$(PostSharpDir)\$(PostSharpBuild)\PostSharp.dll</HintPath>
@@ -63,9 +63,6 @@
     <Compile Include="ThreadAffinedTests.cs" />
     <Compile Include="ThreadUnsafeTests.cs" />
     <Compile Include="TestHelpers.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Threading\PostSharp.Toolkit.Threading\PostSharp.Toolkit.Threading.csproj">
