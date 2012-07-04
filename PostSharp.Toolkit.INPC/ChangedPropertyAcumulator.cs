@@ -8,6 +8,8 @@ namespace PostSharp.Toolkit.INPC
 {
     internal static class ChangedPropertyAcumulator
     {
+
+
         [ThreadStatic]
         private static ConditionalWeakTable<object, IList<string>> changedProperties;
 
@@ -40,8 +42,6 @@ namespace PostSharp.Toolkit.INPC
                 }
             }
         }
-
-
 
         public static void Compact()
         {

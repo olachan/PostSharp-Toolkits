@@ -19,13 +19,14 @@ namespace PostSharp.Toolkit.INPC
             return false;
         }
 
-        public static bool AddIfNew<T>(this ConditionalWeakTable<object, IList<T>> dictionary, object obj, T item, Func<IList<T>> listFactory = null)
+        public static bool AddIfNew<TKey, TValue>(this ConditionalWeakTable<TKey, IList<TValue>> dictionary, TKey obj, TValue item, Func<IList<TValue>> listFactory = null)
+            where TKey : class
         {
-            IList<T> list;
+            IList<TValue> list;
             var reference = obj;
             if (!dictionary.TryGetValue( reference, out list ))
             {
-                list = listFactory == null ? new List<T>() : listFactory();
+                list = listFactory == null ? new List<TValue>() : listFactory();
                 dictionary.Add( reference, list );
             }
 
