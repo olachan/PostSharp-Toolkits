@@ -6,158 +6,321 @@ using System.Text;
 
 using NUnit.Framework;
 
+using PostSharp.Toolkit.INPC;
+
 namespace PostSharp.Toolkit.INPC.Tests
 {
+
     [TestFixture]
     public class NotifyPropertyChangedAspectTests
     {
-        [Test]
-        public void SetFieldsViaSeparateMethodTest()
+        private void DoInpcTest<TInpc>(Action<TInpc> propertyChangeAction, int expectedEventFireCount, params string[] propertyNames)
+            where TInpc : class, new()
         {
-            BaseClass bc = new BaseClass();
+
+            TInpc bc = new TInpc();
 
             int eventFireCounter = 0;
 
-            Post.Cast<BaseClass, INotifyPropertyChanged>(bc).PropertyChanged += (s, e) =>
-                                                                                        {
-                                                                                            if (e.PropertyName == "Sum")
-                                                                                            {
-                                                                                                eventFireCounter++;
+            ((INotifyPropertyChanged)bc).PropertyChanged += (s, e) =>
+            {
+                if (propertyNames.Contains(e.PropertyName))
+                {
+                    eventFireCounter++;
+                }
+            };
 
-                                                                                            }
-                                                                                        };
+            propertyChangeAction(bc);
 
-            bc.SetField1(2);
-            bc.SetField2(4);
+            Assert.AreEqual(expectedEventFireCount, eventFireCounter);
 
-            Assert.AreEqual(2, eventFireCounter);
+        }
+
+        [Test]
+        public void MultipleInstancesTest()
+        {
+            InpcDerrivedClass[] objects1 = new[] { new InpcDerrivedClass(), new InpcDerrivedClass(), new InpcDerrivedClass(), new InpcDerrivedClass(), new InpcDerrivedClass() };
+            InpcBasicClass[] objects2 = new[] { new InpcBasicClass(), new InpcBasicClass(), new InpcBasicClass(), new InpcBasicClass(), new InpcBasicClass() };
+            int[] firedEvents1 = new int[5];
+            int[] firedEvents2 = new int[5];
+
+            for (int i = 0; i < 5; i++)
+            {
+                int j = i;
+                objects1[i].PropertyChanged += (s, e) => firedEvents1[j]++;
+                ((INotifyPropertyChanged)objects2[i]).PropertyChanged += (s, e) => firedEvents2[j]++;
+            }
+
+            for (int i = 0; i < 5; i++)
+            {
+                objects1[i].AutoProperty = 2;
+                objects2[i].AutoProperty = 3;
+            }
+
+            for (int i = 0; i < 5; i++)
+            {
+                Assert.AreEqual(1, firedEvents1[i]);
+                Assert.AreEqual(1, firedEvents2[i]);
+            }
+        }
+
+        [Test]
+        public void SetFieldsViaSeparateMethodTest()
+        {
+            DoInpcTest<InpcBasicClass>(
+                c =>
+                {
+                    c.SetField1(2);
+                    c.SetField2(4);
+                },
+                2,
+                "Sum");
+        }
+
+        [Test]
+        public void SetFieldsViaSeparateMethodTest_ForDerivedClass()
+        {
+            DoInpcTest<InpcDerrivedClass>(
+                c =>
+                {
+                    c.SetField1(2);
+                    c.SetField2(4);
+                },
+                2,
+                "Sum");
         }
 
         [Test]
         public void SetFieldsViaCompositeMethodTest()
         {
-            BaseClass bc = new BaseClass();
+            DoInpcTest<InpcBasicClass>(
+               c => c.SetFields(2, 3),
+               1,
+               "Sum");
+        }
 
-            int eventFireCounter = 0;
-
-            Post.Cast<BaseClass, INotifyPropertyChanged>(bc).PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == "Sum")
-                {
-                    eventFireCounter++;
-
-                }
-            };
-
-            bc.SetField1(2);
-            bc.SetField2(4);
-
-            Assert.AreEqual(2, eventFireCounter);
+        [Test]
+        public void SetFieldsViaCompositeMethodTest_ForDerivedClass()
+        {
+            DoInpcTest<InpcDerrivedClass>(
+               c => c.SetFields(2, 3),
+               1,
+               "Sum");
         }
 
         [Test]
         public void SetFieldsDirectlyTest()
         {
-            BaseClass bc = new BaseClass();
+            DoInpcTest<InpcBasicClass>(
+              c =>
+              {
+                  c.Field1 = 2;
+                  c.Field2 = 3;
+              },
+              2,
+              "Sum");
+        }
 
-            int eventFireCounter = 0;
-
-            Post.Cast<BaseClass, INotifyPropertyChanged>(bc).PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == "Sum")
-                {
-                    eventFireCounter++;
-
-                }
-            };
-
-            bc.SetFields(2, 3);
-
-            Assert.AreEqual(1, eventFireCounter);
+        [Test]
+        public void SetFieldsDirectlyTest_ForDerivedClass()
+        {
+            DoInpcTest<InpcDerrivedClass>(
+              c =>
+              {
+                  c.Field1 = 2;
+                  c.Field2 = 3;
+              },
+              2,
+              "Sum");
         }
 
         [Test]
         public void AutoPropertyTest()
         {
-            BaseClass bc = new BaseClass();
+            DoInpcTest<InpcBasicClass>(
+             c =>
+             {
+                 c.AutoProperty = 4;
+             },
+             1,
+             "AutoProperty");
+        }
 
-            int eventFireCounter = 0;
-
-            Post.Cast<BaseClass, INotifyPropertyChanged>(bc).PropertyChanged += (s, e) => eventFireCounter++;
-            bc.AutoProperty = 4;
-
-            Assert.AreEqual(1, eventFireCounter);
+        [Test]
+        public void AutoPropertyTest_ForDerivedClass()
+        {
+            DoInpcTest<InpcDerrivedClass>(
+             c =>
+             {
+                 c.AutoProperty = 4;
+             },
+             1,
+             "AutoProperty");
         }
 
         [Test]
         public void SetFieldsViaSeparateMethodTest_MethodBasedProperty()
         {
-            BaseClass bc = new BaseClass();
-
-            int eventFireCounter = 0;
-
-            Post.Cast<BaseClass, INotifyPropertyChanged>(bc).PropertyChanged += (s, e) =>
+            DoInpcTest<InpcBasicClass>(
+            c =>
             {
-                if (e.PropertyName == "SumViaMethod")
-                {
-                    eventFireCounter++;
+                c.SetField1(2);
+                c.SetField2(4);
+            },
+            2,
+            "SumViaMethod");
+        }
 
-                }
-            };
-
-            bc.SetField1(2);
-            bc.SetField2(4);
-
-            Assert.AreEqual(2, eventFireCounter);
+        [Test]
+        public void SetFieldsViaSeparateMethodTest_MethodBasedProperty_ForDerivedClass()
+        {
+            DoInpcTest<InpcDerrivedClass>(
+            c =>
+            {
+                c.SetField1(2);
+                c.SetField2(4);
+            },
+            2,
+            "SumViaMethod");
         }
 
         [Test]
         public void SetFieldsViaCompositeMethodTest_MethodBasedProperty()
         {
-            BaseClass bc = new BaseClass();
+            DoInpcTest<InpcBasicClass>(
+           c => c.SetFields(2, 3),
+           1,
+           "SumViaMethod");
+        }
 
-            int eventFireCounter = 0;
-
-            Post.Cast<BaseClass, INotifyPropertyChanged>(bc).PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == "SumViaMethod")
-                {
-                    eventFireCounter++;
-
-                }
-            };
-
-            bc.SetField1(2);
-            bc.SetField2(4);
-
-            Assert.AreEqual(2, eventFireCounter);
+        [Test]
+        public void SetFieldsViaCompositeMethodTest_MethodBasedProperty_ForDerivedClass()
+        {
+            DoInpcTest<InpcDerrivedClass>(
+           c => c.SetFields(2, 3),
+           1,
+           "SumViaMethod");
         }
 
         [Test]
         public void SetFieldsDirectlyTest_MethodBasedProperty()
         {
-            BaseClass bc = new BaseClass();
+            DoInpcTest<InpcBasicClass>(
+           c =>
+           {
+               c.Field1 = 2;
+               c.Field2 = 3;
+           },
+           2,
+           "SumViaMethod");
+        }
 
-            int eventFireCounter = 0;
+        [Test]
+        public void SetFieldsDirectlyTest_MethodBasedProperty_ForDerivedClass()
+        {
+            DoInpcTest<InpcDerrivedClass>(
+           c =>
+           {
+               c.Field1 = 2;
+               c.Field2 = 3;
+           },
+           2,
+           "SumViaMethod");
+        }
 
-            Post.Cast<BaseClass, INotifyPropertyChanged>(bc).PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == "SumViaMethod")
-                {
-                    eventFireCounter++;
-
-                }
-            };
-
-            bc.SetFields(2, 3);
-
-            Assert.AreEqual(1, eventFireCounter);
+        [Test]
+        public void BaseField_RaisesDerivedEvent()
+        {
+           DoInpcTest<InpcDerrivedClass>(
+           c =>
+               {
+                   c.BaseField1 = 1;
+               },
+           1,
+           "BaseClasseBasedProperty");
         }
 
     }
 
     [NotifyPropertyChangedAspect]
-    public class BaseClass
+    public class InpcBaseClass : INotifyPropertyChanged, IRaiseNotifyPropertyChanged
+    {
+        public int BaseField1;
+
+        public int BaseMethod1()
+        {
+            return BaseField1;
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        [NotNotified]
+        public virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChangedEventHandler handler = this.PropertyChanged;
+            if (handler != null)
+            {
+                handler(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+
+    public class InpcDerrivedClass : InpcBaseClass
+    {
+        public int Field1;
+
+        public int Field2;
+
+        public int Sum
+        {
+            get
+            {
+                return this.Field1 + this.Field2;
+            }
+        }
+
+        public int SumViaMethod
+        {
+            get
+            {
+                return this.GetSum();
+            }
+        }
+
+        public int AutoProperty { get; set; }
+
+        public int BaseClasseBasedProperty
+        {
+            get
+            {
+                return this.BaseMethod1();
+            }
+        }
+
+        public void SetField1(int value)
+        {
+            this.Field1 = value;
+        }
+
+        public void SetField2(int value)
+        {
+            this.Field2 = value;
+        }
+
+        public void SetFields(int field1, int field2)
+        {
+            this.Field1 = field1;
+            this.Field2 = field2;
+        }
+
+        public int GetSum()
+        {
+            return Field1 + Field2;
+        }
+    }
+
+    [NotifyPropertyChangedAspect]
+    public class InpcBasicClass
     {
         public int Field1;
 

@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 
@@ -18,30 +19,35 @@ namespace PostSharp.Toolkit.INPC
     /// Under development. Early version !!!
     /// </summary>
     [Serializable]
+    [MulticastAttributeUsage(MulticastTargets.Class, Inheritance = MulticastInheritance.Strict)]
     [IntroduceInterface(typeof(INotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore)]
     [IntroduceInterface(typeof(IRaiseNotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore)]
     public class NotifyPropertyChangedAspect : InstanceLevelAspect, INotifyPropertyChanged, IRaiseNotifyPropertyChanged
     {
         private Dictionary<string, IList<string>> fieldPropertyMapping;
 
-        [NonSerialized]
-        private ThreadLocal<int> methodCounter;
-
-        [NonSerialized]
-        [ThreadStatic]
-        private static Stack<object> stackTrace;
-
-        private static Stack<object> StackTrace
+        [OnSerializing]
+        public void OnSerializing(StreamingContext context)
         {
-            get
+            this.fieldPropertyMapping = FieldMap.FieldPropertyMapping;
+            FieldMap.FieldPropertyMapping = null;
+        }
+
+        [OnDeserialized]
+        public void OnDeserialized(StreamingContext context)
+        {
+            if (FieldMap.FieldPropertyMapping == null && this.fieldPropertyMapping != null)
             {
-                return stackTrace ?? (stackTrace = new Stack<object>());
+                // TODO: should add to map not replace it
+                FieldMap.FieldPropertyMapping = this.fieldPropertyMapping;
             }
         }
 
+        // used compile time only
         [NonSerialized]
-        private static HashSet<MethodBase> analizedMethods = new HashSet<MethodBase>();
+        private static HashSet<MethodBase> analizedMethods;
 
+        // used compile time only
         [NonSerialized]
         private static Dictionary<MethodBase, IList<FieldInfo>> methodFieldMapping;
 
@@ -50,76 +56,45 @@ namespace PostSharp.Toolkit.INPC
         {
             args.ProceedSetValue();
             IList<string> propertyList;
-            if (fieldPropertyMapping.TryGetValue(args.LocationName, out propertyList))
+            if (FieldMap.FieldPropertyMapping.TryGetValue(args.LocationFullName, out propertyList))
             {
                 foreach (string propertyName in propertyList)
                 {
-                    ChangedPropertyAcumulator.AddProperty(this.Instance, propertyName);
+                    ChangedPropertyAcumulator.AddProperty(args.Instance, propertyName);
                 }
             }
 
-            if (methodCounter.Value == 0)
-            {
-                RaisePropertyChanged();
-            }
-        }
-
-        private void RaisePropertyChanged()
-        {
-            IList<string> propertyNames;
-
-            var objectsToRisePropertyChanged = ChangedPropertyAcumulator.ChangedObjects.Except( StackTrace ).Union( new[] { this.Instance } );
-
-            foreach ( object o in objectsToRisePropertyChanged )
-            {
-                ChangedPropertyAcumulator.ChangedProperties.TryGetValue(o, out propertyNames);
-
-                if (propertyNames == null)
-                {
-                    continue;
-                }
-
-                foreach (var changedProperty in propertyNames)
-                {
-                    IRaiseNotifyPropertyChanged rpc = o as IRaiseNotifyPropertyChanged;
-                    if (rpc != null)
-                    {
-                        rpc.OnPropertyChanged( changedProperty );
-                    }
-                }
-
-                ChangedPropertyAcumulator.ChangedProperties.Remove(o);
-            }
+            ChangedPropertyAcumulator.RaisePropertyChanged(args.Instance, false);
         }
 
         [OnMethodInvokeAdvice, MulticastPointcut(Targets = MulticastTargets.Method)]
         public void OnMethodInvoke(MethodInterceptionArgs args)
         {
+            if (args.Method.GetCustomAttributes(typeof(NotNotifiedAttribute), true).Any())
+            {
+                args.Proceed();
+                return;
+            }
+
             try
             {
-                if (methodCounter.Value == 0)
-                {
-                    StackTrace.Push( this.Instance );
-                }
-
-                methodCounter.Value++;
+                ChangedPropertyAcumulator.PushOnStack(args.Instance);
                 args.Proceed();
             }
             finally
             {
-                methodCounter.Value--;
-                if (methodCounter.Value == 0)
                 {
-                    this.RaisePropertyChanged();
-                    StackTrace.Pop(); //TODO: chack if pop is always valid
+                    ChangedPropertyAcumulator.RaisePropertyChanged(args.Instance, true);
                 }
             }
         }
 
         public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
         {
-            fieldPropertyMapping = new Dictionary<string, IList<string>>();
+            if (FieldMap.FieldPropertyMapping == null) FieldMap.FieldPropertyMapping = new Dictionary<string, IList<string>>();
+
             methodFieldMapping = new Dictionary<MethodBase, IList<FieldInfo>>();
+            analizedMethods = new HashSet<MethodBase>();
 
             base.CompileTimeInitialize(type, aspectInfo);
 
@@ -143,7 +118,7 @@ namespace PostSharp.Toolkit.INPC
                 {
                     foreach (var field in fieldList)
                     {
-                        IList<string>  propertyList = fieldPropertyMapping.GetOrCreate(field.Name, () => new List<string>());
+                        IList<string> propertyList = FieldMap.FieldPropertyMapping.GetOrCreate(string.Format("{0}.{1}", field.DeclaringType.FullName, field.Name), () => new List<string>());
 
                         propertyList.AddIfNew(propertyInfo.Name);
                     }
@@ -161,9 +136,9 @@ namespace PostSharp.Toolkit.INPC
 
             MethodUsageCodeReference[] declarations = ReflectionSearch.GetDeclarationsUsedByMethod(method);
 
-            IList<FieldInfo> fieldList = methodFieldMapping.GetOrCreate( method, () => new List<FieldInfo>() );
+            IList<FieldInfo> fieldList = methodFieldMapping.GetOrCreate(method, () => new List<FieldInfo>());
 
-            foreach (var reference in declarations.Where(r => r.UsedType == type))
+            foreach (var reference in declarations.Where(r => r.UsedType.IsAssignableFrom( type )))
             {
                 if (reference.Instructions.HasFlag(MethodUsageInstructions.LoadField))
                 {
@@ -189,21 +164,16 @@ namespace PostSharp.Toolkit.INPC
 
         }
 
-        public override void RuntimeInitializeInstance()
-        {
-            base.RuntimeInitializeInstance();
-            methodCounter = new ThreadLocal<int>(() => 0);
-        }
-
         [ImportMember("OnPropertyChanged", IsRequired = false, Order = ImportMemberOrder.AfterIntroductions)]
         public Action<string> OnPropertyChangedMethod;
 
         [IntroduceMember(Visibility = Visibility.Family, IsVirtual = true, OverrideAction = MemberOverrideAction.Ignore)]
         public void OnPropertyChanged(string propertyName)
         {
-            if (this.PropertyChanged != null)
+            PropertyChangedEventHandler handler = this.PropertyChanged;
+            if (handler != null)
             {
-                this.PropertyChanged(this.Instance, new PropertyChangedEventArgs(propertyName));
+                handler(this.Instance, new PropertyChangedEventArgs(propertyName));
             }
         }
 
@@ -211,14 +181,13 @@ namespace PostSharp.Toolkit.INPC
         public event PropertyChangedEventHandler PropertyChanged;
     }
 
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method)]
     public class NotNotifiedAttribute : Attribute
     {
     }
 
     public interface IRaiseNotifyPropertyChanged
     {
-        void OnPropertyChanged( string propertyName );
+        void OnPropertyChanged(string propertyName);
     }
-
 }
