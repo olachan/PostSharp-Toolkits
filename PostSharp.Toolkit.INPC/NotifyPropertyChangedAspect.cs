@@ -24,12 +24,7 @@ namespace PostSharp.Toolkit.INPC
     [IntroduceInterface(typeof(IRaiseNotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore)]
     public class NotifyPropertyChangedAspect : InstanceLevelAspect, INotifyPropertyChanged, IRaiseNotifyPropertyChanged
     {
-        // runtime immiutable hance thread synchronization is not needed
-        
         private Dictionary<string, IList<string>> fieldPropertyMapping;
-
-        //[NonSerialized]
-        //private ThreadLocal<int> methodCounter;
 
         [OnSerializing]
         public void OnSerializing(StreamingContext context)
@@ -43,22 +38,8 @@ namespace PostSharp.Toolkit.INPC
         {
             if (FieldMap.FieldPropertyMapping == null && this.fieldPropertyMapping != null)
             {
+                // TODO: should add to map not replace it
                 FieldMap.FieldPropertyMapping = this.fieldPropertyMapping;
-            }
-        }
-
-        [NonSerialized]
-        [ThreadStatic]
-        private static Stack<object> stackTrace;
-
-        //[NonSerialized]
-        //private ThreadLocal<bool> isInpcFireing; 
-
-        private static Stack<object> StackTrace
-        {
-            get
-            {
-                return stackTrace ?? (stackTrace = new Stack<object>());
             }
         }
 
@@ -83,54 +64,7 @@ namespace PostSharp.Toolkit.INPC
                 }
             }
 
-            RaisePropertyChanged(args.Instance, 0);
-
-        }
-
-        private void RaisePropertyChanged(object instance, int maxStackCount)
-        {
-            //if (this.isInpcFireing.Value)
-            //{
-            //    return;
-            //}
-            if (StackTrace.Count(o => o == instance) > maxStackCount)
-            {
-                return;
-            }
-
-
-            try
-            {
-                //this.isInpcFireing.Value = true;
-
-                var objectsToRisePropertyChanged = ChangedPropertyAcumulator.ChangedObjects.Except(StackTrace).Union(new[] { instance });
-
-                foreach (object o in objectsToRisePropertyChanged)
-                {
-                    IList<string> propertyNames;
-                    ChangedPropertyAcumulator.ChangedProperties.TryGetValue(o, out propertyNames);
-
-                    if (propertyNames == null)
-                    {
-                        continue;
-                    }
-
-                    foreach (var changedProperty in propertyNames)
-                    {
-                        IRaiseNotifyPropertyChanged rpc = o as IRaiseNotifyPropertyChanged;
-                        if (rpc != null)
-                        {
-                            rpc.OnPropertyChanged(changedProperty);
-                        }
-                    }
-
-                    ChangedPropertyAcumulator.ChangedProperties.Remove(o);
-                }
-            }
-            finally
-            {
-                //this.isInpcFireing.Value = false;
-            }
+            ChangedPropertyAcumulator.RaisePropertyChanged(args.Instance, false);
         }
 
         [OnMethodInvokeAdvice, MulticastPointcut(Targets = MulticastTargets.Method)]
@@ -144,29 +78,19 @@ namespace PostSharp.Toolkit.INPC
 
             try
             {
-                //if (methodCounter.Value == 0)
-                //{
-                StackTrace.Push(args.Instance);
-                //}
-
-                //methodCounter.Value++;
+                ChangedPropertyAcumulator.PushOnStack(args.Instance);
                 args.Proceed();
             }
             finally
             {
-                //methodCounter.Value--;
-                //if (methodCounter.Value == 0)
                 {
-                    this.RaisePropertyChanged(args.Instance, 1);
-                    StackTrace.Pop(); //TODO: chack if pop is always valid
+                    ChangedPropertyAcumulator.RaisePropertyChanged(args.Instance, true);
                 }
             }
         }
 
         public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
         {
-            // this.fieldMap = (FieldMap)type.Assembly.GetCustomAttributes( typeof(FieldMap), false ).First();
-
             if (FieldMap.FieldPropertyMapping == null) FieldMap.FieldPropertyMapping = new Dictionary<string, IList<string>>();
 
             methodFieldMapping = new Dictionary<MethodBase, IList<FieldInfo>>();
@@ -203,20 +127,6 @@ namespace PostSharp.Toolkit.INPC
             }
         }
 
-        public override void RuntimeInitialize(Type type)
-        {
-           
-            //this.methodCounter = new ThreadLocal<int>(() => 0);
-        }
-
-        //public override object CreateInstance(AdviceArgs adviceArgs)
-        //{
-        //    NotifyPropertyChangedAspect instance = (NotifyPropertyChangedAspect)this.MemberwiseClone();
-        //    instance.methodCounter = new ThreadLocal<int>();
-        //    instance.isInpcFireing = new ThreadLocal<bool>();
-        //    return instance;
-        //}
-
         private void AnalizeMethod(Type type, MethodBase method)
         {
             if (analizedMethods.Contains(method))
@@ -252,13 +162,6 @@ namespace PostSharp.Toolkit.INPC
                 }
             }
 
-        }
-
-        public override void RuntimeInitializeInstance()
-        {
-            base.RuntimeInitializeInstance();
-            //methodCounter = new ThreadLocal<int>(() => 0);
-            //isInpcFireing = new ThreadLocal<bool>(() => false);
         }
 
         [ImportMember("OnPropertyChanged", IsRequired = false, Order = ImportMemberOrder.AfterIntroductions)]
