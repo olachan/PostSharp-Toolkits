@@ -12,6 +12,7 @@ using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 using PostSharp.Extensibility;
 using PostSharp.Reflection;
+using PostSharp.Sdk.Extensibility;
 
 namespace PostSharp.Toolkit.INPC
 {

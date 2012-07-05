@@ -7,21 +7,32 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using PostSharp.Extensibility;
 using PostSharp.Reflection;
+using PostSharp.Reflection.Syntax;
+using PostSharp.Sdk.CodeModel;
+using PostSharp.Sdk.CodeModel.ReflectionWrapper;
+using PostSharp.Sdk.CodeModel.Syntax;
+using PostSharp.Sdk.Extensibility;
 
 namespace PostSharp.Toolkit.INPC
 {
+    //TODO: Serious refactoring
+
     public class PropertiesDependencieAnalyzer
     {
-        //Methods already analyzed (for redundant analysis and cycles avoidance)
-        private readonly HashSet<MethodBase> analyzedMethods = new HashSet<MethodBase>();
-
-        //Dependencies of methods on fields
-        private static readonly Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies = new Dictionary<MethodBase, IList<FieldInfo>>();
-
         private readonly Dictionary<string, IList<string>> fieldDependentProperties = new Dictionary<string, IList<string>>();
+
+        private MethodAnalyzer methodAnalyzer;
+
+        public PropertiesDependencieAnalyzer()
+        {
+            methodAnalyzer = new MethodAnalyzer( this );
+        }
 
         public Dictionary<string, IList<string>> FieldDependentProperties
         {
@@ -47,13 +58,13 @@ namespace PostSharp.Toolkit.INPC
                     continue;
                 }
 
-                this.AnalyzeMethod(type, getMethod);
+                methodAnalyzer.AnalyzeProperty( type, getMethod );
 
                 IList<FieldInfo> fieldList;
 
                 //Time to build the reversed graph, i.e. field->property dependencies
 
-                if (methodFieldDependencies.TryGetValue(getMethod, out fieldList))
+                if (methodAnalyzer.MethodFieldDependencies.TryGetValue(getMethod, out fieldList))
                 {
                     foreach (var field in fieldList)
                     {
@@ -67,45 +78,116 @@ namespace PostSharp.Toolkit.INPC
         }
 
 
-        private void AnalyzeMethod(Type type, MethodBase method)
+   
+        private class MethodAnalyzer : SyntaxTreeVisitor
         {
-            //TODO: Rewrite using AST to find out whether we're not accessing other instances, report errors etc.
+            private Type currentType;
+            //private MethodBase currentMethod;
 
-            if (analyzedMethods.Contains(method))
+            private readonly PropertiesDependencieAnalyzer analyzer;
+
+            //Methods already analyzed (for redundant analysis and cycles avoidance)
+            private readonly HashSet<MethodBase> analyzedMethods = new HashSet<MethodBase>();
+
+            //Dependencies of methods on fields
+            private readonly Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies = new Dictionary<MethodBase, IList<FieldInfo>>();
+
+            public Dictionary<MethodBase, IList<FieldInfo>> MethodFieldDependencies
             {
-                return;
+                get { return this.methodFieldDependencies; }
             }
 
-            analyzedMethods.Add( method );
+            private MethodBase currentMethod;
+            private ISyntaxService syntaxService;
 
-            MethodUsageCodeReference[] declarations = ReflectionSearch.GetDeclarationsUsedByMethod(method);
-
-            IList<FieldInfo> fieldList = methodFieldDependencies.GetOrCreate(method, () => new List<FieldInfo>());
-
-            foreach (var reference in declarations.Where(r => r.UsedType.IsAssignableFrom(type)))
+            public MethodAnalyzer(PropertiesDependencieAnalyzer analyzer)
             {
-                if (reference.Instructions.HasFlag(MethodUsageInstructions.LoadField))
+                this.analyzer = analyzer;
+                syntaxService = PostSharpEnvironment.CurrentProject.GetService<ISyntaxService>();
+            }
+
+            public void AnalyzeProperty(Type type, MethodBase propertyGetter)
+            {
+                if (currentType != null)
                 {
-                    fieldList.AddIfNew((FieldInfo)reference.UsedDeclaration);
+                    throw new NotSupportedException("MethodAnalyzer is currently single-threaded!");
+                }
+                this.currentType = type;
+
+                try
+                {
+                    this.AnalyzeMethodRecursive( propertyGetter );
+                }
+                finally
+                {
+                    currentType = null;
+                }
+            }
+
+            private void AnalyzeMethodRecursive( MethodBase method )
+            {
+                if ( this.analyzedMethods.Contains( method ) )
+                {
+                    return;
                 }
 
-                if (reference.Instructions.HasFlag(MethodUsageInstructions.Call))
-                {
-                    MethodBase calledMethod = (MethodBase)reference.UsedDeclaration;
-                    AnalyzeMethod(type, calledMethod);
-                    IList<FieldInfo> calledMethodFields;
-                    methodFieldDependencies.TryGetValue(calledMethod, out calledMethodFields);
+                this.analyzedMethods.Add( method );
 
-                    if (calledMethodFields != null)
+                MethodBase prevMethod = this.currentMethod;
+                this.currentMethod = method;
+
+                try
+                {
+                    //TODO: Any better way to get MethodDefDeclaration?
+                    MethodDefDeclaration methodDef =
+                        ((Project) PostSharpEnvironment.CurrentProject).Module.FindMethod( method, BindingOptions.Default ).GetMethodDefinition();
+
+                    var body = syntaxService.GetMethodBody( methodDef, SyntaxAbstractionLevel.ExpressionTree );
+
+                    this.VisitMethodBody( body );
+                }
+                finally
+                {
+                    this.currentMethod = prevMethod;
+                }
+            }
+
+            public override object VisitFieldExpression(IFieldExpression expression)
+            {
+                if (expression.Instance.SyntaxElementKind != SyntaxElementKind.This)
+                {
+                    //TODO: Proper error handling
+                    throw new Exception(this.currentType.ToString()+" "+this.currentMethod+" "+expression);
+                }
+
+                methodFieldDependencies.GetOrCreate( this.currentMethod, () => new List<FieldInfo>() ).AddIfNew( expression.Field );
+
+                return base.VisitFieldExpression(expression);
+            }
+
+            public override object VisitMethodCallExpression(IMethodCallExpression expression)
+            {
+                if (expression.Instance.SyntaxElementKind != SyntaxElementKind.This)
+                {
+                    //TODO: Proper error handling
+                    throw new Exception();
+                }
+
+                this.AnalyzeMethodRecursive(expression.Method);
+                IList<FieldInfo> calledMethodFields;
+                this.methodFieldDependencies.TryGetValue(expression.Method, out calledMethodFields);
+
+                if (calledMethodFields != null)
+                {
+                    var fieldList = methodFieldDependencies.GetOrCreate( this.currentMethod, () => new List<FieldInfo>() );
+                    foreach (var calledMethodField in calledMethodFields)
                     {
-                        foreach (var calledMethodField in calledMethodFields)
-                        {
-                            fieldList.AddIfNew(calledMethodField);
-                        }
+                        fieldList.AddIfNew(calledMethodField);
                     }
                 }
-            }
 
+                return base.VisitMethodCallExpression(expression);
+            }
         }
     }
 }
