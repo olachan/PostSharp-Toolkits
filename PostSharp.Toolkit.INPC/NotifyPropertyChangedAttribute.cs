@@ -26,7 +26,7 @@ namespace PostSharp.Toolkit.INPC
     public class NotifyPropertyChangedAttribute : InstanceLevelAspect, IRaiseNotifyPropertyChanged
     {
         // Compile-time use only
-        private static PropertiesDependencieAnalyzer analyzer = new PropertiesDependencieAnalyzer();
+        private static Lazy<PropertiesDependencieAnalyzer> analyzer = new Lazy<PropertiesDependencieAnalyzer>();
 
         //TODO: Encapsulate the map into a class instead of using this ugly dictionary everywhere
         private Dictionary<string, IList<string>> fieldDependentProperties;
@@ -39,7 +39,7 @@ namespace PostSharp.Toolkit.INPC
             //Grab the dependencies map to serialize if, if no other aspect has done it before
             if (analyzer != null)
             {
-                this.fieldDependentProperties = analyzer.FieldDependentProperties;
+                this.fieldDependentProperties = analyzer.Value.FieldDependentProperties;
                 analyzer = null;
             }
         }
@@ -95,7 +95,7 @@ namespace PostSharp.Toolkit.INPC
 
         public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
         {
-            analyzer.AnalyzeType( type );
+            analyzer.Value.AnalyzeType( type );
         }
 
         
@@ -116,6 +116,9 @@ namespace PostSharp.Toolkit.INPC
         [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
         public event PropertyChangedEventHandler PropertyChanged;
     }
+
+
+
 
     //TODO: Rename!
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method)]

@@ -51,20 +51,15 @@ namespace PostSharp.Toolkit.INPC
 
             foreach (var propertyInfo in properties)
             {
-                var getMethod = propertyInfo.GetGetMethod(false);
+                if (!propertyInfo.CanRead) continue;
 
-                if (getMethod == null)
-                {
-                    continue;
-                }
-
-                methodAnalyzer.AnalyzeProperty( type, getMethod );
+                methodAnalyzer.AnalyzeProperty( type, propertyInfo );
 
                 IList<FieldInfo> fieldList;
 
                 //Time to build the reversed graph, i.e. field->property dependencies
 
-                if (methodAnalyzer.MethodFieldDependencies.TryGetValue(getMethod, out fieldList))
+                if (methodAnalyzer.MethodFieldDependencies.TryGetValue(propertyInfo.GetGetMethod(), out fieldList))
                 {
                     foreach (var field in fieldList)
                     {
@@ -81,11 +76,38 @@ namespace PostSharp.Toolkit.INPC
    
         private class MethodAnalyzer : SyntaxTreeVisitor
         {
-            private Type currentType;
-            //private MethodBase currentMethod;
+            private class AnalysisContext : NestableContextInfo
+            {
+                public Type CurrentType { get; set; }
 
-            private readonly PropertiesDependencieAnalyzer analyzer;
+                public MethodBase CurrentMethod { get; set; }
 
+                public PropertyInfo CurrentProperty { get; set; }
+
+                public AnalysisContext()
+                { }
+
+                public AnalysisContext( Type currentType, MethodBase currentMethod, PropertyInfo currentProperty )
+                {
+                    this.CurrentType = currentType;
+                    this.CurrentMethod = currentMethod;
+                    this.CurrentProperty = currentProperty;
+                }
+
+                public AnalysisContext CloneWithDifferentMethod(MethodBase method)
+                {
+                    return new AnalysisContext()
+                               {
+                                   CurrentMethod = method,
+                                   CurrentProperty = this.CurrentProperty,
+                                   CurrentType = this.CurrentType
+                               };
+                }
+            }
+
+
+            private readonly NestableContext<AnalysisContext> context = new NestableContext<AnalysisContext>();
+            
             //Methods already analyzed (for redundant analysis and cycles avoidance)
             private readonly HashSet<MethodBase> analyzedMethods = new HashSet<MethodBase>();
 
@@ -97,30 +119,30 @@ namespace PostSharp.Toolkit.INPC
                 get { return this.methodFieldDependencies; }
             }
 
-            private MethodBase currentMethod;
-            private ISyntaxService syntaxService;
+            private readonly ISyntaxService syntaxService;
 
             public MethodAnalyzer(PropertiesDependencieAnalyzer analyzer)
             {
-                this.analyzer = analyzer;
                 syntaxService = PostSharpEnvironment.CurrentProject.GetService<ISyntaxService>();
             }
 
-            public void AnalyzeProperty(Type type, MethodBase propertyGetter)
+            public void AnalyzeProperty(Type type, PropertyInfo propertyInfo)
             {
-                if (currentType != null)
+                if (context.Current != null)
                 {
                     throw new NotSupportedException("MethodAnalyzer is currently single-threaded!");
                 }
-                this.currentType = type;
 
-                try
+                var propertyGetter = propertyInfo.GetGetMethod(false);
+
+                if (propertyGetter == null)
                 {
-                    this.AnalyzeMethodRecursive( propertyGetter );
+                    return;
                 }
-                finally
+
+                using (this.context.InContext(() => new AnalysisContext(type, propertyGetter, propertyInfo)))
                 {
-                    currentType = null;
+                    this.AnalyzeMethodRecursive(propertyGetter);
                 }
             }
 
@@ -133,10 +155,7 @@ namespace PostSharp.Toolkit.INPC
 
                 this.analyzedMethods.Add( method );
 
-                MethodBase prevMethod = this.currentMethod;
-                this.currentMethod = method;
-
-                try
+                using (this.context.InContext(() => this.context.Current.CloneWithDifferentMethod(method)))
                 {
                     //TODO: Any better way to get MethodDefDeclaration?
                     MethodDefDeclaration methodDef =
@@ -146,27 +165,25 @@ namespace PostSharp.Toolkit.INPC
 
                     this.VisitMethodBody( body );
                 }
-                finally
-                {
-                    this.currentMethod = prevMethod;
-                }
             }
 
             public override object VisitFieldExpression(IFieldExpression expression)
             {
                 if (expression.Instance.SyntaxElementKind != SyntaxElementKind.This)
                 {
-                    //TODO: Proper error handling
-                    throw new Exception(this.currentType.ToString()+" "+this.currentMethod+" "+expression);
+                    //TODO: Write tests for build-time errors and warnings!
+                    InpcMessageSource.Instance.Write( this.context.Current.CurrentProperty, SeverityType.Error, "INPC001",
+                        context.Current.CurrentProperty, context.Current.CurrentMethod );
                 }
 
-                methodFieldDependencies.GetOrCreate( this.currentMethod, () => new List<FieldInfo>() ).AddIfNew( expression.Field );
+                methodFieldDependencies.GetOrCreate(context.Current.CurrentMethod, () => new List<FieldInfo>()).AddIfNew(expression.Field);
 
                 return base.VisitFieldExpression(expression);
             }
 
             public override object VisitMethodCallExpression(IMethodCallExpression expression)
             {
+                //TODO: Ignore void methods with no ref/out
                 if (expression.Instance.SyntaxElementKind != SyntaxElementKind.This)
                 {
                     //TODO: Proper error handling
@@ -179,7 +196,7 @@ namespace PostSharp.Toolkit.INPC
 
                 if (calledMethodFields != null)
                 {
-                    var fieldList = methodFieldDependencies.GetOrCreate( this.currentMethod, () => new List<FieldInfo>() );
+                    var fieldList = methodFieldDependencies.GetOrCreate(context.Current.CurrentMethod, () => new List<FieldInfo>());
                     foreach (var calledMethodField in calledMethodFields)
                     {
                         fieldList.AddIfNew(calledMethodField);
@@ -188,6 +205,16 @@ namespace PostSharp.Toolkit.INPC
 
                 return base.VisitMethodCallExpression(expression);
             }
+            
+            public override object VisitMethodPointerExpression(IMethodPointerExpression expression)
+            {
+                //TODO: Error handling
+                throw new Exception();
+                return base.VisitMethodPointerExpression(expression);
+            }
+
         }
     }
+
+    
 }
