@@ -14,8 +14,11 @@ using PostSharp.Extensibility;
 
 namespace PostSharp.Toolkit.INPC
 {
-    public class FieldMap
+    internal class FieldDependenciesMap
     {
-        public static Dictionary<string, IList<string>> FieldPropertyMapping { get; set; }
+        /// <summary>
+        /// Dictionary with a list of dependent properties for each instrumented field
+        /// </summary>
+        public static Dictionary<string, IList<string>> FieldDependentProperties { get; set; }
     }
 }

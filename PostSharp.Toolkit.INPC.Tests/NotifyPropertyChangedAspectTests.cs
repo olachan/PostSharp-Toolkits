@@ -159,6 +159,18 @@ namespace PostSharp.Toolkit.INPC.Tests
         }
 
         [Test]
+        public void RecurrentlyCalculatedPropertyTest()
+        {
+            DoInpcTest<InpcBasicClass>(
+            c =>
+                {
+                    c.FieldForRecurrentCalculation = 10;
+                },
+            1,
+            "RecurrentlyCalculatedValue");
+        }
+
+        [Test]
         public void SetFieldsViaSeparateMethodTest_MethodBasedProperty()
         {
             DoInpcTest<InpcBasicClass>(
@@ -242,7 +254,7 @@ namespace PostSharp.Toolkit.INPC.Tests
 
     }
 
-    [NotifyPropertyChangedAspect]
+    [NotifyPropertyChanged]
     public class InpcBaseClass : INotifyPropertyChanged, IRaiseNotifyPropertyChanged
     {
         public int BaseField1;
@@ -254,7 +266,7 @@ namespace PostSharp.Toolkit.INPC.Tests
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        [NotNotified]
+        [NoAutomaticPropertyChangedNotifications]
         public virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChangedEventHandler handler = this.PropertyChanged;
@@ -319,12 +331,14 @@ namespace PostSharp.Toolkit.INPC.Tests
         }
     }
 
-    [NotifyPropertyChangedAspect]
+    [NotifyPropertyChanged]
     public class InpcBasicClass
     {
         public int Field1;
 
         public int Field2;
+
+        public int FieldForRecurrentCalculation;
 
         public int Sum
         {
@@ -340,6 +354,20 @@ namespace PostSharp.Toolkit.INPC.Tests
             {
                 return this.GetSum();
             }
+        }
+
+        public int RecurrentlyCalculatedValue
+        {
+            get
+            {
+                return this.CalculateRecurrently(this.FieldForRecurrentCalculation);
+            }
+        }
+
+        private int CalculateRecurrently(int x)
+        {
+            if (x <= 0) return 0;
+            return x + this.CalculateRecurrently( x - 1 );
         }
 
         public int AutoProperty { get; set; }
