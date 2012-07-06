@@ -1,3 +1,12 @@
+#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
 using System;
 using System.Collections.Generic;
 
@@ -5,12 +14,12 @@ namespace PostSharp.Toolkit.INPC
 {
     internal interface INestableContext
     {
-        void Push( NestableContextInfo  context);
+        void Push( NestableContextInfo context );
+
         NestableContextInfo Pop();
 
         NestableContextInfo Current { get; }
     }
-
 
     internal class NestableContext<TContextInfo> : INestableContext
         where TContextInfo : NestableContextInfo, new()
@@ -24,26 +33,32 @@ namespace PostSharp.Toolkit.INPC
 
         NestableContextInfo INestableContext.Current
         {
-            get { return Current; }
+            get
+            {
+                return this.Current;
+            }
         }
 
         public TContextInfo Current
         {
             get
             {
-                if (this.contextsStack.Count == 0) return null;
+                if ( this.contextsStack.Count == 0 )
+                {
+                    return null;
+                }
                 return this.contextsStack.Peek();
             }
         }
 
-        private void Push (TContextInfo context)
+        private void Push( TContextInfo context )
         {
             this.contextsStack.Push( context );
         }
 
         void INestableContext.Push( NestableContextInfo context )
         {
-            this.Push( (TContextInfo) context );
+            this.Push( (TContextInfo)context );
         }
 
         private TContextInfo Pop()
@@ -51,7 +66,7 @@ namespace PostSharp.Toolkit.INPC
             return this.contextsStack.Pop();
         }
 
-        public TContextInfo InContext(Func<TContextInfo> factory = null)
+        public TContextInfo InContext( Func<TContextInfo> factory = null )
         {
             TContextInfo context = (factory == null) ? new TContextInfo() : factory();
             this.contextsStack.Push( context );
@@ -60,19 +75,18 @@ namespace PostSharp.Toolkit.INPC
         }
     }
 
-    
     internal abstract class NestableContextInfo : IDisposable
     {
         private INestableContext owner;
-        
-        internal void RegisterOwner(INestableContext owner)
+
+        internal void RegisterOwner( INestableContext owner )
         {
             this.owner = owner;
         }
 
         public void Dispose()
         {
-            if (this.owner != null)
+            if ( this.owner != null )
             {
                 this.owner.Pop();
             }

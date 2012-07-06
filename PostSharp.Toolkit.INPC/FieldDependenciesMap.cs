@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.Serialization;
-using System.Text;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
 
-using PostSharp.Aspects;
-using PostSharp.Aspects.Advices;
-using PostSharp.Aspects.Configuration;
-using PostSharp.Aspects.Internals;
-using PostSharp.Aspects.Serialization;
-using PostSharp.Extensibility;
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
+using System.Collections.Generic;
 
 namespace PostSharp.Toolkit.INPC
 {

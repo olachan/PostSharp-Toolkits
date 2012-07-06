@@ -1,18 +1,23 @@
-﻿using System;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading;
 
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 using PostSharp.Extensibility;
 using PostSharp.Reflection;
-using PostSharp.Sdk.Extensibility;
 
 namespace PostSharp.Toolkit.INPC
 {
@@ -20,9 +25,9 @@ namespace PostSharp.Toolkit.INPC
     /// Under development. Early version !!!
     /// </summary>
     [Serializable]
-    [MulticastAttributeUsage(MulticastTargets.Class, Inheritance = MulticastInheritance.Strict)]
-    [IntroduceInterface(typeof(INotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore)]
-    [IntroduceInterface(typeof(IRaiseNotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore)]
+    [MulticastAttributeUsage( MulticastTargets.Class, Inheritance = MulticastInheritance.Strict )]
+    [IntroduceInterface( typeof(INotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore )]
+    [IntroduceInterface( typeof(IRaiseNotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore )]
     public class NotifyPropertyChangedAttribute : InstanceLevelAspect, IRaiseNotifyPropertyChanged
     {
         // Compile-time use only
@@ -31,53 +36,55 @@ namespace PostSharp.Toolkit.INPC
 
         // Used for serializing propertyDependencyMap
         private PropertyDependencySerializationStore propertyDependencySerializationStore;
-        
+
         [OnSerializing]
-        public void OnSerializing(StreamingContext context)
+        public void OnSerializing( StreamingContext context )
         {
             //TODO: Consider better serialization mechanism - maybe simply introduce assembly level aspect doing the stuff below?
 
             //Grab the dependencies map to serialize if, if no other aspect has done it before
-            if (analyzer != null)
+            if ( analyzer != null )
             {
-                this.propertyDependencySerializationStore = new PropertyDependencySerializationStore(analyzer.Value);
+                this.propertyDependencySerializationStore = new PropertyDependencySerializationStore( analyzer.Value );
                 analyzer = null;
             }
         }
 
         [OnDeserialized]
-        public void OnDeserialized(StreamingContext context)
+        public void OnDeserialized( StreamingContext context )
         {
             //If dependencies map was serialized within this aspect, copy the data to global map
-            if (this.propertyDependencySerializationStore != null)
+            if ( this.propertyDependencySerializationStore != null )
             {
                 this.propertyDependencySerializationStore.CopyToMap();
                 this.propertyDependencySerializationStore = null;
             }
         }
 
-        [OnLocationSetValueAdvice, MulticastPointcut(Targets = MulticastTargets.Field)]
-        public void OnFieldSet(LocationInterceptionArgs args)
+        [OnLocationSetValueAdvice]
+        [MulticastPointcut( Targets = MulticastTargets.Field )]
+        public void OnFieldSet( LocationInterceptionArgs args )
         {
             args.ProceedSetValue();
             IList<string> propertyList;
-            if (FieldDependenciesMap.FieldDependentProperties.TryGetValue(args.LocationFullName, out propertyList))
+            if ( FieldDependenciesMap.FieldDependentProperties.TryGetValue( args.LocationFullName, out propertyList ) )
             {
-                foreach (string propertyName in propertyList)
+                foreach ( string propertyName in propertyList )
                 {
-                    PropertyChangesTracker.Accumulator.AddProperty(args.Instance, propertyName);
+                    PropertyChangesTracker.Accumulator.AddProperty( args.Instance, propertyName );
                 }
             }
 
-            PropertyChangesTracker.RaisePropertyChanged(args.Instance, false);
+            PropertyChangesTracker.RaisePropertyChanged( args.Instance, false );
         }
 
-        [OnMethodInvokeAdvice, MethodPointcut("SelectMethods")]
-        public void OnMethodInvoke(MethodInterceptionArgs args)
+        [OnMethodInvokeAdvice]
+        [MethodPointcut( "SelectMethods" )]
+        public void OnMethodInvoke( MethodInterceptionArgs args )
         {
             try
             {
-                PropertyChangesTracker.StackContext.PushOnStack(args.Instance);
+                PropertyChangesTracker.StackContext.PushOnStack( args.Instance );
                 args.Proceed();
             }
             finally
@@ -86,39 +93,39 @@ namespace PostSharp.Toolkit.INPC
             }
         }
 
-        private IEnumerable<MethodBase> SelectMethods(Type type)
+        private IEnumerable<MethodBase> SelectMethods( Type type )
         {
             return
-                type.GetMethods( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly )
-                    .Where( m => !m.GetCustomAttributes( typeof(NoAutomaticPropertyChangedNotificationsAttribute), true ).Any() );
+                type.GetMethods( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly ).Where(
+                    m => !m.GetCustomAttributes( typeof(NoAutomaticPropertyChangedNotificationsAttribute), true ).Any() );
         }
 
-        public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
+        public override void CompileTimeInitialize( Type type, AspectInfo aspectInfo )
         {
             analyzer.Value.AnalyzeType( type );
         }
 
-        [IntroduceMember(Visibility = Visibility.Family, IsVirtual = true, OverrideAction = MemberOverrideAction.Ignore)]
-        public void OnPropertyChanged(string propertyName)
+        [IntroduceMember( Visibility = Visibility.Family, IsVirtual = true, OverrideAction = MemberOverrideAction.Ignore )]
+        public void OnPropertyChanged( string propertyName )
         {
             PropertyChangedEventHandler handler = this.PropertyChanged;
-            if (handler != null)
+            if ( handler != null )
             {
-                handler(this.Instance, new PropertyChangedEventArgs(propertyName));
+                handler( this.Instance, new PropertyChangedEventArgs( propertyName ) );
             }
         }
 
-        [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
+        [IntroduceMember( OverrideAction = MemberOverrideAction.Ignore )]
         public event PropertyChangedEventHandler PropertyChanged;
     }
 
     //TODO: Rename!
-    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method)]
+    [AttributeUsage( AttributeTargets.Property | AttributeTargets.Method )]
     public class NoAutomaticPropertyChangedNotificationsAttribute : Attribute
     {
     }
 
-    [AttributeUsage(AttributeTargets.Method)]
+    [AttributeUsage( AttributeTargets.Method )]
     public class StateIndependentMethod : Attribute
     {
     }

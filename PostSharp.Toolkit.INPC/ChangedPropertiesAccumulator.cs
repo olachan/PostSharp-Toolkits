@@ -1,40 +1,47 @@
-﻿using System.Collections;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace PostSharp.Toolkit.INPC
 {
     internal class ChangedPropertiesAccumulator : IEnumerable<WeakPropertyDescriptor>
     {
         private IList<WeakPropertyDescriptor> changedProperties = new List<WeakPropertyDescriptor>();
-        
 
-        public void AddProperty(object obj, string propertyName)
+        public void AddProperty( object obj, string propertyName )
         {
-            foreach ( WeakPropertyDescriptor weakPropertyDescriptor in changedProperties )
+            foreach ( WeakPropertyDescriptor weakPropertyDescriptor in this.changedProperties )
             {
-                if (weakPropertyDescriptor.Instance.IsAlive && ReferenceEquals( weakPropertyDescriptor.Instance.Target, obj ) && weakPropertyDescriptor.PropertyName == propertyName)
+                if ( weakPropertyDescriptor.Instance.IsAlive && ReferenceEquals( weakPropertyDescriptor.Instance.Target, obj ) &&
+                     weakPropertyDescriptor.PropertyName == propertyName )
                 {
                     return;
                 }
             }
 
-            changedProperties.Add( new WeakPropertyDescriptor( obj, propertyName ) );
+            this.changedProperties.Add( new WeakPropertyDescriptor( obj, propertyName ) );
         }
 
-        public void Remove(WeakPropertyDescriptor propertyDescriptor)
+        public void Remove( WeakPropertyDescriptor propertyDescriptor )
         {
             this.changedProperties.Remove( propertyDescriptor );
         }
 
-        
         public void Compact()
         {
-            var deadObjects = changedProperties.Where( w => !w.Instance.IsAlive ).ToList();
+            List<WeakPropertyDescriptor> deadObjects = this.changedProperties.Where( w => !w.Instance.IsAlive ).ToList();
             foreach ( WeakPropertyDescriptor weakPropertyDescriptor in deadObjects )
             {
-                changedProperties.Remove( weakPropertyDescriptor );
+                this.changedProperties.Remove( weakPropertyDescriptor );
             }
         }
 
