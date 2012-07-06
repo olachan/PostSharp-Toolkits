@@ -26,11 +26,12 @@ namespace PostSharp.Toolkit.INPC
     public class NotifyPropertyChangedAttribute : InstanceLevelAspect, IRaiseNotifyPropertyChanged
     {
         // Compile-time use only
+        [NonSerialized]
         private static Lazy<PropertiesDependencieAnalyzer> analyzer = new Lazy<PropertiesDependencieAnalyzer>();
 
-        //TODO: Encapsulate the map into a class instead of using this ugly dictionary everywhere
-        private Dictionary<string, IList<string>> fieldDependentProperties;
-
+        // Used for serializing propertyDependencyMap
+        private PropertyDependencySerializationStore propertyDependencySerializationStore;
+        
         [OnSerializing]
         public void OnSerializing(StreamingContext context)
         {
@@ -39,7 +40,7 @@ namespace PostSharp.Toolkit.INPC
             //Grab the dependencies map to serialize if, if no other aspect has done it before
             if (analyzer != null)
             {
-                this.fieldDependentProperties = analyzer.Value.FieldDependentProperties;
+                this.propertyDependencySerializationStore = new PropertyDependencySerializationStore(analyzer.Value);
                 analyzer = null;
             }
         }
@@ -48,10 +49,10 @@ namespace PostSharp.Toolkit.INPC
         public void OnDeserialized(StreamingContext context)
         {
             //If dependencies map was serialized within this aspect, copy the data to global map
-            if (FieldDependenciesMap.FieldDependentProperties == null && this.fieldDependentProperties != null)
+            if (this.propertyDependencySerializationStore != null)
             {
-                // TODO: should add to map not replace it
-                FieldDependenciesMap.FieldDependentProperties = this.fieldDependentProperties;
+                this.propertyDependencySerializationStore.CopyToMap();
+                this.propertyDependencySerializationStore = null;
             }
         }
 
@@ -71,15 +72,9 @@ namespace PostSharp.Toolkit.INPC
             PropertyChangesTracker.RaisePropertyChanged(args.Instance, false);
         }
 
-        [OnMethodInvokeAdvice, MulticastPointcut(Targets = MulticastTargets.Method)]
+        [OnMethodInvokeAdvice, MethodPointcut("SelectMethods")]
         public void OnMethodInvoke(MethodInterceptionArgs args)
         {
-            if (args.Method.GetCustomAttributes(typeof(NoAutomaticPropertyChangedNotificationsAttribute), true).Any())
-            {
-                args.Proceed();
-                return;
-            }
-
             try
             {
                 PropertyChangesTracker.StackContext.PushOnStack(args.Instance);
@@ -87,21 +82,21 @@ namespace PostSharp.Toolkit.INPC
             }
             finally
             {
-                {
-                    PropertyChangesTracker.RaisePropertyChanged(args.Instance, true);
-                }
+                PropertyChangesTracker.RaisePropertyChanged( args.Instance, true );
             }
+        }
+
+        private IEnumerable<MethodBase> SelectMethods(Type type)
+        {
+            return
+                type.GetMethods( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly )
+                    .Where( m => !m.GetCustomAttributes( typeof(NoAutomaticPropertyChangedNotificationsAttribute), true ).Any() );
         }
 
         public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
         {
             analyzer.Value.AnalyzeType( type );
         }
-
-        
-
-        //[ImportMember("OnPropertyChanged", IsRequired = false, Order = ImportMemberOrder.AfterIntroductions)]
-        //public Action<string> OnPropertyChangedMethod;
 
         [IntroduceMember(Visibility = Visibility.Family, IsVirtual = true, OverrideAction = MemberOverrideAction.Ignore)]
         public void OnPropertyChanged(string propertyName)
@@ -117,12 +112,14 @@ namespace PostSharp.Toolkit.INPC
         public event PropertyChangedEventHandler PropertyChanged;
     }
 
-
-
-
     //TODO: Rename!
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method)]
     public class NoAutomaticPropertyChangedNotificationsAttribute : Attribute
+    {
+    }
+
+    [AttributeUsage(AttributeTargets.Method)]
+    public class StateIndependentMethod : Attribute
     {
     }
 }

@@ -6,8 +6,6 @@ using System.Text;
 
 using NUnit.Framework;
 
-using PostSharp.Toolkit.INPC;
-
 namespace PostSharp.Toolkit.INPC.Tests
 {
 
@@ -163,9 +161,9 @@ namespace PostSharp.Toolkit.INPC.Tests
         {
             DoInpcTest<InpcBasicClass>(
             c =>
-                {
-                    c.FieldForRecurrentCalculation = 10;
-                },
+            {
+                c.FieldForRecurrentCalculation = 10;
+            },
             1,
             "RecurrentlyCalculatedValue");
         }
@@ -194,6 +192,41 @@ namespace PostSharp.Toolkit.INPC.Tests
             },
             2,
             "SumViaMethod");
+        }
+
+        [Test]
+        public void SetFieldForLongMethodChain()
+        {
+            DoInpcTest<InpcBasicClass>(
+           c => c.FieldForLongMethodChain = 5,
+           1,
+           "LongMethodChainProperty");
+        }
+
+        [Test]
+        public void StaticFrameworkMethodBasedProperty()
+        {
+            DoInpcTest<InpcBasicClass>(
+           c =>
+           {
+               c.Str1 = "sdaf";
+               c.Str2 = "sdakflj";
+           },
+           2,
+           "StaticFrameworkMethodBasedProperty");
+        }
+
+        [Test]
+        public void StateIndependentMethodBasedProperty()
+        {
+            DoInpcTest<InpcBasicClass>(
+           c =>
+           {
+               c.Str1 = "sdaf";
+               c.Str2 = "sdakflj";
+           },
+           2,
+           "StateIndependentMethodBasedProperty");
         }
 
         [Test]
@@ -243,13 +276,13 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void BaseField_RaisesDerivedEvent()
         {
-           DoInpcTest<InpcDerrivedClass>(
-           c =>
-               {
-                   c.BaseField1 = 1;
-               },
-           1,
-           "BaseClasseBasedProperty");
+            DoInpcTest<InpcDerrivedClass>(
+            c =>
+            {
+                c.BaseField1 = 1;
+            },
+            1,
+            "BaseClasseBasedProperty");
         }
 
     }
@@ -329,6 +362,12 @@ namespace PostSharp.Toolkit.INPC.Tests
         {
             return Field1 + Field2;
         }
+
+        [StateIndependentMethod]
+        public static string StateIndependentMethod(string format, params object[] parameters)
+        {
+            return string.Format( format, parameters );
+        }
     }
 
     [NotifyPropertyChanged]
@@ -339,6 +378,28 @@ namespace PostSharp.Toolkit.INPC.Tests
         public int Field2;
 
         public int FieldForRecurrentCalculation;
+
+        public int FieldForLongMethodChain;
+
+        public string Str1;
+
+        public string Str2;
+
+        public string StaticFrameworkMethodBasedProperty
+        {
+            get
+            {
+                return string.Format("{0} {1}", Str1, Str2);
+            }
+        }
+
+        public string StateIndependentMethodBasedProperty
+        {
+            get
+            {
+                return InpcDerrivedClass.StateIndependentMethod( "{0} {1}", Str1, Str2 );
+            }
+        }
 
         public int Sum
         {
@@ -367,7 +428,30 @@ namespace PostSharp.Toolkit.INPC.Tests
         private int CalculateRecurrently(int x)
         {
             if (x <= 0) return 0;
-            return x + this.CalculateRecurrently( x - 1 );
+            return x + this.CalculateRecurrently(x - 1);
+        }
+
+        public int LongMethodChainProperty
+        {
+            get
+            {
+                return this.LongMethodChain();
+            }
+        }
+
+        private int LongMethodChain()
+        {
+            return LongMethodCahinInner();
+        }
+
+        private int LongMethodCahinInner()
+        {
+            return LongMethodChainInnerInner();
+        }
+
+        private int LongMethodChainInnerInner()
+        {
+            return FieldForLongMethodChain;
         }
 
         public int AutoProperty { get; set; }

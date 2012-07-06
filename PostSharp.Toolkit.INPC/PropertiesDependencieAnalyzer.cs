@@ -39,12 +39,9 @@ namespace PostSharp.Toolkit.INPC
             get { return this.fieldDependentProperties; }
         }
 
-
         public void AnalyzeType(Type type)
         {
             //We need to grab all the properties and build a map of their dependencies
-
-            if (FieldDependenciesMap.FieldDependentProperties == null) FieldDependenciesMap.FieldDependentProperties = new Dictionary<string, IList<string>>();
 
             var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(p => !p.GetCustomAttributes(typeof(NoAutomaticPropertyChangedNotificationsAttribute), true).Any());
@@ -181,13 +178,27 @@ namespace PostSharp.Toolkit.INPC
                 return base.VisitFieldExpression(expression);
             }
 
+            
+
             public override object VisitMethodCallExpression(IMethodCallExpression expression)
             {
-                //TODO: Ignore void methods with no ref/out
-                if (expression.Instance.SyntaxElementKind != SyntaxElementKind.This)
+                MethodInfo methodInfo = (MethodInfo)expression.Method;
+
+                // Ignore void no ref/out methods, static framework methods and independent methods
+
+                if ((expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This) &&
+                    (methodInfo.IsVoidNoRefOut() || methodInfo.IsStateIndependentMethod() || methodInfo.IsFrameworkStaticMethod()))
                 {
-                    //TODO: Proper error handling
-                    throw new Exception();
+                    return base.VisitMethodCallExpression(expression);
+                }
+
+                if (expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This)
+                {
+                    //TODO: Write tests for build-time errors and warnings!
+                    InpcMessageSource.Instance.Write(this.context.Current.CurrentProperty, SeverityType.Error, "INPC002",
+                       context.Current.CurrentProperty, context.Current.CurrentMethod);
+                    
+                    return base.VisitMethodCallExpression(expression);
                 }
 
                 this.AnalyzeMethodRecursive(expression.Method);
@@ -208,8 +219,8 @@ namespace PostSharp.Toolkit.INPC
             
             public override object VisitMethodPointerExpression(IMethodPointerExpression expression)
             {
-                //TODO: Error handling
-                throw new Exception();
+                InpcMessageSource.Instance.Write(this.context.Current.CurrentProperty, SeverityType.Error, "INPC003",
+                      context.Current.CurrentProperty, context.Current.CurrentMethod);
                 return base.VisitMethodPointerExpression(expression);
             }
 
