@@ -35,7 +35,7 @@ namespace PostSharp.Toolkit.INPC
 
         public static bool IsStateIndependentMethod( this MethodBase method )
         {
-            return method.GetCustomAttributes( typeof(StateIndependentMethod), false ).Any();
+            return method.GetCustomAttributes( typeof(IdempotentMethodAttribute), false ).Any();
         }
 
         public static bool IsVoidNoRefOut( this MethodInfo methodInfo )

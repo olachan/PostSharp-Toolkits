@@ -47,7 +47,8 @@ namespace PostSharp.Toolkit.INPC
 
             IEnumerable<PropertyInfo> properties =
                 type.GetProperties( BindingFlags.Public | BindingFlags.Instance ).Where(
-                    p => !p.GetCustomAttributes( typeof(NoAutomaticPropertyChangedNotificationsAttribute), true ).Any() );
+                    p => !p.GetCustomAttributes( typeof(NoAutomaticPropertyChangedNotificationsAttribute), true ).Any() ).Where(
+                        p => !p.GetCustomAttributes( typeof(DependsOn), false ).Any() );
 
             foreach ( PropertyInfo propertyInfo in properties )
             {
@@ -85,6 +86,17 @@ namespace PostSharp.Toolkit.INPC
                 public MethodBase CurrentMethod { get; set; }
 
                 public PropertyInfo CurrentProperty { get; set; }
+
+                private bool? isInstanceScopedProperty;
+
+                public bool IsInstanceScopedProperty
+                {
+                    get
+                    {
+                        return this.isInstanceScopedProperty ??
+                               (this.isInstanceScopedProperty = this.CurrentProperty.GetCustomAttributes( typeof(InstanceScopedProperty), false ).Any()).Value;
+                    }
+                }
 
                 public AnalysisContext()
                 {
@@ -169,7 +181,7 @@ namespace PostSharp.Toolkit.INPC
 
             public override object VisitFieldExpression( IFieldExpression expression )
             {
-                if ( expression.Instance.SyntaxElementKind != SyntaxElementKind.This )
+                if ( expression.Instance.SyntaxElementKind != SyntaxElementKind.This && !this.context.Current.IsInstanceScopedProperty )
                 {
                     //TODO: Write tests for build-time errors and warnings!
                     InpcMessageSource.Instance.Write(
@@ -196,7 +208,8 @@ namespace PostSharp.Toolkit.INPC
                     return base.VisitMethodCallExpression( expression );
                 }
 
-                if ( expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This )
+                if ( (expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This) &&
+                     !this.context.Current.IsInstanceScopedProperty )
                 {
                     //TODO: Write tests for build-time errors and warnings!
                     InpcMessageSource.Instance.Write(
@@ -227,6 +240,11 @@ namespace PostSharp.Toolkit.INPC
 
             public override object VisitMethodPointerExpression( IMethodPointerExpression expression )
             {
+                if ( this.context.Current.IsInstanceScopedProperty )
+                {
+                    return base.VisitMethodPointerExpression( expression );
+                }
+
                 InpcMessageSource.Instance.Write(
                     this.context.Current.CurrentProperty,
                     SeverityType.Error,

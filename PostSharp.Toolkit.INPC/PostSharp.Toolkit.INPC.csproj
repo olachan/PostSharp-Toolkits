@@ -89,6 +89,7 @@
     <Compile Include="CollectionHelpers.cs" />
     <Compile Include="FieldDependenciesMap.cs" />
     <Compile Include="InpcMessageSource.cs" />
+    <Compile Include="IPropagatedChange.cs" />
     <Compile Include="IRaiseNotifyPropertyChanged.cs" />
     <Compile Include="NestableContext.cs" />
     <Compile Include="PropertiesDependencieAnalyzer.cs" />

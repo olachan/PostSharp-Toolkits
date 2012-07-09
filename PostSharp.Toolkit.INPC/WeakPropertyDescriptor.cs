@@ -20,6 +20,7 @@ namespace PostSharp.Toolkit.INPC
         {
             this.Instance = new WeakReference( instance );
             this.PropertyName = propertyName;
+            this.Processed = false;
 
             //Need to calculate hash code here, so that it does not change during object's lifetime:
             this.hashCode = ((RuntimeHelpers.GetHashCode( instance ) * 397) ^ propertyName.GetHashCode());
@@ -28,6 +29,8 @@ namespace PostSharp.Toolkit.INPC
         public WeakReference Instance { get; private set; }
 
         public string PropertyName { get; private set; }
+
+        public bool Processed { get; set; }
 
         public bool Equals( WeakPropertyDescriptor other )
         {
