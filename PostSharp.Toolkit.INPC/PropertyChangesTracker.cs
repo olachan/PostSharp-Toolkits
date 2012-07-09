@@ -7,6 +7,7 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -21,36 +22,6 @@ namespace PostSharp.Toolkit.INPC
         private static ThreadLocal<bool> propertyChangeRoutineRunning = new ThreadLocal<bool>( () => false );
 
         private static readonly ThreadLocal<StackContext> stackTrace = new ThreadLocal<StackContext>( () => new StackContext() );
-
-        public static void RaisePropertyChanged()
-        {
-            ChangedPropertiesAccumulator accumulator = changedPropertiesAcumulator.Value;
-
-            List<WeakPropertyDescriptor> objectsToRaisePropertyChanged = accumulator.Where( w => w.Instance.IsAlive ).ToList();
-
-            foreach ( WeakPropertyDescriptor w in objectsToRaisePropertyChanged )
-            {
-                if ( w.Processed )
-                {
-                    continue;
-                }
-
-                w.Processed = true;
-                accumulator.Remove( w );
-
-                IRaiseNotifyPropertyChanged rpc = w.Instance.Target as IRaiseNotifyPropertyChanged;
-                if ( rpc != null )
-                {
-                    rpc.OnPropertyChanged( w.PropertyName );
-                }
-
-                IPropagatedChange pc = w.Instance.Target as IPropagatedChange;
-                if ( pc != null )
-                {
-                    pc.RaisePropagatedChange( new PropagatedChangeEventArgs( w.PropertyName ) );
-                }
-            }
-        }
 
         internal static ChangedPropertiesAccumulator Accumulator
         {
@@ -68,7 +39,7 @@ namespace PostSharp.Toolkit.INPC
             }
         }
 
-        internal static void RaisePropertyChanged( object instance, bool popFromStack )
+        public static void RaisePropertyChanged( object instance, Action<string> onPropertyChanged, bool popFromStack )
         {
             propertyChangeRoutineRunning.Value = true;
 
@@ -98,10 +69,10 @@ namespace PostSharp.Toolkit.INPC
                 w.Processed = true;
                 accumulator.Remove( w );
 
-                IRaiseNotifyPropertyChanged rpc = w.Instance.Target as IRaiseNotifyPropertyChanged;
-                if ( rpc != null )
+                
+                if ( onPropertyChanged != null )
                 {
-                    rpc.OnPropertyChanged( w.PropertyName );
+                    onPropertyChanged( w.PropertyName );
                 }
 
                 IPropagatedChange pc = w.Instance.Target as IPropagatedChange;

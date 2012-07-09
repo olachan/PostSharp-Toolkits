@@ -27,9 +27,8 @@ namespace PostSharp.Toolkit.INPC
     [Serializable]
     [MulticastAttributeUsage( MulticastTargets.Class, Inheritance = MulticastInheritance.Strict )]
     [IntroduceInterface( typeof(INotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore )]
-    [IntroduceInterface( typeof(IRaiseNotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore )]
     [IntroduceInterface( typeof(IPropagatedChange), OverrideAction = InterfaceOverrideAction.Ignore )]
-    public class NotifyPropertyChangedAttribute : InstanceLevelAspect, IRaiseNotifyPropertyChanged, IPropagatedChange
+    public class NotifyPropertyChangedAttribute : InstanceLevelAspect,INotifyPropertyChanged, IPropagatedChange
     {
         // Compile-time use only
         [NonSerialized]
@@ -86,7 +85,7 @@ namespace PostSharp.Toolkit.INPC
                 }
             }
 
-            PropertyChangesTracker.RaisePropertyChanged( args.Instance, false );
+            PropertyChangesTracker.RaisePropertyChanged( args.Instance, this.OnPropertyChangedMethod,  false );
         }
 
         private void HookPropagateChangeHandler( LocationInterceptionArgs args, bool propagateChange )
@@ -139,7 +138,7 @@ namespace PostSharp.Toolkit.INPC
                     }
                 }
 
-                PropertyChangesTracker.RaisePropertyChanged( this.Instance, false );
+                PropertyChangesTracker.RaisePropertyChanged(this.Instance, this.OnPropertyChangedMethod, false);
             }
         }
 
@@ -165,7 +164,7 @@ namespace PostSharp.Toolkit.INPC
             }
             finally
             {
-                PropertyChangesTracker.RaisePropertyChanged( args.Instance, true );
+                PropertyChangesTracker.RaisePropertyChanged( args.Instance, this.OnPropertyChangedMethod, true );
             }
         }
 
@@ -197,6 +196,9 @@ namespace PostSharp.Toolkit.INPC
 
             ((IPropagatedChange)this.Instance).PropagatedChange += ( s, a ) => this.GenericPropagatedChangeEventHandler( null, s, a, false );
         }
+
+        [ImportMember("OnPropertyChanged")]
+        public Action<string> OnPropertyChangedMethod;
 
         [IntroduceMember( Visibility = Visibility.Family, IsVirtual = true, OverrideAction = MemberOverrideAction.Ignore )]
         public void OnPropertyChanged( string propertyName )
