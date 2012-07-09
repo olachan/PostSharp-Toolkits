@@ -7,6 +7,7 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -36,7 +37,7 @@ namespace PostSharp.Toolkit.INPC
             }
         }
 
-        public static void RaisePropertyChanged( object instance, bool popFromStack )
+        public static void RaisePropertyChanged( object instance, Action<string> onPropertyChanged, bool popFromStack )
         {
             ChangedPropertiesAccumulator accumulator = changedPropertiesAcumulator.Value;
             if ( popFromStack )
@@ -58,10 +59,10 @@ namespace PostSharp.Toolkit.INPC
             {
                 accumulator.Remove( w );
 
-                IRaiseNotifyPropertyChanged rpc = w.Instance.Target as IRaiseNotifyPropertyChanged;
-                if ( rpc != null )
+                
+                if ( onPropertyChanged != null )
                 {
-                    rpc.OnPropertyChanged( w.PropertyName );
+                    onPropertyChanged( w.PropertyName );
                 }
             }
         }

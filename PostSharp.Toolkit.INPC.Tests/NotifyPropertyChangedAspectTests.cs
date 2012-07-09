@@ -288,7 +288,7 @@ namespace PostSharp.Toolkit.INPC.Tests
     }
 
     [NotifyPropertyChanged]
-    public class InpcBaseClass : INotifyPropertyChanged, IRaiseNotifyPropertyChanged
+    public class InpcBaseClass : INotifyPropertyChanged
     {
         public int BaseField1;
 
