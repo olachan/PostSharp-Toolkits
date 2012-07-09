@@ -14,9 +14,7 @@ using System.Reflection;
 
 using PostSharp.Extensibility;
 using PostSharp.Reflection.Syntax;
-using PostSharp.Sdk.CodeModel;
-using PostSharp.Sdk.CodeModel.Syntax;
-using PostSharp.Sdk.Extensibility;
+
 
 namespace PostSharp.Toolkit.INPC
 {
@@ -119,11 +117,11 @@ namespace PostSharp.Toolkit.INPC
                 }
             }
 
-            private readonly ISyntaxService syntaxService;
+            private readonly ISyntaxReflectionService  syntaxService;
 
             public MethodAnalyzer( PropertiesDependencieAnalyzer analyzer )
             {
-                this.syntaxService = PostSharpEnvironment.CurrentProject.GetService<ISyntaxService>();
+                this.syntaxService = PostSharpEnvironment.CurrentProject.GetService<ISyntaxReflectionService>();
             }
 
             public void AnalyzeProperty( Type type, PropertyInfo propertyInfo )
@@ -158,10 +156,8 @@ namespace PostSharp.Toolkit.INPC
                 using ( this.context.InContext( () => this.context.Current.CloneWithDifferentMethod( method ) ) )
                 {
                     //TODO: Any better way to get MethodDefDeclaration?
-                    MethodDefDeclaration methodDef =
-                        ((Project)PostSharpEnvironment.CurrentProject).Module.FindMethod( method, BindingOptions.Default ).GetMethodDefinition();
-
-                    SyntaxMethodBody body = this.syntaxService.GetMethodBody( methodDef, SyntaxAbstractionLevel.ExpressionTree );
+                 
+                    ISyntaxMethodBody body = this.syntaxService.GetMethodBody( method, SyntaxAbstractionLevel.ExpressionTree );
 
                     this.VisitMethodBody( body );
                 }
