@@ -19,7 +19,7 @@ namespace PostSharp.Toolkit.INPC
         private static readonly ThreadLocal<ChangedPropertiesAccumulator> changedPropertiesAcumulator =
             new ThreadLocal<ChangedPropertiesAccumulator>( () => new ChangedPropertiesAccumulator() );
 
-        private static ThreadLocal<bool> propertyChangeRoutineRunning = new ThreadLocal<bool>( () => false );
+        //private static ThreadLocal<bool> propertyChangeRoutineRunning = new ThreadLocal<bool>( () => false );
 
         private static readonly ThreadLocal<StackContext> stackTrace = new ThreadLocal<StackContext>( () => new StackContext() );
 
@@ -41,7 +41,7 @@ namespace PostSharp.Toolkit.INPC
 
         public static void RaisePropertyChanged( object instance, Action<string> onPropertyChanged, bool popFromStack )
         {
-            propertyChangeRoutineRunning.Value = true;
+            //propertyChangeRoutineRunning.Value = true;
 
             ChangedPropertiesAccumulator accumulator = changedPropertiesAcumulator.Value;
             if ( popFromStack )

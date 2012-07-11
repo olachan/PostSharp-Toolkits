@@ -16,6 +16,7 @@ using System.Runtime.Serialization;
 
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
+using PostSharp.Aspects.Dependencies;
 using PostSharp.Extensibility;
 using PostSharp.Reflection;
 
@@ -25,11 +26,12 @@ namespace PostSharp.Toolkit.INPC
     /// Under development. Early version !!!
     /// </summary>
     [Serializable]
-    [MulticastAttributeUsage( MulticastTargets.Class, Inheritance = MulticastInheritance.Strict )]
-    [IntroduceInterface( typeof(INotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore )]
-    [IntroduceInterface( typeof(IPropagatedChange), OverrideAction = InterfaceOverrideAction.Ignore )]
-    public class NotifyPropertyChangedAttribute : InstanceLevelAspect,INotifyPropertyChanged, IPropagatedChange
+    [MulticastAttributeUsage(MulticastTargets.Class, Inheritance = MulticastInheritance.Strict)]
+    [IntroduceInterface(typeof(INotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore)]
+    [IntroduceInterface(typeof(IPropagatedChange), OverrideAction = InterfaceOverrideAction.Ignore)]
+    public class NotifyPropertyChangedAttribute : InstanceLevelAspect, INotifyPropertyChanged, IPropagatedChange
     {
+        //TODO: cope with PS0089 warning on event backing field
         // Compile-time use only
         [NonSerialized]
         private static Lazy<PropertiesDependencieAnalyzer> analyzer = new Lazy<PropertiesDependencieAnalyzer>();
@@ -40,23 +42,23 @@ namespace PostSharp.Toolkit.INPC
         private ExplicitDependencyMap explicitDependencyMap;
 
         [OnSerializing]
-        public void OnSerializing( StreamingContext context )
+        public void OnSerializing(StreamingContext context)
         {
             //TODO: Consider better serialization mechanism - maybe simply introduce assembly level aspect doing the stuff below?
 
             //Grab the dependencies map to serialize if, if no other aspect has done it before
-            if ( analyzer != null )
+            if (analyzer != null)
             {
-                this.propertyDependencySerializationStore = new PropertyDependencySerializationStore( analyzer.Value );
+                this.propertyDependencySerializationStore = new PropertyDependencySerializationStore(analyzer.Value);
                 analyzer = null;
             }
         }
 
         [OnDeserialized]
-        public void OnDeserialized( StreamingContext context )
+        public void OnDeserialized(StreamingContext context)
         {
             //If dependencies map was serialized within this aspect, copy the data to global map
-            if ( this.propertyDependencySerializationStore != null )
+            if (this.propertyDependencySerializationStore != null)
             {
                 this.propertyDependencySerializationStore.CopyToMap();
                 this.propertyDependencySerializationStore = null;
@@ -67,126 +69,131 @@ namespace PostSharp.Toolkit.INPC
         private Dictionary<string, PropagetedChangeEventHandlerDescriptor> progatedChangedHandlers;
 
         [OnLocationSetValueAdvice]
-        [MulticastPointcut( Targets = MulticastTargets.Field )]
-        public void OnFieldSet( LocationInterceptionArgs args )
+        [MethodPointcut("SelectFields")]
+        // [MulticastPointcut(Targets = MulticastTargets.Field)]
+        public void OnFieldSet(LocationInterceptionArgs args)
         {
-            this.UnHookPropagateChangedHandler( args );
+            this.UnHookPropagatedChangedHandler(args);
 
             args.ProceedSetValue();
 
-            this.HookPropagateChangeHandler( args, false );
+            this.HookPropagatedChangeHandler(args);
 
             IList<string> propertyList;
-            if ( FieldDependenciesMap.FieldDependentProperties.TryGetValue( args.LocationFullName, out propertyList ) )
+            if (FieldDependenciesMap.FieldDependentProperties.TryGetValue(args.LocationFullName, out propertyList))
             {
-                foreach ( string propertyName in propertyList )
-                {
-                    PropertyChangesTracker.Accumulator.AddProperty( args.Instance, propertyName );
-                }
+                PropertyChangesTracker.Accumulator.AddProperties(args.Instance, propertyList);
             }
 
-            PropertyChangesTracker.RaisePropertyChanged( args.Instance, this.OnPropertyChangedMethod,  false );
+            IPropagatedChange instance = (IPropagatedChange)this.Instance;
+            instance.RaisePropagatedChange(new PropagatedChangeEventArgs(args.LocationName));
+            // PropertyChangesTracker.RaisePropertyChanged(args.Instance, this.OnPropertyChangedMethod, false);
         }
 
-        private void HookPropagateChangeHandler( LocationInterceptionArgs args, bool propagateChange )
+        private IEnumerable<FieldInfo> SelectFields(Type type)
+        {
+            // Select only fields that are relevant
+            return type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .Where( f =>    analyzer.Value.FieldDependentProperties.ContainsKey(f.FullName()) ||
+                                analyzer.Value.MethodFieldDependencies.Any(d => d.Value.Contains( f )) || //TODO verify if contains works properly
+                                explicitDependencyMap.GetDependentProperties( f.Name ).Any());
+        } 
+
+        private void HookPropagatedChangeHandler(LocationInterceptionArgs args)
         {
             //TODO: verify
             IPropagatedChange currentValue = args.Value as IPropagatedChange;
-            if ( currentValue != null )
+            if (currentValue != null)
             {
-                string fieldName = args.LocationName;
-                PropagetedChangeEventHandlerDescriptor handlerDescriptor = new PropagetedChangeEventHandlerDescriptor(
-                    currentValue, ( s, a ) => this.GenericPropagatedChangeEventHandler( fieldName, s, a, propagateChange ) );
-                this.progatedChangedHandlers.AddOrUpdate( fieldName, handlerDescriptor );
+                string locationName = args.LocationName;
+                PropagetedChangeEventHandlerDescriptor handlerDescriptor =
+                    new PropagetedChangeEventHandlerDescriptor(currentValue, (s, a) => this.GenericPropagatedChangeEventHandler(locationName, s, a));
+                this.progatedChangedHandlers.AddOrUpdate(locationName, handlerDescriptor);
                 currentValue.PropagatedChange += handlerDescriptor.Handler;
             }
         }
 
-        private void UnHookPropagateChangedHandler( LocationInterceptionArgs args )
+        private void UnHookPropagatedChangedHandler(LocationInterceptionArgs args)
         {
             //TODO: verify
             PropagetedChangeEventHandlerDescriptor handlerDescriptor;
-            if ( this.progatedChangedHandlers.TryGetValue( args.LocationName, out handlerDescriptor ) && handlerDescriptor.Reference.IsAlive )
+            if (this.progatedChangedHandlers.TryGetValue(args.LocationName, out handlerDescriptor) && handlerDescriptor.Reference.IsAlive)
             {
                 IPropagatedChange currentValue = handlerDescriptor.Reference.Target as IPropagatedChange;
-                if ( currentValue != null )
+                if (currentValue != null)
                 {
                     currentValue.PropagatedChange -= handlerDescriptor.Handler;
                 }
             }
         }
 
-        private void GenericPropagatedChangeEventHandler( string locationName, object sender, PropagatedChangeEventArgs args, bool propagate )
+        private void GenericPropagatedChangeEventHandler(string locationName, object sender, PropagatedChangeEventArgs args)
         {
             //TODO: verify
             IPropagatedChange instance = (IPropagatedChange)this.Instance;
 
-            if ( locationName != null )
-            {
-                instance.RaisePropagatedChange( new PropagatedChangeEventArgs( locationName, args ) );
-            }
-            else
-            {
-                IEnumerable<string> changedProperties = this.explicitDependencyMap.GetDependentProperties( args.Path );
+            instance.RaisePropagatedChange(new PropagatedChangeEventArgs(locationName, args));
+        }
 
-                foreach ( string changedProperty in changedProperties )
-                {
-                    PropertyChangesTracker.Accumulator.AddProperty( this.Instance, changedProperty );
-                    if ( propagate )
-                    {
-                        instance.RaisePropagatedChange( new PropagatedChangeEventArgs( changedProperty, args ) );
-                    }
-                }
+        private void SelfPropagatedChangeEventHandler(object sender, PropagatedChangeEventArgs args)
+        {
+            IEnumerable<string> changedProperties = this.explicitDependencyMap.GetDependentProperties(args.Path);
 
-                PropertyChangesTracker.RaisePropertyChanged(this.Instance, this.OnPropertyChangedMethod, false);
-            }
+            PropertyChangesTracker.Accumulator.AddProperties(this.Instance, changedProperties);
+
+            PropertyChangesTracker.RaisePropertyChanged(this.Instance, this.OnPropertyChangedMethod, false);
         }
 
         [OnLocationGetValueAdvice]
-        [MulticastPointcut( Targets = MulticastTargets.Property )]
-        public void OnPropertyGet( LocationInterceptionArgs args )
+        [ProvideAspectRole("INPC_EventHook")]
+        [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, "INPC_EventRaise")]
+        [MulticastPointcut(Targets = MulticastTargets.Property)]
+        public void OnPropertyGet(LocationInterceptionArgs args)
         {
-            this.UnHookPropagateChangedHandler( args );
+            this.UnHookPropagatedChangedHandler(args);
 
             args.ProceedGetValue();
 
-            this.HookPropagateChangeHandler( args, true );
+            this.HookPropagatedChangeHandler(args);
         }
 
         [OnMethodInvokeAdvice]
-        [MethodPointcut( "SelectMethods" )]
-        public void OnMethodInvoke( MethodInterceptionArgs args )
+        [ProvideAspectRole("INPC_EventRaise")]
+        [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.After, "INPC_EventHook")]
+        [MethodPointcut("SelectMethods")]
+        public void OnMethodInvoke(MethodInterceptionArgs args)
         {
             try
             {
-                PropertyChangesTracker.StackContext.PushOnStack( args.Instance );
+                PropertyChangesTracker.StackContext.PushOnStack(args.Instance);
                 args.Proceed();
             }
             finally
             {
-                PropertyChangesTracker.RaisePropertyChanged( args.Instance, this.OnPropertyChangedMethod, true );
+                PropertyChangesTracker.RaisePropertyChanged(args.Instance, this.OnPropertyChangedMethod, true);
             }
         }
 
-        private IEnumerable<MethodBase> SelectMethods( Type type )
+        private IEnumerable<MethodBase> SelectMethods(Type type)
         {
             return
-                type.GetMethods( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly ).Where(
-                    m => !m.GetCustomAttributes( typeof(NoAutomaticPropertyChangedNotificationsAttribute), true ).Any() );
+                type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly).Where(
+                    m => !m.GetCustomAttributes(typeof(NoAutomaticPropertyChangedNotificationsAttribute), true).Any());
+            //.Where(m => !(m.IsSpecialName && (m.Name.StartsWith("add_") || m.Name.StartsWith("remove_"))));
         }
 
-        public override void CompileTimeInitialize( Type type, AspectInfo aspectInfo )
+        public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
         {
-            analyzer.Value.AnalyzeType( type );
+            analyzer.Value.AnalyzeType(type);
 
             var properties =
-                type.GetProperties( BindingFlags.Public | BindingFlags.Instance ).Where(
-                    p => !p.GetCustomAttributes( typeof(NoAutomaticPropertyChangedNotificationsAttribute), true ).Any() ).Select(
-                        p => new { Property = p, DependsOn = p.GetCustomAttributes( typeof(DependsOn), false ) } ).Where( p => p.DependsOn.Any() );
+                type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(
+                    p => !p.GetCustomAttributes(typeof(NoAutomaticPropertyChangedNotificationsAttribute), true).Any()).Select(
+                        p => new { Property = p, DependsOn = p.GetCustomAttributes(typeof(DependsOn), false) }).Where(p => p.DependsOn.Any());
 
             this.explicitDependencyMap =
                 new ExplicitDependencyMap(
-                    properties.Select( p => new ExplicitDependency( p.Property.Name, p.DependsOn.SelectMany( d => ((DependsOn)d).Dependencies ) ) ) );
+                    properties.Select(p => new ExplicitDependency(p.Property.Name, p.DependsOn.SelectMany(d => ((DependsOn)d).Dependencies))));
         }
 
         public override void RuntimeInitializeInstance()
@@ -194,35 +201,35 @@ namespace PostSharp.Toolkit.INPC
             base.RuntimeInitializeInstance();
             this.progatedChangedHandlers = new Dictionary<string, PropagetedChangeEventHandlerDescriptor>();
 
-            ((IPropagatedChange)this.Instance).PropagatedChange += ( s, a ) => this.GenericPropagatedChangeEventHandler( null, s, a, false );
+            ((IPropagatedChange)this.Instance).PropagatedChange += this.SelfPropagatedChangeEventHandler;
         }
 
         [ImportMember("OnPropertyChanged")]
         public Action<string> OnPropertyChangedMethod;
 
-        [IntroduceMember( Visibility = Visibility.Family, IsVirtual = true, OverrideAction = MemberOverrideAction.Ignore )]
-        public void OnPropertyChanged( string propertyName )
+        [IntroduceMember(Visibility = Visibility.Family, IsVirtual = true, OverrideAction = MemberOverrideAction.Ignore)]
+        public void OnPropertyChanged(string propertyName)
         {
             PropertyChangedEventHandler handler = this.PropertyChanged;
-            if ( handler != null )
+            if (handler != null)
             {
-                handler( this.Instance, new PropertyChangedEventArgs( propertyName ) );
+                handler(this.Instance, new PropertyChangedEventArgs(propertyName));
             }
         }
 
-        [IntroduceMember( OverrideAction = MemberOverrideAction.Ignore )]
+        [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public void RaisePropagatedChange( PropagatedChangeEventArgs args )
+        public void RaisePropagatedChange(PropagatedChangeEventArgs args)
         {
             PropagatedChangeEventHandler handler = this.PropagatedChange;
-            if ( handler != null )
+            if (handler != null)
             {
-                handler( this.Instance, args );
+                handler(this.Instance, args);
             }
         }
 
-        [IntroduceMember( OverrideAction = MemberOverrideAction.Ignore )]
+        [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
         public event PropagatedChangeEventHandler PropagatedChange;
 
         [Serializable]
@@ -230,21 +237,21 @@ namespace PostSharp.Toolkit.INPC
         {
             private List<ExplicitDependency> dependencies;
 
-            public ExplicitDependencyMap( IEnumerable<ExplicitDependency> dependencies )
+            public ExplicitDependencyMap(IEnumerable<ExplicitDependency> dependencies)
             {
                 this.dependencies = dependencies.ToList();
             }
 
-            public IEnumerable<string> GetDependentProperties( string changedPath )
+            public IEnumerable<string> GetDependentProperties(string changedPath)
             {
-                return this.dependencies.Where( d => d.Dependencies.Any( pd => pd.StartsWith( changedPath ) ) ).Select( d => d.PropertyName );
+                return this.dependencies.Where(d => d.Dependencies.Any(pd => pd.StartsWith(changedPath))).Select(d => d.PropertyName);
             }
         }
 
         [Serializable]
         private class ExplicitDependency
         {
-            public ExplicitDependency( string propertyName, IEnumerable<string> dependencies )
+            public ExplicitDependency(string propertyName, IEnumerable<string> dependencies)
             {
                 this.PropertyName = propertyName;
                 this.Dependencies = dependencies.ToList();
@@ -258,9 +265,9 @@ namespace PostSharp.Toolkit.INPC
         [Serializable]
         private class PropagetedChangeEventHandlerDescriptor
         {
-            public PropagetedChangeEventHandlerDescriptor( object reference, PropagatedChangeEventHandler handler )
+            public PropagetedChangeEventHandlerDescriptor(object reference, PropagatedChangeEventHandler handler)
             {
-                this.Reference = new WeakReference( reference );
+                this.Reference = new WeakReference(reference);
                 this.Handler = handler;
             }
 
@@ -271,18 +278,18 @@ namespace PostSharp.Toolkit.INPC
     }
 
     //TODO: Rename!
-    [AttributeUsage( AttributeTargets.Property | AttributeTargets.Method )]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method)]
     public class NoAutomaticPropertyChangedNotificationsAttribute : Attribute
     {
     }
 
-    [AttributeUsage( AttributeTargets.Method )]
+    [AttributeUsage(AttributeTargets.Method)]
     public class IdempotentMethodAttribute : Attribute
     {
     }
 
-    [AttributeUsage( AttributeTargets.Parameter )]
-    public class InstanceScopedProperty : Attribute
+    [AttributeUsage(AttributeTargets.Property)]
+    public class InstanceScopedPropertyAttribute : Attribute
     {
     }
 }

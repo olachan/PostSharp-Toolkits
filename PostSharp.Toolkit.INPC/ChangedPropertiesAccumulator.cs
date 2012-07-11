@@ -31,6 +31,14 @@ namespace PostSharp.Toolkit.INPC
             this.changedProperties.Add( new WeakPropertyDescriptor( obj, propertyName ) );
         }
 
+        public void AddProperties( object obj, IEnumerable<string> propertyNames )
+        {
+            foreach ( string propertyName in propertyNames )
+            {
+                this.AddProperty( obj, propertyName );
+            }
+        }
+
         public void Remove( WeakPropertyDescriptor propertyDescriptor )
         {
             this.changedProperties.Remove( propertyDescriptor );

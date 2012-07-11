@@ -33,6 +33,11 @@ namespace PostSharp.Toolkit.INPC
             return attribute.Product == "Microsoft® .NET Framework";
         }
 
+        public static string FullName(this MemberInfo memberInfo)
+        {
+            return string.Format( "{0}.{1}", memberInfo.DeclaringType.FullName, memberInfo.Name );
+        }
+
         public static bool IsStateIndependentMethod( this MethodBase method )
         {
             return method.GetCustomAttributes( typeof(IdempotentMethodAttribute), false ).Any();
