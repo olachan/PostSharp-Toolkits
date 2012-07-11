@@ -10,7 +10,7 @@
 using System;
 using System.Linq;
 
-namespace PostSharp.Toolkit.INPC
+namespace PostSharp.Toolkit.Domain
 {
     public interface IPropagatedChange
     {

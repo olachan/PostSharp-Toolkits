@@ -6,7 +6,7 @@ using System.Text;
 
 using NUnit.Framework;
 
-namespace PostSharp.Toolkit.INPC.Tests
+namespace PostSharp.Toolkit.Domain.Tests
 {
 
     [TestFixture]
@@ -93,6 +93,26 @@ namespace PostSharp.Toolkit.INPC.Tests
               c =>
               {
                   c.Field1 = 2;
+                  c.Field2 = 3;
+              },
+              2,
+              "Sum");
+        }
+
+        [Test]
+        public void MultipleSetFieldsDirectlyTest()
+        {
+            TestHelpers.DoInpcTest<InpcBasicClass>(
+              c =>
+              {
+                  c.Field1 = 2;
+                  c.Field1 = 2;
+                  c.Field1 = 2;
+                  c.Field1 = 2;
+
+                  c.Field2 = 3;
+                  c.Field2 = 3;
+                  c.Field2 = 3;
                   c.Field2 = 3;
               },
               2,

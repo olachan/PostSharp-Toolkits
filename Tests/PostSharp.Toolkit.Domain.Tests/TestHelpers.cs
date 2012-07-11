@@ -6,7 +6,7 @@ using System.Text;
 
 using NUnit.Framework;
 
-namespace PostSharp.Toolkit.INPC.Tests
+namespace PostSharp.Toolkit.Domain.Tests
 {
     internal static class TestHelpers
     {

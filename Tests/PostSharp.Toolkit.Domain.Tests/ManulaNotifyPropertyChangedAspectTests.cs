@@ -13,7 +13,7 @@ using System.Linq;
 
 using NUnit.Framework;
 
-namespace PostSharp.Toolkit.INPC.Tests
+namespace PostSharp.Toolkit.Domain.Tests
 {
     [TestFixture]
     public class ManulaNotifyPropertyChangedAspectTests

@@ -10,7 +10,7 @@
 using System.Linq;
 using System.Reflection;
 
-namespace PostSharp.Toolkit.INPC
+namespace PostSharp.Toolkit.Domain
 {
     internal static class ReflectionHelpers
     {
