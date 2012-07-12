@@ -13,9 +13,9 @@ using System.Linq;
 
 namespace PostSharp.Toolkit.Domain
 {
-    internal class ChangedPropertiesAccumulator : IEnumerable<WeakPropertyDescriptor>
+    internal sealed class ChangedPropertiesAccumulator : IEnumerable<WeakPropertyDescriptor>
     {
-        private IList<WeakPropertyDescriptor> changedProperties = new List<WeakPropertyDescriptor>();
+        private readonly List<WeakPropertyDescriptor> changedProperties = new List<WeakPropertyDescriptor>();
 
         public void AddProperty( object obj, string propertyName )
         {

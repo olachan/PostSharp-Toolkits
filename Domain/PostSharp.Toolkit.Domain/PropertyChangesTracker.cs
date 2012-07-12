@@ -75,10 +75,10 @@ namespace PostSharp.Toolkit.Domain
                     onPropertyChanged( w.PropertyName );
                 }
 
-                IPropagatedChange pc = w.Instance.Target as IPropagatedChange;
+                INotifyChildPropertyChanged pc = w.Instance.Target as INotifyChildPropertyChanged;
                 if ( pc != null )
                 {
-                    pc.RaisePropagatedChange( new PropagatedChangeEventArgs( w.PropertyName ) );
+                    pc.RaisePropagatedChange( new NotifyChildPropertyChangedEventArgs( w.PropertyName ) );
                 }
             }
         }

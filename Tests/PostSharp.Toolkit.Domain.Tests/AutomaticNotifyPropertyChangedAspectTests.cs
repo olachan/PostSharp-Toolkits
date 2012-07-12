@@ -312,7 +312,7 @@ namespace PostSharp.Toolkit.Domain.Tests
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        [NoAutomaticPropertyChangedNotifications]
+        [NotifyPropertyChangedIgnore]
         public virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChangedEventHandler handler = this.PropertyChanged;
@@ -424,7 +424,20 @@ namespace PostSharp.Toolkit.Domain.Tests
             }
         }
 
-        [InstanceScopedProperty]
+        public string StateIndependentMethodBasedProperty2
+        {
+            get
+            {
+                return InpcDerrivedClass.StateIndependentMethod("{0}", this);
+            }
+        }
+
+        public override string ToString()
+        {
+            return string.Format( "{0} {1}", Str1, Str2 );
+        }
+
+        [NotifyPropertyChangedSafe]
         public int SumViaExternalMethod
         {
             get

@@ -11,7 +11,7 @@ using System.Collections.Generic;
 
 namespace PostSharp.Toolkit.Domain
 {
-    internal class FieldDependenciesMap
+    internal static class FieldDependenciesMap
     {
         /// <summary>
         /// Dictionary with a list of dependent properties for each instrumented field

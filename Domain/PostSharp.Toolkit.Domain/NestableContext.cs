@@ -12,15 +12,6 @@ using System.Collections.Generic;
 
 namespace PostSharp.Toolkit.Domain
 {
-    internal interface INestableContext
-    {
-        void Push( NestableContextInfo context );
-
-        NestableContextInfo Pop();
-
-        NestableContextInfo Current { get; }
-    }
-
     internal class NestableContext<TContextInfo> : INestableContext
         where TContextInfo : NestableContextInfo, new()
     {
@@ -72,24 +63,6 @@ namespace PostSharp.Toolkit.Domain
             this.contextsStack.Push( context );
             context.RegisterOwner( this );
             return context;
-        }
-    }
-
-    internal abstract class NestableContextInfo : IDisposable
-    {
-        private INestableContext owner;
-
-        internal void RegisterOwner( INestableContext owner )
-        {
-            this.owner = owner;
-        }
-
-        public void Dispose()
-        {
-            if ( this.owner != null )
-            {
-                this.owner.Pop();
-            }
         }
     }
 }

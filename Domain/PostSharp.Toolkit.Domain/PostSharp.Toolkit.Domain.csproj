@@ -84,14 +84,20 @@
   <ItemGroup>
     <Compile Include="ChangedPropertiesAccumulator.cs" />
     <Compile Include="CollectionHelpers.cs" />
+    <Compile Include="DependsOnAttribute.cs" />
     <Compile Include="FieldDependenciesMap.cs" />
-    <Compile Include="InpcMessageSource.cs" />
-    <Compile Include="IPropagatedChange.cs" />
-    <Compile Include="IRaiseNotifyPropertyChanged.cs" />
+    <Compile Include="DomainMessageSource.cs" />
+    <Compile Include="IdempotentMethodAttribute.cs" />
+    <Compile Include="INestableContext.cs" />
+    <Compile Include="INotifyChildPropertyChanged.cs" />
+    <Compile Include="NotifyPropertyChangedController.cs" />
+    <Compile Include="NotifyPropertyChangedSafeAttribute.cs" />
     <Compile Include="NestableContext.cs" />
+    <Compile Include="NestableContextInfo.cs" />
+    <Compile Include="NotifyPropertyChangedIgnoreAttribute.cs" />
+    <Compile Include="NotifyChildPropertyChangedEventArgs.cs" />
     <Compile Include="PropertiesDependencieAnalyzer.cs" />
     <Compile Include="NotifyPropertyChangedAttribute.cs" />
-    <Compile Include="NotifyPropertyChangedClass.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyChangesTracker.cs" />
     <Compile Include="PropertyDependencySerializationStore.cs" />
