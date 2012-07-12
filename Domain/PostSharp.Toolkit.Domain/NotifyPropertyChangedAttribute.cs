@@ -28,8 +28,8 @@ namespace PostSharp.Toolkit.Domain
     [Serializable]
     [MulticastAttributeUsage(MulticastTargets.Class, Inheritance = MulticastInheritance.Strict)]
     [IntroduceInterface(typeof(INotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore)]
-    [IntroduceInterface(typeof(IPropagatedChange), OverrideAction = InterfaceOverrideAction.Ignore)]
-    public class NotifyPropertyChangedAttribute : InstanceLevelAspect, INotifyPropertyChanged, IPropagatedChange
+    [IntroduceInterface(typeof(INotifyChildPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore)]
+    public class NotifyPropertyChangedAttribute : InstanceLevelAspect, INotifyPropertyChanged, INotifyChildPropertyChanged
     {
         // Compile-time use only
         [NonSerialized]
@@ -91,8 +91,8 @@ namespace PostSharp.Toolkit.Domain
                 PropertyChangesTracker.Accumulator.AddProperties(args.Instance, propertyList);
             }
 
-            IPropagatedChange instance = (IPropagatedChange)this.Instance;
-            instance.RaisePropagatedChange(new PropagatedChangeEventArgs(args.LocationName));
+            INotifyChildPropertyChanged instance = (INotifyChildPropertyChanged)this.Instance;
+            instance.RaisePropagatedChange(new NotifyChildPropertyChangedEventArgs(args.LocationName));
         }
 
         private bool IsValueChanged( LocationInterceptionArgs args )
@@ -114,14 +114,14 @@ namespace PostSharp.Toolkit.Domain
 
         private void HookPropagatedChangeHandler(LocationInterceptionArgs args)
         {
-            IPropagatedChange currentValue = args.Value as IPropagatedChange;
+            INotifyChildPropertyChanged currentValue = args.Value as INotifyChildPropertyChanged;
             if (currentValue != null)
             {
                 string locationName = args.LocationName;
                 PropagetedChangeEventHandlerDescriptor handlerDescriptor =
                     new PropagetedChangeEventHandlerDescriptor(currentValue, (s, a) => this.GenericPropagatedChangeEventHandler(locationName, s, a));
                 this.propagatedChangedHandlers.AddOrUpdate(locationName, handlerDescriptor);
-                currentValue.PropagatedChange += handlerDescriptor.Handler;
+                currentValue.ChildPropertyChanged += handlerDescriptor.Handler;
             }
         }
 
@@ -130,22 +130,22 @@ namespace PostSharp.Toolkit.Domain
             PropagetedChangeEventHandlerDescriptor handlerDescriptor;
             if (this.propagatedChangedHandlers.TryGetValue(args.LocationName, out handlerDescriptor) && handlerDescriptor.Reference.IsAlive)
             {
-                IPropagatedChange currentValue = handlerDescriptor.Reference.Target as IPropagatedChange;
+                INotifyChildPropertyChanged currentValue = handlerDescriptor.Reference.Target as INotifyChildPropertyChanged;
                 if (currentValue != null)
                 {
-                    currentValue.PropagatedChange -= handlerDescriptor.Handler;
+                    currentValue.ChildPropertyChanged -= handlerDescriptor.Handler;
                 }
             }
         }
 
-        private void GenericPropagatedChangeEventHandler(string locationName, object sender, PropagatedChangeEventArgs args)
+        private void GenericPropagatedChangeEventHandler(string locationName, object sender, NotifyChildPropertyChangedEventArgs args)
         {
-            IPropagatedChange instance = (IPropagatedChange)this.Instance;
+            INotifyChildPropertyChanged instance = (INotifyChildPropertyChanged)this.Instance;
 
-            instance.RaisePropagatedChange(new PropagatedChangeEventArgs(locationName, args));
+            instance.RaisePropagatedChange(new NotifyChildPropertyChangedEventArgs(locationName, args));
         }
 
-        private void SelfPropagatedChangeEventHandler(object sender, PropagatedChangeEventArgs args)
+        private void SelfChildPropertyChangedEventHandler(object sender, NotifyChildPropertyChangedEventArgs args)
         {
             IEnumerable<string> changedProperties = this.explicitDependencyMap.GetDependentProperties(args.Path);
 
@@ -188,7 +188,7 @@ namespace PostSharp.Toolkit.Domain
         {
             return
                 type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly).Where(
-                    m => !m.GetCustomAttributes(typeof(NoAutomaticPropertyChangedNotificationsAttribute), true).Any());
+                    m => !m.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any());
         }
 
         public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
@@ -197,12 +197,12 @@ namespace PostSharp.Toolkit.Domain
 
             var properties =
                 type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(
-                    p => !p.GetCustomAttributes(typeof(NoAutomaticPropertyChangedNotificationsAttribute), true).Any()).Select(
-                        p => new { Property = p, DependsOn = p.GetCustomAttributes(typeof(DependsOn), false) }).Where(p => p.DependsOn.Any());
+                    p => !p.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any()).Select(
+                        p => new { Property = p, DependsOn = p.GetCustomAttributes(typeof(DependsOnAttribute), false) }).Where(p => p.DependsOn.Any());
 
             this.explicitDependencyMap =
                 new ExplicitDependencyMap(
-                    properties.Select(p => new ExplicitDependency(p.Property.Name, p.DependsOn.SelectMany(d => ((DependsOn)d).Dependencies))));
+                    properties.Select(p => new ExplicitDependency(p.Property.Name, p.DependsOn.SelectMany(d => ((DependsOnAttribute)d).Dependencies))));
 
             this.fieldIsValueType =  type.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly )
                 .ToDictionary( f => f.FullName(), f => f.FieldType.IsValueType );
@@ -213,7 +213,7 @@ namespace PostSharp.Toolkit.Domain
             base.RuntimeInitializeInstance();
             this.propagatedChangedHandlers = new Dictionary<string, PropagetedChangeEventHandlerDescriptor>();
 
-            ((IPropagatedChange)this.Instance).PropagatedChange += this.SelfPropagatedChangeEventHandler;
+            ((INotifyChildPropertyChanged)this.Instance).ChildPropertyChanged += this.SelfChildPropertyChangedEventHandler;
         }
 
         [ImportMember("OnPropertyChanged")]
@@ -232,9 +232,9 @@ namespace PostSharp.Toolkit.Domain
         [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public void RaisePropagatedChange(PropagatedChangeEventArgs args)
+        public void RaisePropagatedChange(NotifyChildPropertyChangedEventArgs args)
         {
-            PropagatedChangeEventHandler handler = this.PropagatedChange;
+            EventHandler<NotifyChildPropertyChangedEventArgs> handler = this.ChildPropertyChanged;
             if (handler != null)
             {
                 handler(this.Instance, args);
@@ -242,7 +242,7 @@ namespace PostSharp.Toolkit.Domain
         }
 
         [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
-        public event PropagatedChangeEventHandler PropagatedChange;
+        public event EventHandler<NotifyChildPropertyChangedEventArgs> ChildPropertyChanged;
 
         [Serializable]
         private sealed class ExplicitDependencyMap
@@ -277,7 +277,7 @@ namespace PostSharp.Toolkit.Domain
         [Serializable]
         private sealed class PropagetedChangeEventHandlerDescriptor
         {
-            public PropagetedChangeEventHandlerDescriptor(object reference, PropagatedChangeEventHandler handler)
+            public PropagetedChangeEventHandlerDescriptor(object reference, EventHandler<NotifyChildPropertyChangedEventArgs> handler)
             {
                 this.Reference = new WeakReference(reference);
                 this.Handler = handler;
@@ -285,7 +285,7 @@ namespace PostSharp.Toolkit.Domain
 
             public WeakReference Reference { get; private set; }
 
-            public PropagatedChangeEventHandler Handler { get; private set; }
+            public EventHandler<NotifyChildPropertyChangedEventArgs> Handler { get; private set; }
         }
     }
 

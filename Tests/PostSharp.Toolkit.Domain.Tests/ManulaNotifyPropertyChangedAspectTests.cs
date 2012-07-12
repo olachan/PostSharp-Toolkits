@@ -81,7 +81,7 @@ namespace PostSharp.Toolkit.Domain.Tests
         }
 
         [Test]
-        // Test showing problem when not executing getters
+        [Ignore] // Test showing problem when not executing getters
         public void TwoLevelDependsOn_ViaProperty_PartlySideObjectChange()
         {
             TestHelpers.DoInpcTest<InpcWithManualDependencies>(

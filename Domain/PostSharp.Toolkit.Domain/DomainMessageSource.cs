@@ -11,7 +11,7 @@ using PostSharp.Extensibility;
 
 namespace PostSharp.Toolkit.Domain
 {
-    internal static class InpcMessageSource
+    internal static class DomainMessageSource
     {
         public static MessageSource Instance = new MessageSource( "PostSharp.Toolkit.INPC", new InpcMessageDispenser() );
 

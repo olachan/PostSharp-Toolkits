@@ -53,8 +53,8 @@ namespace PostSharp.Toolkit.Domain
 
             IEnumerable<PropertyInfo> properties =
                 type.GetProperties( BindingFlags.Public | BindingFlags.Instance ).Where(
-                    p => !p.GetCustomAttributes( typeof(NoAutomaticPropertyChangedNotificationsAttribute), true ).Any() ).Where(
-                        p => !p.GetCustomAttributes( typeof(DependsOn), false ).Any() );
+                    p => !p.GetCustomAttributes( typeof(NotifyPropertyChangedIgnoreAttribute), true ).Any() ).Where(
+                        p => !p.GetCustomAttributes( typeof(DependsOnAttribute), false ).Any() );
 
             foreach ( PropertyInfo propertyInfo in properties )
             {
@@ -100,7 +100,7 @@ namespace PostSharp.Toolkit.Domain
                     get
                     {
                         return this.isInstanceScopedProperty ??
-                               (this.isInstanceScopedProperty = this.CurrentProperty.GetCustomAttributes( typeof(InstanceScopedPropertyAttribute), false ).Any()).Value;
+                               (this.isInstanceScopedProperty = this.CurrentProperty.GetCustomAttributes( typeof(NotifyPropertyChangedSafeAttribute), false ).Any()).Value;
                     }
                 }
 
@@ -189,7 +189,7 @@ namespace PostSharp.Toolkit.Domain
                 {
                     //TODO: Write tests for build-time errors and warnings!
                     // Method contains direct access to a field of another class.
-                    InpcMessageSource.Instance.Write(
+                    DomainMessageSource.Instance.Write(
                         this.context.Current.CurrentProperty,
                         SeverityType.Error,
                         "INPC001",
@@ -218,7 +218,7 @@ namespace PostSharp.Toolkit.Domain
                 {
                     //TODO: Write tests for build-time errors and warnings!
                     // Method contains call to non void (ref/out param) method of another class.
-                    InpcMessageSource.Instance.Write(
+                    DomainMessageSource.Instance.Write(
                         this.context.Current.CurrentProperty,
                         SeverityType.Error,
                         "INPC002",
@@ -252,7 +252,7 @@ namespace PostSharp.Toolkit.Domain
                 }
 
                 // Method contains delegate call.
-                InpcMessageSource.Instance.Write(
+                DomainMessageSource.Instance.Write(
                     this.context.Current.CurrentProperty,
                     SeverityType.Error,
                     "INPC003",
