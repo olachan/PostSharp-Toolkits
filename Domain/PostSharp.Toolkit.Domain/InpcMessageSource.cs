@@ -28,13 +28,16 @@ namespace PostSharp.Toolkit.Domain
                 {
                     case 1:
                         return "NotifyPropertyChangedAttribute: automatic analysis of property {0} failed. " +
-                               "Method {1} contains direct access to a field of another class." + "Use attribute TODO or TODO to TODO.";
+                               "Method {1} contains direct access to a field of another class." + 
+                               "Use InstanceScopedProperty attribute to specify that property value depends only on state of current instance or DependsOn attribute to explicitly specify dependencies.";
                     case 2:
                         return "NotifyPropertyChangedAttribute: automatic analysis of property {0} failed. " +
-                               "Method {1} contains call to non void (ref/out param) method of another class." + "Use attribute TODO or TODO to TODO.";
+                               "Method {1} contains call to non void (ref/out param) method of another class." +
+                               "Use InstanceScopedProperty attribute to specify that property value depends only on state of current instance, DependsOn attribute to explicitly specify dependencies or mark called method with IdempotentMethodAttribute attribute to specify that the method is idempotent.";
                     case 3:
-                        return "NotifyPropertyChangedAttribute: automatic analysis of property {0} failed. " + "Method {1} contains delegate call." +
-                               "Use attribute TODO or TODO to TODO.";
+                        return "NotifyPropertyChangedAttribute: automatic analysis of property {0} failed. " + 
+                               "Method {1} contains delegate call." +
+                               "Use InstanceScopedProperty attribute to specify that property value depends only on state of current instance or DependsOn attribute to explicitly specify dependencies.";
                     default:
                         return null;
                 }

@@ -48,6 +48,10 @@
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Domain\PostSharp.Toolkit.Domain\PostSharp.Toolkit.Domain.csproj">
+      <Project>{9648D4B9-9C05-4DB5-953B-DE3139B6087C}</Project>
+      <Name>PostSharp.Toolkit.Domain</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Threading\PostSharp.Toolkit.Threading.Weaver\PostSharp.Toolkit.Threading.Weaver.csproj">
       <Project>{B30B75A1-16EF-4C3D-A818-7EB7C437D551}</Project>
       <Name>PostSharp.Toolkit.Threading.Weaver</Name>

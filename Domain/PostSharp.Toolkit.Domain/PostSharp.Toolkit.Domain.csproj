@@ -87,7 +87,6 @@
     <Compile Include="FieldDependenciesMap.cs" />
     <Compile Include="InpcMessageSource.cs" />
     <Compile Include="IPropagatedChange.cs" />
-    <Compile Include="IRaiseNotifyPropertyChanged.cs" />
     <Compile Include="NestableContext.cs" />
     <Compile Include="PropertiesDependencieAnalyzer.cs" />
     <Compile Include="NotifyPropertyChangedAttribute.cs" />
@@ -95,6 +94,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyChangesTracker.cs" />
     <Compile Include="PropertyDependencySerializationStore.cs" />
+    <Compile Include="PublicAPIAttributes.cs" />
     <Compile Include="ReflectionHelpers.cs" />
     <Compile Include="StackContext.cs" />
     <Compile Include="WeakHashSet.cs" />

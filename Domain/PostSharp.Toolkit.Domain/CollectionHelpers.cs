@@ -13,7 +13,7 @@ using System.Runtime.CompilerServices;
 
 namespace PostSharp.Toolkit.Domain
 {
-    public static class CollectionHelpers
+    internal static class CollectionHelpers
     {
         public static bool AddIfNew<T>( this IList<T> list, T item )
         {

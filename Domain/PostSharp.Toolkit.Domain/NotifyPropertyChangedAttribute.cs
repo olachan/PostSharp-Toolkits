@@ -67,16 +67,13 @@ namespace PostSharp.Toolkit.Domain
         }
 
         [NonSerialized]
-        private Dictionary<string, PropagetedChangeEventHandlerDescriptor> progatedChangedHandlers;
+        private Dictionary<string, PropagetedChangeEventHandlerDescriptor> propagatedChangedHandlers;
 
         [OnLocationSetValueAdvice]
         [MethodPointcut("SelectFields")]
         public void OnFieldSet(LocationInterceptionArgs args)
         {
-            bool isValueType;
-            this.fieldIsValueType.TryGetValue( args.LocationFullName, out isValueType );
-
-            if ( isValueType ? Equals( args.GetCurrentValue(), args.Value ) : ReferenceEquals( args.GetCurrentValue(), args.Value ) )
+            if ( !this.IsValueChanged( args ) )
             {
                 args.ProceedSetValue();
                 return;
@@ -98,13 +95,21 @@ namespace PostSharp.Toolkit.Domain
             instance.RaisePropagatedChange(new PropagatedChangeEventArgs(args.LocationName));
         }
 
+        private bool IsValueChanged( LocationInterceptionArgs args )
+        {
+            bool isValueType;
+            this.fieldIsValueType.TryGetValue( args.LocationFullName, out isValueType );
+
+            return isValueType ? !Equals( args.GetCurrentValue(), args.Value ) : !ReferenceEquals( args.GetCurrentValue(), args.Value );
+        }
+
         private IEnumerable<FieldInfo> SelectFields(Type type)
         {
             // Select only fields that are relevant
             return type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-                .Where( f =>    analyzer.Value.FieldDependentProperties.ContainsKey(f.FullName()) ||
-                                analyzer.Value.MethodFieldDependencies.Any(d => d.Value.Contains( f )) || //TODO verify if contains works properly
-                                explicitDependencyMap.GetDependentProperties( f.Name ).Any());
+                .Where( f => analyzer.Value.FieldDependentProperties.ContainsKey(f.FullName()) ||
+                             analyzer.Value.MethodFieldDependencies.Any(d => d.Value.Contains( f )) ||
+                             explicitDependencyMap.GetDependentProperties( f.Name ).Any());
         } 
 
         private void HookPropagatedChangeHandler(LocationInterceptionArgs args)
@@ -115,7 +120,7 @@ namespace PostSharp.Toolkit.Domain
                 string locationName = args.LocationName;
                 PropagetedChangeEventHandlerDescriptor handlerDescriptor =
                     new PropagetedChangeEventHandlerDescriptor(currentValue, (s, a) => this.GenericPropagatedChangeEventHandler(locationName, s, a));
-                this.progatedChangedHandlers.AddOrUpdate(locationName, handlerDescriptor);
+                this.propagatedChangedHandlers.AddOrUpdate(locationName, handlerDescriptor);
                 currentValue.PropagatedChange += handlerDescriptor.Handler;
             }
         }
@@ -123,7 +128,7 @@ namespace PostSharp.Toolkit.Domain
         private void UnHookPropagatedChangedHandler(LocationInterceptionArgs args)
         {
             PropagetedChangeEventHandlerDescriptor handlerDescriptor;
-            if (this.progatedChangedHandlers.TryGetValue(args.LocationName, out handlerDescriptor) && handlerDescriptor.Reference.IsAlive)
+            if (this.propagatedChangedHandlers.TryGetValue(args.LocationName, out handlerDescriptor) && handlerDescriptor.Reference.IsAlive)
             {
                 IPropagatedChange currentValue = handlerDescriptor.Reference.Target as IPropagatedChange;
                 if (currentValue != null)
@@ -184,7 +189,6 @@ namespace PostSharp.Toolkit.Domain
             return
                 type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly).Where(
                     m => !m.GetCustomAttributes(typeof(NoAutomaticPropertyChangedNotificationsAttribute), true).Any());
-            //.Where(m => !(m.IsSpecialName && (m.Name.StartsWith("add_") || m.Name.StartsWith("remove_"))));
         }
 
         public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
@@ -207,7 +211,7 @@ namespace PostSharp.Toolkit.Domain
         public override void RuntimeInitializeInstance()
         {
             base.RuntimeInitializeInstance();
-            this.progatedChangedHandlers = new Dictionary<string, PropagetedChangeEventHandlerDescriptor>();
+            this.propagatedChangedHandlers = new Dictionary<string, PropagetedChangeEventHandlerDescriptor>();
 
             ((IPropagatedChange)this.Instance).PropagatedChange += this.SelfPropagatedChangeEventHandler;
         }
@@ -241,9 +245,9 @@ namespace PostSharp.Toolkit.Domain
         public event PropagatedChangeEventHandler PropagatedChange;
 
         [Serializable]
-        private class ExplicitDependencyMap
+        private sealed class ExplicitDependencyMap
         {
-            private List<ExplicitDependency> dependencies;
+            private readonly List<ExplicitDependency> dependencies;
 
             public ExplicitDependencyMap(IEnumerable<ExplicitDependency> dependencies)
             {
@@ -257,7 +261,7 @@ namespace PostSharp.Toolkit.Domain
         }
 
         [Serializable]
-        private class ExplicitDependency
+        private sealed class ExplicitDependency
         {
             public ExplicitDependency(string propertyName, IEnumerable<string> dependencies)
             {
@@ -265,13 +269,13 @@ namespace PostSharp.Toolkit.Domain
                 this.Dependencies = dependencies.ToList();
             }
 
-            public string PropertyName { get; set; }
+            public string PropertyName { get; private set; }
 
-            public List<string> Dependencies { get; set; }
+            public List<string> Dependencies { get; private set; }
         }
 
         [Serializable]
-        private class PropagetedChangeEventHandlerDescriptor
+        private sealed class PropagetedChangeEventHandlerDescriptor
         {
             public PropagetedChangeEventHandlerDescriptor(object reference, PropagatedChangeEventHandler handler)
             {
@@ -285,19 +289,5 @@ namespace PostSharp.Toolkit.Domain
         }
     }
 
-    //TODO: Rename!
-    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method)]
-    public class NoAutomaticPropertyChangedNotificationsAttribute : Attribute
-    {
-    }
-
-    [AttributeUsage(AttributeTargets.Method)]
-    public class IdempotentMethodAttribute : Attribute
-    {
-    }
-
-    [AttributeUsage(AttributeTargets.Property)]
-    public class InstanceScopedPropertyAttribute : Attribute
-    {
-    }
+   
 }

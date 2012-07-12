@@ -20,7 +20,7 @@ namespace PostSharp.Toolkit.Domain
 {
     //TODO: Serious refactoring
 
-    public class PropertiesDependencieAnalyzer
+    internal class PropertiesDependencieAnalyzer
     {
         private readonly Dictionary<string, IList<string>> fieldDependentProperties = new Dictionary<string, IList<string>>();
 
@@ -185,9 +185,10 @@ namespace PostSharp.Toolkit.Domain
 
             public override object VisitFieldExpression( IFieldExpression expression )
             {
-                if ( expression.Instance.SyntaxElementKind != SyntaxElementKind.This && !this.context.Current.IsInstanceScopedProperty )
+                if ( (expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This) && !this.context.Current.IsInstanceScopedProperty )
                 {
                     //TODO: Write tests for build-time errors and warnings!
+                    // Method contains direct access to a field of another class.
                     InpcMessageSource.Instance.Write(
                         this.context.Current.CurrentProperty,
                         SeverityType.Error,
@@ -216,6 +217,7 @@ namespace PostSharp.Toolkit.Domain
                      !this.context.Current.IsInstanceScopedProperty )
                 {
                     //TODO: Write tests for build-time errors and warnings!
+                    // Method contains call to non void (ref/out param) method of another class.
                     InpcMessageSource.Instance.Write(
                         this.context.Current.CurrentProperty,
                         SeverityType.Error,
@@ -249,6 +251,7 @@ namespace PostSharp.Toolkit.Domain
                     return base.VisitMethodPointerExpression( expression );
                 }
 
+                // Method contains delegate call.
                 InpcMessageSource.Instance.Write(
                     this.context.Current.CurrentProperty,
                     SeverityType.Error,
