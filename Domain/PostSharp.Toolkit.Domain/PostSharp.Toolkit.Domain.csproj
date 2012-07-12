@@ -90,6 +90,7 @@
     <Compile Include="IdempotentMethodAttribute.cs" />
     <Compile Include="INestableContext.cs" />
     <Compile Include="INotifyChildPropertyChanged.cs" />
+    <Compile Include="ChildPropertyChangedProcessor.cs" />
     <Compile Include="NotifyPropertyChangedController.cs" />
     <Compile Include="NotifyPropertyChangedSafeAttribute.cs" />
     <Compile Include="NestableContext.cs" />
