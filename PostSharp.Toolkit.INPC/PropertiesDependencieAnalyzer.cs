@@ -167,8 +167,6 @@ namespace PostSharp.Toolkit.INPC
 
                 using ( this.context.InContext( () => this.context.Current.CloneWithDifferentMethod( method ) ) )
                 {
-                    //TODO: Any better way to get MethodDefDeclaration?
-                 
                     ISyntaxMethodBody body = this.syntaxService.GetMethodBody( method, SyntaxAbstractionLevel.ExpressionTree );
 
                     this.VisitMethodBody( body );
@@ -177,6 +175,7 @@ namespace PostSharp.Toolkit.INPC
 
             public override object VisitFieldExpression( IFieldExpression expression )
             {
+                //Check for access to static fields or fields of other objects
                 if ( expression.Instance.SyntaxElementKind != SyntaxElementKind.This && !this.context.Current.IsInstanceScopedProperty )
                 {
                     //TODO: Write tests for build-time errors and warnings!
@@ -197,13 +196,14 @@ namespace PostSharp.Toolkit.INPC
             {
                 MethodInfo methodInfo = (MethodInfo)expression.Method;
 
-                // Ignore void no ref/out ,static framework and state independent methods
+                // Ignore void no ref/out, static framework and state independent methods
                 if ( (expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This) &&
                      (methodInfo.IsVoidNoRefOut() || methodInfo.IsStateIndependentMethod() || methodInfo.IsFrameworkStaticMethod()) )
                 {
                     return base.VisitMethodCallExpression( expression );
                 }
 
+                //Check for method calls on external objects
                 if ( (expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This) &&
                      !this.context.Current.IsInstanceScopedProperty )
                 {
@@ -215,7 +215,7 @@ namespace PostSharp.Toolkit.INPC
                         this.context.Current.CurrentProperty,
                         this.context.Current.CurrentMethod );
 
-                    return base.VisitMethodCallExpression( expression ); // End analisis of this branch
+                    return base.VisitMethodCallExpression( expression ); // End analysis of this branch
                 }
 
                 this.AnalyzeMethodRecursive( expression.Method );
