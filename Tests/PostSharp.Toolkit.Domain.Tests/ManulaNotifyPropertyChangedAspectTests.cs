@@ -13,59 +13,54 @@ using System.Linq;
 
 using NUnit.Framework;
 
-namespace PostSharp.Toolkit.INPC.Tests
+namespace PostSharp.Toolkit.Domain.Tests
 {
     [TestFixture]
-    public class NotifyPropertyChangedAspectTests
+    public class ManulaNotifyPropertyChangedAspectTests
     {
-        private void DoInpcTest<TInpc>( Action<TInpc> propertyChangeAction, int expectedEventFireCount, params string[] propertyNames )
-            where TInpc : class, new()
-        {
-            TInpc bc = new TInpc();
-
-            int eventFireCounter = 0;
-
-            ((INotifyPropertyChanged)bc).PropertyChanged += ( s, e ) =>
-                {
-                    if ( propertyNames.Contains( e.PropertyName ) )
-                    {
-                        eventFireCounter++;
-                    }
-                };
-
-            propertyChangeAction( bc );
-
-            Assert.AreEqual( expectedEventFireCount, eventFireCounter );
-        }
-
         [Test]
         public void SimpleDependsOn()
         {
-            this.DoInpcTest<InpcWithManualDependencies>(
+            TestHelpers.DoInpcTest<InpcWithManualDependencies>(
                 c =>
                     {
                         c.InnerObject = new InpcInnrClass();
                         c.InnerObject.Str1 = "asd";
                         c.InnerObject.Str2 = "asfd";
                     },
-                2,
+                3,
                 "ConcatFromInnerObject" );
         }
 
         [Test]
         public void TwoLevelDependsOn()
         {
-            this.DoInpcTest<InpcWithManualDependencies>(
+            TestHelpers.DoInpcTest<InpcWithManualDependencies>(
                 c =>
                     {
                         c.InnerObject = new InpcInnrClass();
                         c.InnerObject.SuperInnrObject = new InpcSuperInnrClass();
                         c.InnerObject.SuperInnrObject.Str1 = "afasf";
                         c.InnerObject.SuperInnrObject.Str2 = "sgfhdhd";
-                        // PropertyChangesTracker.RaisePropertyChanged();
                     },
-                3,
+                4,
                 "ConcatFromSuperInnerObject" );
+        }
+
+        [Test]
+        public void TwoLevelDependsOn_ViaProperty()
+        {
+            TestHelpers.DoInpcTest<InpcWithManualDependencies>(
+                c =>
+                {
+                    c.InnerObject2 = new InpcInnrClass();
+                    var a = c.ConcatFromSuperInnerObjectViaProperty;
+                    c.InnerObject2.SuperInnrObject = new InpcSuperInnrClass();
+                    c.InnerObject2.SuperInnrObject.Str1 = "afasf";
+                    c.InnerObject2.SuperInnrObject.Str2 = "sgfhdhd";
+                },
+                4,
+                "ConcatFromSuperInnerObjectViaProperty");
         }
     }
 
@@ -108,6 +103,16 @@ namespace PostSharp.Toolkit.INPC.Tests
     {
         public InpcInnrClass InnerObject;
 
+        public InpcInnrClass InnerObject2;
+
+        public InpcInnrClass InnerObjectProperty
+        {
+            get
+            {
+                return this.InnerObject2;
+            }
+        }
+
         [DependsOn( "InnerObject.StrConcat" )]
         public string ConcatFromInnerObject
         {
@@ -123,6 +128,22 @@ namespace PostSharp.Toolkit.INPC.Tests
             get
             {
                 return this.InnerObject.SuperInnrObject.StrConcat;
+            }
+        }
+
+        [DependsOn("InnerObjectProperty.SuperInnrObject.StrConcat")]
+        public string ConcatFromSuperInnerObjectViaProperty
+        {
+            get
+            {
+                if (this.InnerObjectProperty != null && this.InnerObjectProperty.SuperInnrObject != null)
+                {
+                    return this.InnerObjectProperty.SuperInnrObject.StrConcat;
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
     }

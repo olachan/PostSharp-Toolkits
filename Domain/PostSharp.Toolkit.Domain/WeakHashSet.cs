@@ -12,7 +12,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PostSharp.Toolkit.INPC
+namespace PostSharp.Toolkit.Domain
 {
     internal sealed class WeakHashSet : IEnumerable<object>
     {

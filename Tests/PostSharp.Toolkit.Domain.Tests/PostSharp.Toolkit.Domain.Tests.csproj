@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\Dependencies\PostSharp\PostSharpDir.targets" />
+  <Import Project="..\..\Dependencies\PostSharp\PostSharpDir.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
@@ -9,8 +9,8 @@
     <ProjectGuid>{5802A256-BF7B-4563-B329-80EB7D67E1B8}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PostSharp.Toolkit.INPC.Tests</RootNamespace>
-    <AssemblyName>PostSharp.Toolkit.INPC.Tests</AssemblyName>
+    <RootNamespace>PostSharp.Toolkit.Domain.Tests</RootNamespace>
+    <AssemblyName>PostSharp.Toolkit.Domain.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -72,6 +72,7 @@
   <ItemGroup>
     <Compile Include="ManulaNotifyPropertyChangedAspectTests.cs" />
     <Compile Include="AutomaticNotifyPropertyChangedAspectTests.cs" />
+    <Compile Include="TestHelpers.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="nunit.framework, Version=2.5.10.11092, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
@@ -84,9 +85,9 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PostSharp.Toolkit.INPC\PostSharp.Toolkit.INPC.csproj">
+    <ProjectReference Include="..\..\Domain\PostSharp.Toolkit.Domain\PostSharp.Toolkit.Domain.csproj">
       <Project>{9648D4B9-9C05-4DB5-953B-DE3139B6087C}</Project>
-      <Name>PostSharp.Toolkit.INPC</Name>
+      <Name>PostSharp.Toolkit.Domain</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

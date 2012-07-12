@@ -14,11 +14,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 
-[assembly: AssemblyTitle( "PostSharp.Toolkit.INPC" )]
+[assembly: AssemblyTitle( "PostSharp.Toolkit.Domain" )]
 [assembly: AssemblyDescription( "" )]
 [assembly: AssemblyConfiguration( "" )]
 [assembly: AssemblyCompany( "" )]
-[assembly: AssemblyProduct( "PostSharp.Toolkit.INPC" )]
+[assembly: AssemblyProduct("PostSharp.Toolkit.Domain")]
 [assembly: AssemblyCopyright( "Copyright ©  2012" )]
 [assembly: AssemblyTrademark( "" )]
 [assembly: AssemblyCulture( "" )]

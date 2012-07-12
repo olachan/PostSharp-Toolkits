@@ -10,7 +10,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace PostSharp.Toolkit.INPC
+namespace PostSharp.Toolkit.Domain
 {
     /// <summary>
     /// class used to store static data between compile time and runtime

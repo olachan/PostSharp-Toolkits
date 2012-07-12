@@ -10,7 +10,7 @@
 using System.Linq;
 using System.Reflection;
 
-namespace PostSharp.Toolkit.INPC
+namespace PostSharp.Toolkit.Domain
 {
     internal static class ReflectionHelpers
     {
@@ -31,6 +31,11 @@ namespace PostSharp.Toolkit.INPC
             }
 
             return attribute.Product == "Microsoft® .NET Framework";
+        }
+
+        public static string FullName(this MemberInfo memberInfo)
+        {
+            return string.Format( "{0}.{1}", memberInfo.DeclaringType.FullName, memberInfo.Name );
         }
 
         public static bool IsStateIndependentMethod( this MethodBase method )

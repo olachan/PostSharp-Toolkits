@@ -16,7 +16,7 @@ using PostSharp.Extensibility;
 using PostSharp.Reflection.Syntax;
 
 
-namespace PostSharp.Toolkit.INPC
+namespace PostSharp.Toolkit.Domain
 {
     //TODO: Serious refactoring
 
@@ -29,6 +29,14 @@ namespace PostSharp.Toolkit.INPC
         public PropertiesDependencieAnalyzer()
         {
             this.methodAnalyzer = new MethodAnalyzer( this );
+        }
+
+        public Dictionary<MethodBase, IList<FieldInfo>> MethodFieldDependencies
+        {
+            get
+            {
+                return this.methodAnalyzer.MethodFieldDependencies;
+            }
         }
 
         public Dictionary<string, IList<string>> FieldDependentProperties
@@ -67,7 +75,7 @@ namespace PostSharp.Toolkit.INPC
                     {
                         IList<string> propertyList =
                             this.fieldDependentProperties.GetOrCreate(
-                                string.Format( "{0}.{1}", field.DeclaringType.FullName, field.Name ), () => new List<string>() );
+                                field.FullName(), () => new List<string>() );
 
                         propertyList.AddIfNew( propertyInfo.Name );
                     }
@@ -92,7 +100,7 @@ namespace PostSharp.Toolkit.INPC
                     get
                     {
                         return this.isInstanceScopedProperty ??
-                               (this.isInstanceScopedProperty = this.CurrentProperty.GetCustomAttributes( typeof(InstanceScopedProperty), false ).Any()).Value;
+                               (this.isInstanceScopedProperty = this.CurrentProperty.GetCustomAttributes( typeof(InstanceScopedPropertyAttribute), false ).Any()).Value;
                     }
                 }
 

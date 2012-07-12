@@ -6,33 +6,13 @@ using System.Text;
 
 using NUnit.Framework;
 
-namespace PostSharp.Toolkit.INPC.Tests
+namespace PostSharp.Toolkit.Domain.Tests
 {
 
     [TestFixture]
     public class AutomaticNotifyPropertyChangedAspectTests
     {
-        private void DoInpcTest<TInpc>(Action<TInpc> propertyChangeAction, int expectedEventFireCount, params string[] propertyNames)
-            where TInpc : class, new()
-        {
-
-            TInpc bc = new TInpc();
-
-            int eventFireCounter = 0;
-
-            ((INotifyPropertyChanged)bc).PropertyChanged += (s, e) =>
-            {
-                if (propertyNames.Contains(e.PropertyName))
-                {
-                    eventFireCounter++;
-                }
-            };
-
-            propertyChangeAction(bc);
-
-            Assert.AreEqual(expectedEventFireCount, eventFireCounter);
-
-        }
+       
 
         [Test]
         public void MultipleInstancesTest()
@@ -65,7 +45,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void SetFieldsViaSeparateMethodTest()
         {
-            DoInpcTest<InpcBasicClass>(
+            TestHelpers.DoInpcTest<InpcBasicClass>(
                 c =>
                 {
                     c.SetField1(2);
@@ -78,7 +58,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void SetFieldsViaSeparateMethodTest_ForDerivedClass()
         {
-            DoInpcTest<InpcDerrivedClass>(
+            TestHelpers.DoInpcTest<InpcDerrivedClass>(
                 c =>
                 {
                     c.SetField1(2);
@@ -91,7 +71,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void SetFieldsViaCompositeMethodTest()
         {
-            DoInpcTest<InpcBasicClass>(
+            TestHelpers.DoInpcTest<InpcBasicClass>(
                c => c.SetFields(2, 3),
                1,
                "Sum");
@@ -100,7 +80,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void SetFieldsViaCompositeMethodTest_ForDerivedClass()
         {
-            DoInpcTest<InpcDerrivedClass>(
+            TestHelpers.DoInpcTest<InpcDerrivedClass>(
                c => c.SetFields(2, 3),
                1,
                "Sum");
@@ -109,7 +89,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void SetFieldsDirectlyTest()
         {
-            DoInpcTest<InpcBasicClass>(
+            TestHelpers.DoInpcTest<InpcBasicClass>(
               c =>
               {
                   c.Field1 = 2;
@@ -120,9 +100,42 @@ namespace PostSharp.Toolkit.INPC.Tests
         }
 
         [Test]
+        public void MultipleSetFieldsDirectlyTest()
+        {
+            TestHelpers.DoInpcTest<InpcBasicClass>(
+              c =>
+              {
+                  c.Field1 = 2;
+                  c.Field1 = 2;
+                  c.Field1 = 2;
+                  c.Field1 = 2;
+
+                  c.Field2 = 3;
+                  c.Field2 = 3;
+                  c.Field2 = 3;
+                  c.Field2 = 3;
+              },
+              2,
+              "Sum");
+        }
+
+        [Test]
+        public void SumViaExternalMethod_SetFieldsDirectlyTest()
+        {
+            TestHelpers.DoInpcTest<InpcBasicClass>(
+              c =>
+              {
+                  c.Field1 = 2;
+                  c.Field2 = 3;
+              },
+              2,
+              "SumViaExternalMethod");
+        }
+
+        [Test]
         public void SetFieldsDirectlyTest_ForDerivedClass()
         {
-            DoInpcTest<InpcDerrivedClass>(
+            TestHelpers.DoInpcTest<InpcDerrivedClass>(
               c =>
               {
                   c.Field1 = 2;
@@ -135,7 +148,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void AutoPropertyTest()
         {
-            DoInpcTest<InpcBasicClass>(
+            TestHelpers.DoInpcTest<InpcBasicClass>(
              c =>
              {
                  c.AutoProperty = 4;
@@ -147,7 +160,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void AutoPropertyTest_ForDerivedClass()
         {
-            DoInpcTest<InpcDerrivedClass>(
+            TestHelpers.DoInpcTest<InpcDerrivedClass>(
              c =>
              {
                  c.AutoProperty = 4;
@@ -159,7 +172,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void RecurrentlyCalculatedPropertyTest()
         {
-            DoInpcTest<InpcBasicClass>(
+            TestHelpers.DoInpcTest<InpcBasicClass>(
             c =>
             {
                 c.FieldForRecurrentCalculation = 10;
@@ -171,7 +184,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void SetFieldsViaSeparateMethodTest_MethodBasedProperty()
         {
-            DoInpcTest<InpcBasicClass>(
+            TestHelpers.DoInpcTest<InpcBasicClass>(
             c =>
             {
                 c.SetField1(2);
@@ -184,7 +197,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void SetFieldsViaSeparateMethodTest_MethodBasedProperty_ForDerivedClass()
         {
-            DoInpcTest<InpcDerrivedClass>(
+            TestHelpers.DoInpcTest<InpcDerrivedClass>(
             c =>
             {
                 c.SetField1(2);
@@ -197,7 +210,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void SetFieldForLongMethodChain()
         {
-            DoInpcTest<InpcBasicClass>(
+            TestHelpers.DoInpcTest<InpcBasicClass>(
            c => c.FieldForLongMethodChain = 5,
            1,
            "LongMethodChainProperty");
@@ -206,7 +219,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void StaticFrameworkMethodBasedProperty()
         {
-            DoInpcTest<InpcBasicClass>(
+            TestHelpers.DoInpcTest<InpcBasicClass>(
            c =>
            {
                c.Str1 = "sdaf";
@@ -219,7 +232,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void StateIndependentMethodBasedProperty()
         {
-            DoInpcTest<InpcBasicClass>(
+            TestHelpers.DoInpcTest<InpcBasicClass>(
            c =>
            {
                c.Str1 = "sdaf";
@@ -232,7 +245,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void SetFieldsViaCompositeMethodTest_MethodBasedProperty()
         {
-            DoInpcTest<InpcBasicClass>(
+            TestHelpers.DoInpcTest<InpcBasicClass>(
            c => c.SetFields(2, 3),
            1,
            "SumViaMethod");
@@ -241,7 +254,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void SetFieldsViaCompositeMethodTest_MethodBasedProperty_ForDerivedClass()
         {
-            DoInpcTest<InpcDerrivedClass>(
+            TestHelpers.DoInpcTest<InpcDerrivedClass>(
            c => c.SetFields(2, 3),
            1,
            "SumViaMethod");
@@ -250,7 +263,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void SetFieldsDirectlyTest_MethodBasedProperty()
         {
-            DoInpcTest<InpcBasicClass>(
+            TestHelpers.DoInpcTest<InpcBasicClass>(
            c =>
            {
                c.Field1 = 2;
@@ -263,7 +276,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void SetFieldsDirectlyTest_MethodBasedProperty_ForDerivedClass()
         {
-            DoInpcTest<InpcDerrivedClass>(
+            TestHelpers.DoInpcTest<InpcDerrivedClass>(
            c =>
            {
                c.Field1 = 2;
@@ -276,7 +289,7 @@ namespace PostSharp.Toolkit.INPC.Tests
         [Test]
         public void BaseField_RaisesDerivedEvent()
         {
-            DoInpcTest<InpcDerrivedClass>(
+            TestHelpers.DoInpcTest<InpcDerrivedClass>(
             c =>
             {
                 c.BaseField1 = 1;
@@ -370,6 +383,14 @@ namespace PostSharp.Toolkit.INPC.Tests
         }
     }
 
+    public class InnerClass
+    {
+        public int Sum(int left, int right)
+        {
+            return left + right;
+        }
+    }
+
     [NotifyPropertyChanged]
     public class InpcBasicClass
     {
@@ -385,6 +406,8 @@ namespace PostSharp.Toolkit.INPC.Tests
 
         public string Str2;
 
+        public InnerClass Inner = new InnerClass();
+
         public string StaticFrameworkMethodBasedProperty
         {
             get
@@ -398,6 +421,15 @@ namespace PostSharp.Toolkit.INPC.Tests
             get
             {
                 return InpcDerrivedClass.StateIndependentMethod( "{0} {1}", Str1, Str2 );
+            }
+        }
+
+        [InstanceScopedProperty]
+        public int SumViaExternalMethod
+        {
+            get
+            {
+                return Inner.Sum( this.Field1, this.Field2 );
             }
         }
 
