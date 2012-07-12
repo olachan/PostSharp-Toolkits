@@ -37,15 +37,4 @@ namespace PostSharp.Toolkit.Domain
             }
         }
     }
-
-    [AttributeUsage( AttributeTargets.Property )]
-    public class DependsOn : Attribute
-    {
-        public string[] Dependencies { get; private set; }
-
-        public DependsOn( params string[] dependencies )
-        {
-            this.Dependencies = dependencies.ToArray();
-        }
-    }
 }

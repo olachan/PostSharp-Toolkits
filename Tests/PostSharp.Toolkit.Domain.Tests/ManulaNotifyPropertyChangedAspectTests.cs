@@ -54,10 +54,45 @@ namespace PostSharp.Toolkit.Domain.Tests
                 c =>
                 {
                     c.InnerObject2 = new InpcInnrClass();
+                    c.InnerObjectProperty.SuperInnrObject = new InpcSuperInnrClass();
+                    c.InnerObjectProperty.SuperInnrObject.Str1 = "afasf";
+                    c.InnerObjectProperty.SuperInnrObject.Str2 = "sgfhdhd";
+                },
+                4,
+                "ConcatFromSuperInnerObjectViaProperty");
+        }
+
+        [Test]
+        [Ignore] // Test showing problem when not executing getters
+        public void TwoLevelDependsOn_ViaProperty_SideObjectChange()
+        {
+            TestHelpers.DoInpcTest<InpcWithManualDependencies>(
+                c =>
+                {
+                    var innerObject = new InpcInnrClass();
+                    c.InnerObject2 = innerObject;
+                    var superInnerObject = new InpcSuperInnrClass();
+                    innerObject.SuperInnrObject = superInnerObject;
+                    superInnerObject.Str1 = "sadf";
+                    superInnerObject.Str2 = "sag";
+                },
+                4,
+                "ConcatFromSuperInnerObjectViaProperty");
+        }
+
+        [Test]
+        [Ignore] // Test showing problem when not executing getters
+        public void TwoLevelDependsOn_ViaProperty_PartlySideObjectChange()
+        {
+            TestHelpers.DoInpcTest<InpcWithManualDependencies>(
+                c =>
+                {
+                    c.InnerObject2 = new InpcInnrClass();
                     var a = c.ConcatFromSuperInnerObjectViaProperty;
-                    c.InnerObject2.SuperInnrObject = new InpcSuperInnrClass();
-                    c.InnerObject2.SuperInnrObject.Str1 = "afasf";
-                    c.InnerObject2.SuperInnrObject.Str2 = "sgfhdhd";
+                    var superInnerObject = new InpcSuperInnrClass();
+                    c.InnerObject2.SuperInnrObject = superInnerObject;
+                    superInnerObject.Str1 = "sadf";
+                    superInnerObject.Str2 = "sag";
                 },
                 4,
                 "ConcatFromSuperInnerObjectViaProperty");

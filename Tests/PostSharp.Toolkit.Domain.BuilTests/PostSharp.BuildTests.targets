@@ -1,0 +1,214 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0" InitialTargets="PrepareTest">
+
+
+  <UsingTask TaskName="RegexMatch" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+    <ParameterGroup>
+      <Expression ParameterType="System.String" />
+      <Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+      <Matches ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <!--<Reference Include="" />-->
+      <Using Namespace="System"/>
+      <Using Namespace="System.Diagnostics"/>
+      <Using Namespace="System.Collections.Generic"/>
+      <Using Namespace="System.IO"/>
+      <Using Namespace="System.Text.RegularExpressions"/>
+      <Using Namespace="Microsoft.Build.Framework"/>
+      <Using Namespace="Microsoft.Build.Utilities"/>
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+       Regex regex = new Regex( this.Expression, RegexOptions.Multiline );
+
+            foreach ( ITaskItem file in this.Files )
+            {
+                string content = File.ReadAllText( file.ItemSpec );
+                MatchCollection regexMatches = regex.Matches( content );
+                List<ITaskItem> matchesList = new List<ITaskItem>();
+
+                foreach ( Match match in regexMatches )
+                {
+                    matchesList.Add( new TaskItem( match.Groups[1].Value ) );
+                }
+
+                this.Matches = matchesList.ToArray();
+            }
+
+            return true;
+        
+]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+
+  <ItemGroup>
+    <Source Include="$(Source)"/>
+  </ItemGroup>
+
+
+  <PropertyGroup>
+
+    <TargetFramework>NET</TargetFramework>
+
+    <!-- Set path to MSBuild -->
+    <MSBuild40>$(MSBuildBinPath)\msbuild.exe /nologo /p:PostSharpBuild=$(PostSharpBuild) /p:PostSharpAttachDebugger=$(PostSharpAttachDebugger)</MSBuild40>
+    <MSBuild40 Condition="'$(PostSharpTrace)'!=''">$(MSBuild40) /p:PostSharpTrace=$(PostSharpTrace)</MSBuild40>
+    <MSBuild40 Condition="'$(PostSharpTrace)'!='' OR '$(Verbose)'!=''">$(MSBuild40) /v:diag</MSBuild40>
+    <MSBuild40 Condition="'$(PostSharpTrace)'=='' AND '$(Verbose)'==''">$(MSBuild40) /v:minimal</MSBuild40>
+    <MSBuild40 Condition="'$(PostSharpProperties)'!=''">$(MSBuild40) /p:PostSharpProperties=$(PostSharpProperties)</MSBuild40>
+
+  </PropertyGroup>
+
+
+  <PropertyGroup Condition="'$(IsTest)'=='True'">
+    <BuildProjectReferences>false</BuildProjectReferences>
+    <AssemblyName>$(TestAssemblyName)</AssemblyName>
+    <OutputPath>bin\$(_SourceRelativeDir)\$(AssemblyName)\$(TargetFramework)\$(Configuration)</OutputPath>
+    
+    <!--    <PostSharpOutput>$(OutputPath)\$(AssemblyName).exe</PostSharpOutput> -->
+    <OutputFile>$(AssemblyName).exe</OutputFile>
+    <PostSharpMetricsFile>$(MSBuildProjectDirectory)\$(OutputPath)\Metrics.txt</PostSharpMetricsFile>
+    <IntermediateOutputPath>obj\$(_SourceRelativeDir)\$(AssemblyName)\$(TargetFramework)\$(Configuration)\</IntermediateOutputPath>
+
+    <!-- Set up PostSharp for error testing -->
+    <PostSharpIgnoreError>True</PostSharpIgnoreError>
+    <PostSharpFailOnUnexpectedMessage>True</PostSharpFailOnUnexpectedMessage>
+    <PostSharpConstraintVerificationEnabled>True</PostSharpConstraintVerificationEnabled>
+
+    <!-- Remove StartupObject to enable automatic choice. -->
+    <StartupObject></StartupObject>
+
+
+  </PropertyGroup>
+
+  <Target Name="PrepareTest"  Condition="'$(IsTest)'=='True'">
+
+    <Message Importance="high" Text=" =============== Building '$(Source)', TargetFramework=$(TargetFramework) =================="/>
+
+    <GetFrameworkSdkPath>
+      <Output
+          TaskParameter="FrameworkSdkVersion40Path"
+          PropertyName="SdkPath" />
+    </GetFrameworkSdkPath>
+
+    <Message Text="SDK installed in $(SdkPath)"/>
+
+    <ItemGroup>
+      <Compile Remove="@(Compile)"/>
+      <Compile Include="$(Source)" />
+      <Compile Include="Common.cs" Condition="Exists('Common.cs')"/>
+    </ItemGroup>
+
+    <PropertyGroup>
+
+      <PeVerify>"$(SdkPath)\Bin\NETFX 4.0 Tools\x64\peverify.exe" /nologo</PeVerify>
+
+      <!-- Override output paths -->
+      <_SourceRelativeDir>$(SourceRelativeDir)</_SourceRelativeDir>
+      <_SourceRelativeDir Condition="'$(_SourceRelativeDir)'==''">.</_SourceRelativeDir>
+
+     
+    </PropertyGroup>
+
+    <MakeDir Directories="$(OutputPath)"/>
+    
+    
+    <RegexMatch Files="$(Source)" Expression="@ExpectedMessage\((\w+)\)">
+      <Output TaskParameter="Matches" ItemName="_ExpectedMessages"/>
+    </RegexMatch>
+
+    <Message Text="Expected Messages: @(_ExpectedMessages)"/>
+
+    <RegexMatch Files="$(Source)" Expression="(@Unsafe)">
+      <Output TaskParameter="Matches" PropertyName="_Unsafe"/>
+    </RegexMatch>
+
+    <Message Text="Unsafe: $(_Unsafe)" />
+
+    <RegexMatch Files="$(Source)" Expression="@License\((\w+)\)">
+      <Output TaskParameter="Matches" PropertyName="_License"/>
+    </RegexMatch>
+
+    <Message Text="License: $(_License)"/>
+
+    <CreateProperty Value="@(_ExpectedMessages)" >
+      <Output TaskParameter="Value" PropertyName="PostSharpExpectedMessages"/>
+    </CreateProperty>
+
+    <CreateProperty Value="Commercial" Condition="'$(_License)'==''">
+      <Output TaskParameter="Value" PropertyName="_License"/>
+    </CreateProperty>
+
+
+    <ReadLinesFromFile File="$(MSBuildProjectDirectory)\$(_License).license">
+      <Output TaskParameter="Lines" PropertyName="PostSharpLicense"/>
+    </ReadLinesFromFile>
+
+
+    <CreateProperty Value="Native" Condition="'$(_License)'!='Commercial'">
+      <Output TaskParameter="Value" PropertyName="PostSharpHost"/>
+    </CreateProperty>
+
+
+    <Delete Files="$(PostSharpMetricsFile)" Condition="Exists('$(PostSharpMetricsFile)')"/>
+
+  </Target>
+
+  <Target Name="AfterBuild">
+    <!-- Verify that PostSharp ran propertly -->
+    <Error Text="Error with test $(Source): PostSharp returned with code '$(PostSharpExitCode)'" Condition="$(PostSharpExitCode) != 0 AND $(PostSharpExitCode) != 14 AND '$(PostSharpExitCode)' != ''" />
+    <Message Text="Exit Code=$(PostSharpExitCode); Output=$(PostSharpOutput)" Importance="high" />
+
+  </Target>
+
+  <Target Name="TestProperties">
+    <Error Condition="'$(TestAssemblyName)'==''" Text="'AssemblyName' property not set."/>
+    <Error Condition="'$(TargetFramework)'==''" Text="'TargetFramework' property not set."/>
+    <Error Condition="'$(_SourceRelativeDir)'==''" Text="'SourceRelativeDir' property not set."/>
+  </Target>
+
+
+  <Target Name="PEVerify" DependsOnTargets="TestProperties;Build">
+
+    <!-- Execute PEVERIFY -->
+    <Exec Command="$(PeVerify) &quot;$(OutDir)$(OutputFile)&quot;" Condition="'@(_Unsafe)'=='' And $(PostSharpExitCode) == 0 "/>
+
+  </Target>
+
+  <Target Name="ExecProgram" DependsOnTargets="PEVerify" Condition="'$(TargetFramework)'=='NET'">
+
+    <!-- Execute the transformed program -->
+    <Message Text="--- Executing the program ------------------------------" Importance="High" Condition="$(PostSharpExitCode) == 0"/>
+    <Exec Command="&quot;$(OutDir)$(OutputFile)&quot;" Condition="$(PostSharpExitCode) == 0"/>
+
+  </Target>
+
+
+  <Target Name="BuildDependency" Condition="Exists('$(Dependency)')">
+    <Exec Command="$(MSBuild40) &quot;$(MSBuildProjectFile)&quot; /p:TargetFramework=$(TargetFramework) /p:Source=$(Dependency) /p:SourceRelativeDir=%(Source.RelativeDir) /p:TestAssemblyName=%(Source.Filename).Dependency /p:TargetFramework=$(TargetFramework) /p:OutputType=Library /t:Build"/>
+  </Target>
+
+  <Target Name="_TestOne" DependsOnTargets="BuildDependency;Build;PEVerify;ExecProgram"/>
+
+  <Target Name="TestOne" DependsOnTargets="">
+    <RemoveDir Directories="bin;obj" ContinueOnError="true"/>
+    <Error Text="Property Source not set." Condition="'$(Source)'==''"/>
+    <Exec Command="$(MSBuild40) &quot;$(MSBuildProjectFile)&quot; /p:Source=%(Source.Identity) /p:Dependency=%(Source.RootDir)%(Source.Directory)%(Source.Filename).Dependency.cs /p:SourceRelativeDir=%(Source.RelativeDir) /p:TestAssemblyName=%(Source.Filename) /p:TargetFramework=$(TargetFramework) /t:_TestOne /p:BuildProjectReferences=$(BuildProjectReferences) /p:IsTest=True" />
+  </Target>
+
+  <Target Name="Test" DependsOnTargets="">
+    <RemoveDir Directories="bin;obj" ContinueOnError="true"/>
+    
+    <CreateItem Include="**\*.cs" Condition="'$(SourceDir)'==''" Exclude="Common.cs;**\*.Dependency.cs">
+      <Output TaskParameter="Include" ItemName="AllSourceFiles"/>
+    </CreateItem>
+    <CreateItem Include="$(SourceDir)\**\*.cs" Exclude="$(SourceDir)\**\*.Dependency.cs" Condition="'$(SourceDir)'!=''">
+      <Output TaskParameter="Include" ItemName="AllSourceFiles"/>
+    </CreateItem>
+    <Exec Command="$(MSBuild40) &quot;$(MSBuildProjectFile)&quot; /p:Source=%(AllSourceFiles.Identity) /p:Dependency=%(AllSourceFiles.RootDir)%(AllSourceFiles.Directory)%(AllSourceFiles.Filename).Dependency.cs /p:SourceRelativeDir=%(AllSourceFiles.RelativeDir) /p:TestAssemblyName=%(AllSourceFiles.Filename) /p:TargetFramework=$(TargetFramework) /t:_TestOne /p:BuildProjectReferences=$(BuildProjectReferences) /p:IsTest=True"/>
+
+  </Target>
+
+</Project>

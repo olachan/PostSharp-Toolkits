@@ -20,7 +20,7 @@ namespace PostSharp.Toolkit.Domain
 {
     //TODO: Serious refactoring
 
-    public class PropertiesDependencieAnalyzer
+    internal class PropertiesDependencieAnalyzer
     {
         private readonly Dictionary<string, IList<string>> fieldDependentProperties = new Dictionary<string, IList<string>>();
 
@@ -53,8 +53,8 @@ namespace PostSharp.Toolkit.Domain
 
             IEnumerable<PropertyInfo> properties =
                 type.GetProperties( BindingFlags.Public | BindingFlags.Instance ).Where(
-                    p => !p.GetCustomAttributes( typeof(NoAutomaticPropertyChangedNotificationsAttribute), true ).Any() ).Where(
-                        p => !p.GetCustomAttributes( typeof(DependsOn), false ).Any() );
+                    p => !p.GetCustomAttributes( typeof(NotifyPropertyChangedIgnoreAttribute), true ).Any() ).Where(
+                        p => !p.GetCustomAttributes( typeof(DependsOnAttribute), false ).Any() );
 
             foreach ( PropertyInfo propertyInfo in properties )
             {
@@ -100,7 +100,7 @@ namespace PostSharp.Toolkit.Domain
                     get
                     {
                         return this.isInstanceScopedProperty ??
-                               (this.isInstanceScopedProperty = this.CurrentProperty.GetCustomAttributes( typeof(InstanceScopedPropertyAttribute), false ).Any()).Value;
+                               (this.isInstanceScopedProperty = this.CurrentProperty.GetCustomAttributes( typeof(NotifyPropertyChangedSafeAttribute), false ).Any()).Value;
                     }
                 }
 
@@ -183,11 +183,12 @@ namespace PostSharp.Toolkit.Domain
 
             public override object VisitFieldExpression( IFieldExpression expression )
             {
-                //Check for access to static fields or fields of other objects
-                if ( expression.Instance.SyntaxElementKind != SyntaxElementKind.This && !this.context.Current.IsInstanceScopedProperty )
+				//Check for access to static fields or fields of other objects
+                if ( (expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This) && !this.context.Current.IsInstanceScopedProperty )
                 {
                     //TODO: Write tests for build-time errors and warnings!
-                    InpcMessageSource.Instance.Write(
+                    // Method contains direct access to a field of another class.
+                    DomainMessageSource.Instance.Write(
                         this.context.Current.CurrentProperty,
                         SeverityType.Error,
                         "INPC001",
@@ -216,7 +217,8 @@ namespace PostSharp.Toolkit.Domain
                      !this.context.Current.IsInstanceScopedProperty )
                 {
                     //TODO: Write tests for build-time errors and warnings!
-                    InpcMessageSource.Instance.Write(
+                    // Method contains call to non void (ref/out param) method of another class.
+                    DomainMessageSource.Instance.Write(
                         this.context.Current.CurrentProperty,
                         SeverityType.Error,
                         "INPC002",
@@ -249,7 +251,8 @@ namespace PostSharp.Toolkit.Domain
                     return base.VisitMethodPointerExpression( expression );
                 }
 
-                InpcMessageSource.Instance.Write(
+                // Method contains delegate call.
+                DomainMessageSource.Instance.Write(
                     this.context.Current.CurrentProperty,
                     SeverityType.Error,
                     "INPC003",

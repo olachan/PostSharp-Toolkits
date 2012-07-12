@@ -51,6 +51,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Domain", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Domain.Tests", "Tests\PostSharp.Toolkit.Domain.Tests\PostSharp.Toolkit.Domain.Tests.csproj", "{5802A256-BF7B-4563-B329-80EB7D67E1B8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Domain.BuilTests", "Tests\PostSharp.Toolkit.Domain.BuilTests\PostSharp.Toolkit.Domain.BuilTests.csproj", "{11EA22F3-1407-4177-86EE-E0D9233B2EF6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -214,6 +216,14 @@ Global
 		{5802A256-BF7B-4563-B329-80EB7D67E1B8}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{5802A256-BF7B-4563-B329-80EB7D67E1B8}.Release|x86.ActiveCfg = Release|x86
 		{5802A256-BF7B-4563-B329-80EB7D67E1B8}.Release|x86.Build.0 = Release|x86
+		{11EA22F3-1407-4177-86EE-E0D9233B2EF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11EA22F3-1407-4177-86EE-E0D9233B2EF6}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{11EA22F3-1407-4177-86EE-E0D9233B2EF6}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{11EA22F3-1407-4177-86EE-E0D9233B2EF6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{11EA22F3-1407-4177-86EE-E0D9233B2EF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11EA22F3-1407-4177-86EE-E0D9233B2EF6}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{11EA22F3-1407-4177-86EE-E0D9233B2EF6}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{11EA22F3-1407-4177-86EE-E0D9233B2EF6}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -227,5 +237,6 @@ Global
 		{24509C87-563B-4256-9326-7595AA6C55D4} = {E79F9017-525A-458D-868D-37990CD4668B}
 		{306C7F83-5070-4558-BD8F-D98176B02737} = {E79F9017-525A-458D-868D-37990CD4668B}
 		{5802A256-BF7B-4563-B329-80EB7D67E1B8} = {E79F9017-525A-458D-868D-37990CD4668B}
+		{11EA22F3-1407-4177-86EE-E0D9233B2EF6} = {E79F9017-525A-458D-868D-37990CD4668B}
 	EndGlobalSection
 EndGlobal

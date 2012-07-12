@@ -16,8 +16,12 @@ namespace PostSharp.Toolkit.Domain
     {
         public static bool IsFrameworkStaticMethod( this MethodBase method )
         {
-            // TODO verify validity of this approach
             if ( !method.IsStatic )
+            {
+                return false;
+            }
+
+            if (method.DeclaringType == null)
             {
                 return false;
             }
@@ -35,7 +39,7 @@ namespace PostSharp.Toolkit.Domain
 
         public static string FullName(this MemberInfo memberInfo)
         {
-            return string.Format( "{0}.{1}", memberInfo.DeclaringType.FullName, memberInfo.Name );
+            return memberInfo.DeclaringType == null ? memberInfo.Name : string.Format( "{0}.{1}", memberInfo.DeclaringType.FullName, memberInfo.Name );
         }
 
         public static bool IsStateIndependentMethod( this MethodBase method )

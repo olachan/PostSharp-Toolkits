@@ -14,12 +14,10 @@ using System.Threading;
 
 namespace PostSharp.Toolkit.Domain
 {
-    public static class PropertyChangesTracker
+    internal static class PropertyChangesTracker
     {
         private static readonly ThreadLocal<ChangedPropertiesAccumulator> changedPropertiesAcumulator =
             new ThreadLocal<ChangedPropertiesAccumulator>( () => new ChangedPropertiesAccumulator() );
-
-        //private static ThreadLocal<bool> propertyChangeRoutineRunning = new ThreadLocal<bool>( () => false );
 
         private static readonly ThreadLocal<StackContext> stackTrace = new ThreadLocal<StackContext>( () => new StackContext() );
 
@@ -41,8 +39,6 @@ namespace PostSharp.Toolkit.Domain
 
         public static void RaisePropertyChanged( object instance, Action<string> onPropertyChanged, bool popFromStack )
         {
-            //propertyChangeRoutineRunning.Value = true;
-
             ChangedPropertiesAccumulator accumulator = changedPropertiesAcumulator.Value;
             if ( popFromStack )
             {
@@ -75,10 +71,10 @@ namespace PostSharp.Toolkit.Domain
                     onPropertyChanged( w.PropertyName );
                 }
 
-                IPropagatedChange pc = w.Instance.Target as IPropagatedChange;
+                INotifyChildPropertyChanged pc = w.Instance.Target as INotifyChildPropertyChanged;
                 if ( pc != null )
                 {
-                    pc.RaisePropagatedChange( new PropagatedChangeEventArgs( w.PropertyName ) );
+                    pc.RaisePropagatedChange( new NotifyChildPropertyChangedEventArgs( w.PropertyName ) );
                 }
             }
         }
