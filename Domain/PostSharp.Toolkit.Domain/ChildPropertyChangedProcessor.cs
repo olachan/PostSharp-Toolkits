@@ -23,14 +23,12 @@ namespace PostSharp.Toolkit.Domain
 
         private Dictionary<string, FieldType> FieldTypes { get; set; }
 
-        private Dictionary<string, FieldByValueDependency> propertyToFieldMapping;
-
-
+        private PropertyToFieldBiDirectionalMap propertyToFieldMapping;
 
         private ChildPropertyChangedProcessor(ChildPropertyChangedProcessor prototype)
         {
             this.FieldTypes = prototype.FieldTypes;
-            this.propertyToFieldMapping = prototype.propertyToFieldMapping.ToDictionary(kv => kv.Key, kv => new FieldByValueDependency(kv.Value));
+            this.propertyToFieldMapping = new PropertyToFieldBiDirectionalMap( prototype.propertyToFieldMapping );
         }
 
         private ChildPropertyChangedProcessor(Type type, Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies)
@@ -47,7 +45,7 @@ namespace PostSharp.Toolkit.Domain
                 type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly).ToDictionary(
                 f => f.FullName(), f => f.PropertyType.IsValueType ? FieldType.ValueType : FieldType.ReferenceType)).ToDictionary(kv => kv.Key, kv => kv.Value);
 
-            this.propertyToFieldMapping = new Dictionary<string, FieldByValueDependency>();
+            this.propertyToFieldMapping = new PropertyToFieldBiDirectionalMap();
 
             var allProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
@@ -63,10 +61,15 @@ namespace PostSharp.Toolkit.Domain
             }
         }
 
+        public void RuntimeInitialize()
+        {
+            this.propertyToFieldMapping.RuntimeInitialize();
+        }
+
         public void ProcessGet(LocationInterceptionArgs args)
         {
             FieldByValueDependency dependentField;
-            if (this.propertyToFieldMapping.TryGetValue(args.LocationName, out dependentField))
+            if (this.propertyToFieldMapping.TryGetByProperty(args.LocationName, out dependentField))
             {
                 object value = dependentField.Field.GetValue(args.Instance);
 
@@ -178,77 +181,6 @@ namespace PostSharp.Toolkit.Domain
             return new ChildPropertyChangedProcessor(prototype) {notifyChildPropertyChangedHandlers = new Dictionary<string, NotifyChildPropertyChangedEventHandlerDescriptor>()};
         }
 
-        [Serializable]
-        private class FieldByValueDependency
-        {
-            public FieldByValueDependency(FieldInfo field, Type type)
-            {
-                this.Field = new FieldInfoWithGetter(field, type);
-                this.IsActive = true;
-            }
-
-            public FieldByValueDependency(FieldByValueDependency prototype)
-            {
-                this.Field = prototype.Field;
-                this.IsActive = true;
-            }
-
-            public FieldInfoWithGetter Field { get; private set; }
-
-            public bool IsActive { get; set; }
-        }
-
-        [Serializable]
-        private sealed class FieldInfoWithGetter
-        {
-            public FieldInfoWithGetter(FieldInfo field, Type type)
-            {
-                location = new LocationInfo(field);
-                this.type = type;
-            }
-
-            public void RuntimeInitialize()
-            {
-                ParameterExpression objectParameterExpression = Expression.Parameter(typeof(object));
-                UnaryExpression castExpression = Expression.Convert(objectParameterExpression, type);
-                Expression fieldExpr = Expression.PropertyOrField(castExpression, location.Name);
-                UnaryExpression resultCastExpression = Expression.Convert(fieldExpr, typeof(object));
-                GetValue = Expression.Lambda<Func<object, object>>(resultCastExpression, objectParameterExpression).Compile();
-            }
-
-            private LocationInfo location;
-
-            private Type type;
-
-            private Func<object, object> getValue;
-
-            public string FieldName
-            {
-                get
-                {
-                    return location.Name;
-                }
-            }
-
-            public Func<object, object> GetValue
-            {
-                get
-                {
-                    if (this.getValue == null)
-                    {
-                        this.RuntimeInitialize();
-                    }
-
-                    return this.getValue;
-                }
-
-                private set
-                {
-                    this.getValue = value;
-                }
-            }
-        }
-
         public IEnumerable<string> GetEffectedPaths( NotifyChildPropertyChangedEventArgs args )
         {
             int dotIndex = args.Path.IndexOf('.');
@@ -259,8 +191,8 @@ namespace PostSharp.Toolkit.Domain
 
             string changedField = args.Path.Substring(0, dotIndex);
             string changedPath = args.Path.Substring(dotIndex + 1);
-            return this.propertyToFieldMapping
-                .Where(d => d.Value.IsActive && d.Value.Field.FieldName == changedField)
+            return this.propertyToFieldMapping.GetByField(changedField)
+                .Where(d => d.Value.IsActive)
                 .Select(d => string.Format("{0}.{1}", d.Key, changedPath));
         }
     }

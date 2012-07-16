@@ -141,7 +141,6 @@ namespace PostSharp.Toolkit.Domain
 
         private IEnumerable<MethodBase> SelectMethods(Type type)
         {
-            //TODO: Should also track property setters (and getters, actually, because they modify properties as well) - except currently this leads to errors
             return
                 type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly).Where(
                     m => !m.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any());
@@ -168,6 +167,7 @@ namespace PostSharp.Toolkit.Domain
         public override void RuntimeInitializeInstance()
         {
             base.RuntimeInitializeInstance();
+            childPropertyChangedProcessor.RuntimeInitialize();
             ((INotifyChildPropertyChanged)this.Instance).ChildPropertyChanged += this.ChildPropertyChangedEventHandler;
         }
 
