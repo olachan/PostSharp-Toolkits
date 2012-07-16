@@ -177,6 +177,7 @@ namespace PostSharp.Toolkit.Domain
         public override void RuntimeInitializeInstance()
         {
             base.RuntimeInitializeInstance();
+            childPropertyChangedProcessor.RuntimeInitialize();
             ((INotifyChildPropertyChanged)this.Instance).ChildPropertyChanged += this.ChildPropertyChangedEventHandler;
         }
 
