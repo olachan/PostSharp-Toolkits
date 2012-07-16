@@ -85,6 +85,7 @@
     <Compile Include="ChangedPropertiesAccumulator.cs" />
     <Compile Include="CollectionHelpers.cs" />
     <Compile Include="DependsOnAttribute.cs" />
+    <Compile Include="ExplicitDependencyMap.cs" />
     <Compile Include="FieldDependenciesMap.cs" />
     <Compile Include="DomainMessageSource.cs" />
     <Compile Include="IdempotentMethodAttribute.cs" />

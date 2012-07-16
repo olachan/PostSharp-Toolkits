@@ -21,7 +21,7 @@ namespace PostSharp.Toolkit.Domain
 
         private static readonly ThreadLocal<StackContext> stackTrace = new ThreadLocal<StackContext>( () => new StackContext() );
 
-        internal static ChangedPropertiesAccumulator Accumulator
+        private static ChangedPropertiesAccumulator Accumulator
         {
             get
             {
@@ -29,7 +29,7 @@ namespace PostSharp.Toolkit.Domain
             }
         }
 
-        internal static StackContext StackContext
+        private static StackContext StackContext
         {
             get
             {
@@ -37,19 +37,39 @@ namespace PostSharp.Toolkit.Domain
             }
         }
 
-        public static void RaisePropertyChanged( object instance, Action<string> onPropertyChanged, bool popFromStack )
+        public static void PushOnStack( object o )
+        {
+            StackContext.PushOnStack( o );
+        }
+
+        public static object PopFromStack()
+        {
+            return StackContext.Pop();
+        }
+
+        public static object StackPeek()
+        {
+            return StackContext.Count == 0 ? null : StackContext.Peek();
+        }
+
+        public static void HandleFieldChange(object instance, string locationFullName)
+        {
+            IList<string> propertyList;
+            if (FieldDependenciesMap.FieldDependentProperties.TryGetValue(locationFullName, out propertyList))
+            {
+                StoreChangedProperties(instance, propertyList);
+            }
+        }
+
+        public static void StoreChangedProperties(object instance, IEnumerable<string> properties)
+        {
+            Accumulator.AddProperties(instance, properties);
+        }
+
+        public static void RaisePropertyChanged()
         {
             ChangedPropertiesAccumulator accumulator = changedPropertiesAcumulator.Value;
-            if ( popFromStack )
-            {
-                stackTrace.Value.Pop();
-            }
-
-            if ( stackTrace.Value.Count > 0 && stackTrace.Value.Peek() == instance )
-            {
-                return;
-            }
-
+            
             accumulator.Compact();
 
             List<WeakPropertyDescriptor> objectsToRaisePropertyChanged =
@@ -57,6 +77,8 @@ namespace PostSharp.Toolkit.Domain
 
             foreach ( WeakPropertyDescriptor w in objectsToRaisePropertyChanged )
             {
+                //INPC handler may raise INPC again and process some of our events;
+                //we're working on accumulator copy, so only way to know it is to have a flag on the descriptor
                 if ( w.Processed )
                 {
                     continue;
@@ -65,16 +87,12 @@ namespace PostSharp.Toolkit.Domain
                 w.Processed = true;
                 accumulator.Remove( w );
 
-                
-                if ( onPropertyChanged != null )
-                {
-                    onPropertyChanged( w.PropertyName );
-                }
+                INotifyChildPropertyChanged cpc = w.Instance.Target as INotifyChildPropertyChanged;
 
-                INotifyChildPropertyChanged pc = w.Instance.Target as INotifyChildPropertyChanged;
-                if ( pc != null )
+                if (cpc != null) //Target may not be alive any more
                 {
-                    pc.RaisePropagatedChange( new NotifyChildPropertyChangedEventArgs( w.PropertyName ) );
+                    cpc.RaisePropertyChanged( w.PropertyName );
+                    cpc.RaiseChildPropertyChanged( new NotifyChildPropertyChangedEventArgs( w.PropertyName ) );
                 }
             }
         }

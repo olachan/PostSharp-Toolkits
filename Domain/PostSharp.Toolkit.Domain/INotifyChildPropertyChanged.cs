@@ -13,7 +13,8 @@ namespace PostSharp.Toolkit.Domain
 {
     public interface INotifyChildPropertyChanged
     {
-        void RaisePropagatedChange( NotifyChildPropertyChangedEventArgs args );
+        void RaisePropertyChanged(string propertyName);
+        void RaiseChildPropertyChanged( NotifyChildPropertyChangedEventArgs args );
 
         event EventHandler<NotifyChildPropertyChangedEventArgs> ChildPropertyChanged;
     }

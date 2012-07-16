@@ -38,6 +38,7 @@ namespace PostSharp.Toolkit.Domain
         // Used for serializing propertyDependencyMap
         private PropertyDependencySerializationStore propertyDependencySerializationStore;
 
+        //Dependencies built with DependsOnAttribute and derived API
         private ExplicitDependencyMap explicitDependencyMap;
 
         private ChildPropertyChangedProcessor childPropertyChangedProcessor;
@@ -80,14 +81,10 @@ namespace PostSharp.Toolkit.Domain
 
             this.childPropertyChangedProcessor.ReHookNotifyChildPropertyChangedHandler(args);
 
-            IList<string> propertyList;
-            if (FieldDependenciesMap.FieldDependentProperties.TryGetValue(args.LocationFullName, out propertyList))
-            {
-                PropertyChangesTracker.Accumulator.AddProperties(args.Instance, propertyList);
-            }
+            PropertyChangesTracker.HandleFieldChange( args.Instance, args.LocationFullName );
 
             INotifyChildPropertyChanged instance = (INotifyChildPropertyChanged)this.Instance;
-            instance.RaisePropagatedChange(new NotifyChildPropertyChangedEventArgs(args.LocationName));
+            instance.RaiseChildPropertyChanged(new NotifyChildPropertyChangedEventArgs(args.LocationName));
         }
 
         private IEnumerable<FieldInfo> SelectFields(Type type)
@@ -103,9 +100,12 @@ namespace PostSharp.Toolkit.Domain
         {
             IEnumerable<string> changedProperties = this.explicitDependencyMap.GetDependentProperties(args.Path);
 
-            PropertyChangesTracker.Accumulator.AddProperties(this.Instance, changedProperties);
+            PropertyChangesTracker.StoreChangedProperties( this.Instance, changedProperties );
 
-            PropertyChangesTracker.RaisePropertyChanged(this.Instance, this.OnPropertyChangedMethod, false);
+            if (PropertyChangesTracker.StackPeek() != this.Instance)
+            {
+                PropertyChangesTracker.RaisePropertyChanged();
+            }
         }
 
         [OnLocationGetValueAdvice]
@@ -126,12 +126,16 @@ namespace PostSharp.Toolkit.Domain
         {
             try
             {
-                PropertyChangesTracker.StackContext.PushOnStack(args.Instance);
+                PropertyChangesTracker.PushOnStack(args.Instance);
                 args.Proceed();
             }
             finally
             {
-                PropertyChangesTracker.RaisePropertyChanged(args.Instance, this.OnPropertyChangedMethod, true);
+                PropertyChangesTracker.PopFromStack();
+                if (PropertyChangesTracker.StackPeek() != args.Instance)
+                {
+                    PropertyChangesTracker.RaisePropertyChanged();
+                }
             }
         }
 
@@ -172,8 +176,8 @@ namespace PostSharp.Toolkit.Domain
             return clone;
         }
 
-        [ImportMember("OnPropertyChanged")]
-        public Action<string> OnPropertyChangedMethod;
+        //[ImportMember("OnPropertyChanged")]
+        //public Action<string> OnPropertyChangedMethod;
 
         [IntroduceMember(Visibility = Visibility.Family, IsVirtual = true, OverrideAction = MemberOverrideAction.Ignore)]
         public void OnPropertyChanged(string propertyName)
@@ -188,7 +192,7 @@ namespace PostSharp.Toolkit.Domain
         [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public void RaisePropagatedChange(NotifyChildPropertyChangedEventArgs args)
+        public void RaiseChildPropertyChanged(NotifyChildPropertyChangedEventArgs args)
         {
             EventHandler<NotifyChildPropertyChangedEventArgs> handler = this.ChildPropertyChanged;
             if (handler != null)
@@ -197,37 +201,16 @@ namespace PostSharp.Toolkit.Domain
             }
         }
 
+        public void RaisePropertyChanged(string propertyName)
+        {
+            PropertyChangedEventHandler handler = this.PropertyChanged;
+            if (handler != null)
+            {
+                handler(this.Instance, new PropertyChangedEventArgs( propertyName ));
+            }
+        }
+
         [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
         public event EventHandler<NotifyChildPropertyChangedEventArgs> ChildPropertyChanged;
-
-        [Serializable]
-        private sealed class ExplicitDependencyMap
-        {
-            private readonly List<ExplicitDependency> dependencies;
-
-            public ExplicitDependencyMap(IEnumerable<ExplicitDependency> dependencies)
-            {
-                this.dependencies = dependencies.ToList();
-            }
-
-            public IEnumerable<string> GetDependentProperties(string changedPath)
-            {
-                return this.dependencies.Where(d => d.Dependencies.Any(pd => pd.StartsWith(changedPath))).Select(d => d.PropertyName);
-            }
-        }
-
-        [Serializable]
-        private sealed class ExplicitDependency
-        {
-            public ExplicitDependency(string propertyName, IEnumerable<string> dependencies)
-            {
-                this.PropertyName = propertyName;
-                this.Dependencies = dependencies.ToList();
-            }
-
-            public string PropertyName { get; private set; }
-
-            public List<string> Dependencies { get; private set; }
-        }
     }
 }

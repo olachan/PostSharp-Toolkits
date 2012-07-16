@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 using PostSharp.Aspects;
 
@@ -11,14 +10,20 @@ namespace PostSharp.Toolkit.Domain
     [Serializable]
     internal sealed class ChildPropertyChangedProcessor
     {
+        private enum FieldType
+        {
+            ValueType,
+            ReferenceType
+        }
+
         [NonSerialized]
         private Dictionary<string, NotifyChildPropertyChangedEventHandlerDescriptor> notifyChildPropertyChangedHandlers;
 
-        public Dictionary<string, bool> FieldIsValueType { get; private set; }
+        private Dictionary<string, FieldType> FieldTypes { get; set; }
 
-        private ChildPropertyChangedProcessor( Dictionary<string, bool> fieldIsValueType )
+        private ChildPropertyChangedProcessor(Dictionary<string, FieldType> fieldIsValueType)
         {
-            this.FieldIsValueType = fieldIsValueType;
+            this.FieldTypes = fieldIsValueType;
         }
 
         private ChildPropertyChangedProcessor( Type type )
@@ -29,11 +34,11 @@ namespace PostSharp.Toolkit.Domain
         private void CompileTimeInitialize( Type type )
         {
             var fieldTypes = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-                .ToDictionary(f => f.FullName(), f => f.FieldType.IsValueType);
+                .ToDictionary(f => f.FullName(), f => f.FieldType.IsValueType ? FieldType.ValueType : FieldType.ReferenceType);
 
-            FieldIsValueType = fieldTypes.Union(
+            this.FieldTypes = fieldTypes.Union(
                 type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly).ToDictionary(
-                    f => f.FullName(), f => f.PropertyType.IsValueType)).ToDictionary(kv => kv.Key, kv => kv.Value);
+                f => f.FullName(), f => f.PropertyType.IsValueType ? FieldType.ValueType : FieldType.ReferenceType)).ToDictionary(kv => kv.Key, kv => kv.Value);
         }
 
         public void ReHookNotifyChildPropertyChangedHandler(LocationInterceptionArgs args)
@@ -56,17 +61,17 @@ namespace PostSharp.Toolkit.Domain
 
         public bool IsValueChanged(string locationFullName, object currentValue, object newValue)
         {
-            bool isValueType;
-            this.FieldIsValueType.TryGetValue(locationFullName, out isValueType);
+            FieldType fieldType;
+            this.FieldTypes.TryGetValue(locationFullName, out fieldType);
 
-            return isValueType ? !Equals(currentValue, newValue) : !ReferenceEquals(currentValue, newValue);
+            return fieldType == FieldType.ValueType ? !Equals(currentValue, newValue) : !ReferenceEquals(currentValue, newValue);
         }
 
         private void GenericNotifyChildPropertyChangedEventHandler(string locationName, object instance, object sender, NotifyChildPropertyChangedEventArgs args)
         {
             INotifyChildPropertyChanged incpc = (INotifyChildPropertyChanged)instance;
 
-            incpc.RaisePropagatedChange(new NotifyChildPropertyChangedEventArgs(locationName, args));
+            incpc.RaiseChildPropertyChanged(new NotifyChildPropertyChangedEventArgs(locationName, args));
         }
 
         private void HookNotifyChildPropertyChangedHandler(LocationInterceptionArgs args)
@@ -113,7 +118,7 @@ namespace PostSharp.Toolkit.Domain
 
         public static ChildPropertyChangedProcessor CreateFromPrototype(ChildPropertyChangedProcessor prototype)
         {
-            return new ChildPropertyChangedProcessor(prototype.FieldIsValueType) {notifyChildPropertyChangedHandlers = new Dictionary<string, NotifyChildPropertyChangedEventHandlerDescriptor>()};
+            return new ChildPropertyChangedProcessor(prototype.FieldTypes) {notifyChildPropertyChangedHandlers = new Dictionary<string, NotifyChildPropertyChangedEventHandlerDescriptor>()};
         }
     }
 }
