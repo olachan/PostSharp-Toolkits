@@ -64,7 +64,6 @@ namespace PostSharp.Toolkit.Domain
 
                 w.Processed = true;
                 accumulator.Remove( w );
-
                 
                 if ( onPropertyChanged != null )
                 {

@@ -187,7 +187,6 @@ namespace PostSharp.Toolkit.Domain
             {
                 if ( (expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This) && !this.context.Current.IsInstanceScopedProperty )
                 {
-                    //TODO: Write tests for build-time errors and warnings!
                     // Method contains direct access to a field of another class.
                     DomainMessageSource.Instance.Write(
                         this.context.Current.CurrentProperty,
@@ -216,7 +215,6 @@ namespace PostSharp.Toolkit.Domain
                 if ( (expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This) &&
                      !this.context.Current.IsInstanceScopedProperty )
                 {
-                    //TODO: Write tests for build-time errors and warnings!
                     // Method contains call to non void (ref/out param) method of another class.
                     DomainMessageSource.Instance.Write(
                         this.context.Current.CurrentProperty,
