@@ -22,7 +22,7 @@ namespace PostSharp.Toolkit.Domain
 
     internal class PropertiesDependencieAnalyzer
     {
-        private readonly Dictionary<string, IList<string>> fieldDependentProperties = new Dictionary<string, IList<string>>();
+        private readonly Dictionary<string, List<string>> fieldDependentProperties = new Dictionary<string, List<string>>();
 
         private MethodAnalyzer methodAnalyzer;
 
@@ -39,7 +39,7 @@ namespace PostSharp.Toolkit.Domain
             }
         }
 
-        public Dictionary<string, IList<string>> FieldDependentProperties
+        public Dictionary<string, List<string>> FieldDependentProperties
         {
             get
             {

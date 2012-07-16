@@ -16,6 +16,6 @@ namespace PostSharp.Toolkit.Domain
         /// <summary>
         /// Dictionary with a list of dependent properties for each instrumented field
         /// </summary>
-        public static Dictionary<string, IList<string>> FieldDependentProperties { get; set; }
+        public static Dictionary<string, List<string>> FieldDependentProperties { get; set; }
     }
 }

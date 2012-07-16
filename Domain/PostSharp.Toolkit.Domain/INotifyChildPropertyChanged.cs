@@ -8,6 +8,7 @@
 #endregion
 
 using System;
+using System.ComponentModel;
 
 namespace PostSharp.Toolkit.Domain
 {

@@ -11,21 +11,32 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using PostSharp.Aspects;
 
 namespace PostSharp.Toolkit.Domain
 {
     internal static class PropertyChangesTracker
     {
-        private static readonly ThreadLocal<ChangedPropertiesAccumulator> changedPropertiesAcumulator =
+        private static readonly ThreadLocal<ChangedPropertiesAccumulator> propertyChangesAcumulator =
             new ThreadLocal<ChangedPropertiesAccumulator>( () => new ChangedPropertiesAccumulator() );
+        private static readonly ThreadLocal<ChangedPropertiesAccumulator> childPropertyChangesAcumulator =
+            new ThreadLocal<ChangedPropertiesAccumulator>(() => new ChangedPropertiesAccumulator());
 
         private static readonly ThreadLocal<StackContext> stackTrace = new ThreadLocal<StackContext>( () => new StackContext() );
 
-        private static ChangedPropertiesAccumulator Accumulator
+        private static ChangedPropertiesAccumulator PropertyChangesAccumulator
         {
             get
             {
-                return changedPropertiesAcumulator.Value;
+                return propertyChangesAcumulator.Value;
+            }
+        }
+
+        private static ChangedPropertiesAccumulator ChildPropertyChangesAccumulator
+        {
+            get
+            {
+                return childPropertyChangesAcumulator.Value;
             }
         }
 
@@ -52,24 +63,45 @@ namespace PostSharp.Toolkit.Domain
             return StackContext.Count == 0 ? null : StackContext.Peek();
         }
 
-        public static void HandleFieldChange(object instance, string locationFullName)
+        public static void HandleFieldChange( LocationInterceptionArgs args)
         {
-            IList<string> propertyList;
-            if (FieldDependenciesMap.FieldDependentProperties.TryGetValue(locationFullName, out propertyList))
+            List<string> propertyList;
+            if (FieldDependenciesMap.FieldDependentProperties.TryGetValue(args.LocationFullName, out propertyList))
             {
-                StoreChangedProperties(instance, propertyList);
+                StoreChangedProperties(args.Instance, propertyList);
+            }
+            StoreChangedChildProperty(args.Instance, args.LocationName);
+
+            if (StackPeek() != args.Instance)
+            {
+                RaisePropertyChanged();
             }
         }
 
-        public static void StoreChangedProperties(object instance, IEnumerable<string> properties)
+        public static void StoreChangedProperties(object instance, List<string> properties)
         {
-            Accumulator.AddProperties(instance, properties);
+            StoreChangedChildProperties( instance, properties );
+            PropertyChangesAccumulator.AddProperties(instance, properties);
+        }
+
+        public static void StoreChangedChildProperty(object instance, string propertyPath)
+        {
+            ChildPropertyChangesAccumulator.AddProperty( instance, propertyPath );
+        }
+
+        public static void StoreChangedChildProperties(object instance, List<string> propertyPaths)
+        {
+            ChildPropertyChangesAccumulator.AddProperties(instance, propertyPaths);
         }
 
         public static void RaisePropertyChanged()
         {
-            ChangedPropertiesAccumulator accumulator = changedPropertiesAcumulator.Value;
-            
+            RaisePropertyChangesInternal( childPropertyChangesAcumulator.Value, true );
+            RaisePropertyChangesInternal(propertyChangesAcumulator.Value, false);
+        }
+
+        private static void RaisePropertyChangesInternal( ChangedPropertiesAccumulator accumulator, bool raiseChildPropertyChanges )
+        {
             accumulator.Compact();
 
             List<WeakPropertyDescriptor> objectsToRaisePropertyChanged =
@@ -88,10 +120,16 @@ namespace PostSharp.Toolkit.Domain
                 accumulator.Remove( w );
                 INotifyChildPropertyChanged cpc = w.Instance.Target as INotifyChildPropertyChanged;
 
-                if (cpc != null) //Target may not be alive any more
+                if ( cpc != null ) //Target may not be alive any more
                 {
-                    cpc.RaisePropertyChanged( w.PropertyName );
-                    cpc.RaiseChildPropertyChanged( new NotifyChildPropertyChangedEventArgs( w.PropertyName ) );
+                    if (raiseChildPropertyChanges)
+                    {
+                        cpc.RaiseChildPropertyChanged(new NotifyChildPropertyChangedEventArgs(w.PropertyPath));
+                    }
+                    else
+                    {
+                        cpc.RaisePropertyChanged( w.PropertyPath );
+                    }
                 }
             }
         }

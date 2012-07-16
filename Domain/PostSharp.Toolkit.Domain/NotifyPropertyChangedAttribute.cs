@@ -84,10 +84,7 @@ namespace PostSharp.Toolkit.Domain
 
             this.childPropertyChangedProcessor.ReHookNotifyChildPropertyChangedHandler(args);
 
-            PropertyChangesTracker.HandleFieldChange( args.Instance, args.LocationFullName );
-
-            INotifyChildPropertyChanged instance = (INotifyChildPropertyChanged)this.Instance;
-            instance.RaiseChildPropertyChanged(new NotifyChildPropertyChangedEventArgs(args.LocationName));
+            PropertyChangesTracker.HandleFieldChange( args );
         }
 
         private IEnumerable<FieldInfo> SelectFields(Type type)
@@ -101,22 +98,13 @@ namespace PostSharp.Toolkit.Domain
 
         private void ChildPropertyChangedEventHandler(object sender, NotifyChildPropertyChangedEventArgs args)
         {
-            IEnumerable<string> changedProperties = this.explicitDependencyMap.GetDependentProperties(args.Path);
+            List<string> changedProperties = this.explicitDependencyMap.GetDependentProperties(args.Path).ToList();
 
             PropertyChangesTracker.StoreChangedProperties( this.Instance, changedProperties );
-
-            if (PropertyChangesTracker.StackPeek() != this.Instance)
-            {
-                PropertyChangesTracker.RaisePropertyChanged();
-            }
-
-
+            
             var paths = this.childPropertyChangedProcessor.GetEffectedPaths(args);
 
-            foreach (string path in paths)
-            {
-                this.RaiseChildPropertyChanged(new NotifyChildPropertyChangedEventArgs(path));
-            }
+            PropertyChangesTracker.StoreChangedChildProperties(this.Instance, paths.ToList());
         }
 
         [OnLocationGetValueAdvice]
@@ -153,6 +141,7 @@ namespace PostSharp.Toolkit.Domain
 
         private IEnumerable<MethodBase> SelectMethods(Type type)
         {
+            //TODO: Should also track property setters (and getters, actually, because they modify properties as well) - except currently this leads to errors
             return
                 type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly).Where(
                     m => !m.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any());
@@ -163,9 +152,7 @@ namespace PostSharp.Toolkit.Domain
             analyzer.Value.AnalyzeType(type);
 
             var allProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-           
-
+            
             var properties = allProperties
                 .Where(p => !p.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any())
                 .Select(p => new { Property = p, DependsOn = p.GetCustomAttributes(typeof(DependsOnAttribute), false) })
@@ -195,17 +182,18 @@ namespace PostSharp.Toolkit.Domain
         //[ImportMember("OnPropertyChanged")]
         //public Action<string> OnPropertyChangedMethod;
 
-        [IntroduceMember(Visibility = Visibility.Family, IsVirtual = true, OverrideAction = MemberOverrideAction.Ignore)]
-        public void OnPropertyChanged(string propertyName)
-        {
-            PropertyChangedEventHandler handler = this.PropertyChanged;
-            if (handler != null)
-            {
-                handler(this.Instance, new PropertyChangedEventArgs(propertyName));
-            }
-        }
+        //[IntroduceMember(Visibility = Visibility.Family, IsVirtual = true, OverrideAction = MemberOverrideAction.Ignore)]
+        //public void OnPropertyChanged(string propertyName)
+        //{
+        //    PropertyChangedEventHandler handler = this.PropertyChanged;
+        //    if (handler != null)
+        //    {
+        //        handler(this.Instance, new PropertyChangedEventArgs(propertyName));
+        //    }
+        //}
 
-        [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
+        //TODO: Serious problem: this will work only if the aspect is applied on the class declaring PropertyChanged and not at all if it's applied lower in the class hierarchy!
+        [IntroduceMember(OverrideAction = MemberOverrideAction.OverrideOrIgnore)]
         public event PropertyChangedEventHandler PropertyChanged;
 
         public void RaiseChildPropertyChanged(NotifyChildPropertyChangedEventArgs args)

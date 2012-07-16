@@ -18,7 +18,7 @@ namespace PostSharp.Toolkit.Domain
     [Serializable]
     internal class PropertyDependencySerializationStore
     {
-        private Dictionary<string, IList<string>> fieldDependentProperties;
+        private Dictionary<string, List<string>> fieldDependentProperties;
 
         public PropertyDependencySerializationStore( PropertiesDependencieAnalyzer analyzer )
         {
@@ -40,11 +40,11 @@ namespace PostSharp.Toolkit.Domain
 
             if ( FieldDependenciesMap.FieldDependentProperties == null )
             {
-                FieldDependenciesMap.FieldDependentProperties = new Dictionary<string, IList<string>>( this.fieldDependentProperties );
+                FieldDependenciesMap.FieldDependentProperties = new Dictionary<string, List<string>>( this.fieldDependentProperties );
             }
             else
             {
-                foreach ( KeyValuePair<string, IList<string>> fieldDependentProperty in this.fieldDependentProperties )
+                foreach ( KeyValuePair<string, List<string>> fieldDependentProperty in this.fieldDependentProperties )
                 {
                     FieldDependenciesMap.FieldDependentProperties.Add( fieldDependentProperty.Key, fieldDependentProperty.Value );
                 }

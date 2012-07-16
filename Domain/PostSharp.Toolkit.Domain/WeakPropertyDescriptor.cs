@@ -19,7 +19,7 @@ namespace PostSharp.Toolkit.Domain
         public WeakPropertyDescriptor( object instance, string propertyName )
         {
             this.Instance = new WeakReference( instance );
-            this.PropertyName = propertyName;
+            this.PropertyPath = propertyName;
             this.Processed = false;
 
             //Need to calculate hash code here, so that it does not change during object's lifetime:
@@ -28,7 +28,7 @@ namespace PostSharp.Toolkit.Domain
 
         public WeakReference Instance { get; private set; }
 
-        public string PropertyName { get; private set; }
+        public string PropertyPath { get; private set; }
 
         public bool Processed { get; set; }
 
@@ -48,7 +48,7 @@ namespace PostSharp.Toolkit.Domain
             //TODO: If the final INPC algorithm turns out to depend on this equality, we will need to implement ObjectIDGenerator generator based on ConditionalWeakTable and store the IDs instead of hashes
             //(except this may be slow: ConditionalWeakTable does a lot of locking)
 
-            return this.hashCode == other.hashCode && ReferenceEquals( thisInstance, otherInstance ) && this.PropertyName == other.PropertyName;
+            return this.hashCode == other.hashCode && ReferenceEquals( thisInstance, otherInstance ) && this.PropertyPath == other.PropertyPath;
         }
 
         public override int GetHashCode()

@@ -149,6 +149,7 @@ namespace PostSharp.Toolkit.Domain.Tests
         public string Str1;
 
         public string Str2;
+        private InpcSuperInnrClass superInnrObject;
 
         public string StrConcat
         {
@@ -166,7 +167,11 @@ namespace PostSharp.Toolkit.Domain.Tests
             c.Str2 = "sdjkafh";
         }
 
-        public InpcSuperInnrClass SuperInnrObject { get; set; }
+        public InpcSuperInnrClass SuperInnrObject
+        {
+            get { return this.superInnrObject; }
+            set { this.superInnrObject = value; }
+        }
     }
 
     [NotifyPropertyChanged]
