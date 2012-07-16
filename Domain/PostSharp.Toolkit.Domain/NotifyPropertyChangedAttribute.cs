@@ -8,9 +8,11 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -42,7 +44,8 @@ namespace PostSharp.Toolkit.Domain
         private ExplicitDependencyMap explicitDependencyMap;
 
         private ChildPropertyChangedProcessor childPropertyChangedProcessor;
-            
+
+
         [OnSerializing]
         public void OnSerializing(StreamingContext context)
         {
@@ -91,10 +94,10 @@ namespace PostSharp.Toolkit.Domain
         {
             // Select only fields that are relevant
             return type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-                .Where( f => analyzer.Value.FieldDependentProperties.ContainsKey(f.FullName()) ||
-                             analyzer.Value.MethodFieldDependencies.Any(d => d.Value.Contains( f )) ||
-                             explicitDependencyMap.GetDependentProperties( f.Name ).Any());
-        } 
+                .Where(f => analyzer.Value.FieldDependentProperties.ContainsKey(f.FullName()) ||
+                             analyzer.Value.MethodFieldDependencies.Any(d => d.Value.Contains(f)) ||
+                             explicitDependencyMap.GetDependentProperties(f.Name).Any());
+        }
 
         private void ChildPropertyChangedEventHandler(object sender, NotifyChildPropertyChangedEventArgs args)
         {
@@ -106,6 +109,14 @@ namespace PostSharp.Toolkit.Domain
             {
                 PropertyChangesTracker.RaisePropertyChanged();
             }
+
+
+            var paths = this.childPropertyChangedProcessor.GetEffectedPaths(args);
+
+            foreach (string path in paths)
+            {
+                this.RaiseChildPropertyChanged(new NotifyChildPropertyChangedEventArgs(path));
+            }
         }
 
         [OnLocationGetValueAdvice]
@@ -115,7 +126,8 @@ namespace PostSharp.Toolkit.Domain
         public void OnPropertyGet(LocationInterceptionArgs args)
         {
             args.ProceedGetValue();
-            this.childPropertyChangedProcessor.ReHookNotifyChildPropertyChangedHandler(args);
+
+            this.childPropertyChangedProcessor.ProcessGet( args );
         }
 
         [OnMethodInvokeAdvice]
@@ -150,29 +162,33 @@ namespace PostSharp.Toolkit.Domain
         {
             analyzer.Value.AnalyzeType(type);
 
-            var properties =
-                type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(
-                    p => !p.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any()).Select(
-                        p => new { Property = p, DependsOn = p.GetCustomAttributes(typeof(DependsOnAttribute), false) }).Where(p => p.DependsOn.Any());
+            var allProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+           
+
+            var properties = allProperties
+                .Where(p => !p.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any())
+                .Select(p => new { Property = p, DependsOn = p.GetCustomAttributes(typeof(DependsOnAttribute), false) })
+                .Where(p => p.DependsOn.Any());
 
             this.explicitDependencyMap =
                 new ExplicitDependencyMap(
                     properties.Select(p => new ExplicitDependency(p.Property.Name, p.DependsOn.SelectMany(d => ((DependsOnAttribute)d).Dependencies))));
 
-            this.childPropertyChangedProcessor = ChildPropertyChangedProcessor.CompileTimeCreate( type );
+            this.childPropertyChangedProcessor = ChildPropertyChangedProcessor.CompileTimeCreate(type, analyzer.Value.MethodFieldDependencies);
         }
 
         public override void RuntimeInitializeInstance()
         {
             base.RuntimeInitializeInstance();
-
             ((INotifyChildPropertyChanged)this.Instance).ChildPropertyChanged += this.ChildPropertyChangedEventHandler;
         }
 
         public override object CreateInstance(AdviceArgs adviceArgs)
         {
-            NotifyPropertyChangedAttribute clone = (NotifyPropertyChangedAttribute)base.CreateInstance( adviceArgs );
+            NotifyPropertyChangedAttribute clone = (NotifyPropertyChangedAttribute)base.CreateInstance(adviceArgs);
             clone.childPropertyChangedProcessor = ChildPropertyChangedProcessor.CreateFromPrototype(this.childPropertyChangedProcessor);
+
             return clone;
         }
 
@@ -212,5 +228,7 @@ namespace PostSharp.Toolkit.Domain
 
         [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
         public event EventHandler<NotifyChildPropertyChangedEventArgs> ChildPropertyChanged;
+
+        
     }
 }

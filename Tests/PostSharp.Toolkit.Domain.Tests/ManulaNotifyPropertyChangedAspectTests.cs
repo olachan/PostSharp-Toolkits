@@ -18,6 +18,34 @@ namespace PostSharp.Toolkit.Domain.Tests
     [TestFixture]
     public class ManulaNotifyPropertyChangedAspectTests
     {
+        // TODO test checking if all events are raised on appropriate objects
+        //[Test]
+        //public void DependsOnHierarchyCheck()
+        //{
+        //    int masterEventCount = 0;
+        //    int innerObjectEventCount = 0;
+        //    int innerObject2EventCount = 0;
+        //    int innerObjectSuperInnrObjectEventCount = 0;
+        //    int innerObject2SuperInnrObjectEventCount = 0;
+
+        //    InpcWithManualDependencies master = new InpcWithManualDependencies();
+        //    ((INotifyPropertyChanged)master).PropertyChanged += ( s, a ) => masterEventCount++;
+        //    master.InnerObject = new InpcInnrClass();
+        //    ((INotifyPropertyChanged)master.InnerObject).PropertyChanged += (s, a) => innerObjectEventCount++;
+        //    master.InnerObject2 = new InpcInnrClass();
+        //    ((INotifyPropertyChanged)master.InnerObject2).PropertyChanged += (s, a) => innerObject2EventCount++;
+        //    master.InnerObject.SuperInnrObject = new InpcSuperInnrClass();
+        //    ((INotifyPropertyChanged)master.InnerObject.SuperInnrObject).PropertyChanged += (s, a) => innerObjectSuperInnrObjectEventCount++;
+
+        //    master.InnerObject2.SuperInnrObject = new InpcSuperInnrClass();
+        //    ((INotifyPropertyChanged)master.InnerObject2.SuperInnrObject).PropertyChanged += (s, a) => innerObject2SuperInnrObjectEventCount++;
+        //    master.InnerObject.SuperInnrObject.Str1 = "sadf";
+
+        //    master.DoSyblingChange();
+
+        //    // Assert.AreEqual(  );
+        //}
+
         [Test]
         public void SimpleDependsOn()
         {
@@ -63,7 +91,7 @@ namespace PostSharp.Toolkit.Domain.Tests
         }
 
         [Test]
-        [Ignore] // Test showing problem when not executing getters
+ // Test showing problem when not executing getters
         public void TwoLevelDependsOn_ViaProperty_SideObjectChange()
         {
             TestHelpers.DoInpcTest<InpcWithManualDependencies>(
@@ -81,7 +109,7 @@ namespace PostSharp.Toolkit.Domain.Tests
         }
 
         [Test]
-        [Ignore] // Test showing problem when not executing getters
+ // Test showing problem when not executing getters
         public void TwoLevelDependsOn_ViaProperty_PartlySideObjectChange()
         {
             TestHelpers.DoInpcTest<InpcWithManualDependencies>(
@@ -130,6 +158,14 @@ namespace PostSharp.Toolkit.Domain.Tests
             }
         }
 
+        public void SetProperty(InpcSuperInnrClass c)
+        {
+            Str1 = "sdfjkh";
+            Str2 = "sdkafkl";
+            c.Str1 = "sdjkafh";
+            c.Str2 = "sdjkafh";
+        }
+
         public InpcSuperInnrClass SuperInnrObject { get; set; }
     }
 
@@ -146,6 +182,11 @@ namespace PostSharp.Toolkit.Domain.Tests
             {
                 return this.InnerObject2;
             }
+        }
+
+        public void DoSyblingChange()
+        {
+            this.InnerObject.SetProperty( this.InnerObject2.SuperInnrObject );
         }
 
         [DependsOn( "InnerObject.StrConcat" )]

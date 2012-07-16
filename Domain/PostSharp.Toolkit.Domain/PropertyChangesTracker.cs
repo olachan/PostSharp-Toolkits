@@ -86,7 +86,6 @@ namespace PostSharp.Toolkit.Domain
 
                 w.Processed = true;
                 accumulator.Remove( w );
-
                 INotifyChildPropertyChanged cpc = w.Instance.Target as INotifyChildPropertyChanged;
 
                 if (cpc != null) //Target may not be alive any more
