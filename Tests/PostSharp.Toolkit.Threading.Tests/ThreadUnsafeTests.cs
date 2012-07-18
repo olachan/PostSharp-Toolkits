@@ -16,7 +16,17 @@ namespace PostSharp.Toolkit.Threading.Tests
     [TestFixture]
     public class ThreadUnsafeTests
     {
+#if !(DEBUG || DEBUG_THREADING)
         [Test]
+#endif
+        public void BuildConfigurationTest()
+        {
+            Assert.Inconclusive("ThreadUnsafeTests can run only in DEBUG configuration");
+        }
+
+#if (DEBUG || DEBUG_THREADING)
+        [Test]
+#endif
         public void MethodsInvokedOnSeparateObjects_NoException()
         {
             SingleThreadedMethodsObject o1 = new SingleThreadedMethodsObject();
@@ -24,47 +34,59 @@ namespace PostSharp.Toolkit.Threading.Tests
             TestHelpers.InvokeSimultaneouslyAndWait( o1.InstanceDependentMethod, o2.InstanceDependentMethod );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
         [ExpectedException( typeof(ThreadUnsafeException) )]
+#endif
         public void InstanceDependentDerivedAndNotDerivedMethodInvoked_Exception()
         {
             SingleThreadedMethodsDerivedObject o1 = new SingleThreadedMethodsDerivedObject();
             TestHelpers.InvokeSimultaneouslyAndWait( o1.DerivedInstanceDependentMethod, o1.InstanceDependentMethod );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
         [ExpectedException( typeof(ThreadUnsafeException) )]
+#endif
         public void SameInstanceDependentMethodInvokedTwice_Exception()
         {
             SingleThreadedMethodsObject o1 = new SingleThreadedMethodsObject();
             TestHelpers.InvokeSimultaneouslyAndWait( o1.InstanceDependentMethod, o1.InstanceDependentMethod );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
         [ExpectedException( typeof(ThreadUnsafeException) )]
+#endif
         public void TwoInstanceDependentMethodsInvoked_Exception()
         {
             SingleThreadedMethodsObject o1 = new SingleThreadedMethodsObject();
             TestHelpers.InvokeSimultaneouslyAndWait( o1.InstanceDependentMethod, o1.InstanceDependentMethod2 );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
         [ExpectedException( typeof(ThreadUnsafeException) )]
+#endif
         public void TypeDependentStaticMethodInvokedTwice_Exception()
         {
             TestHelpers.InvokeSimultaneouslyAndWait( SingleThreadedStaticMethodsObject.StaticTypeDependentMethod,
                                                      SingleThreadedStaticMethodsObject.StaticTypeDependentMethod );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
         [ExpectedException( typeof(ThreadUnsafeException) )]
+#endif
         public void TwoTypeDependentStaticMethodInvoked_Exception()
         {
             TestHelpers.InvokeSimultaneouslyAndWait( SingleThreadedStaticMethodsObject.StaticTypeDependentMethod,
                                                      SingleThreadedStaticMethodsObject.StaticTypeDependentMethod2 );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
+#endif
         public void MethodThrowsException_MonitorProperlyReleased()
         {
             SingleThreadedMethodsObject o1 = new SingleThreadedMethodsObject();
@@ -82,7 +104,9 @@ namespace PostSharp.Toolkit.Threading.Tests
                                                          } );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
+#endif
         public void StaticMethodThrowsException_MonitorProperlyReleased()
         {
             TestHelpers.InvokeSimultaneouslyAndWait( () => TestHelpers.Swallow<NotSupportedException>( SingleThreadedMethodsObject.StaticException ),
@@ -100,7 +124,9 @@ namespace PostSharp.Toolkit.Threading.Tests
                                                          } );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
+#endif
         public void SingleThreadedClassGetter_MultipleAccessesDoNotThrow()
         {
             SingleThreadedClassObject o = new SingleThreadedClassObject();
@@ -108,8 +134,10 @@ namespace PostSharp.Toolkit.Threading.Tests
             TestHelpers.InvokeSimultaneouslyAndWait( () => { x = o.TestProperty; }, () => { x = o.TestProperty; } );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
         [ExpectedException( typeof(ThreadUnsafeException) )]
+#endif
         public void SingleThreadedClassSetter_MultipleAccessesThrow()
         {
             SingleThreadedClassObject o = new SingleThreadedClassObject();
@@ -117,65 +145,83 @@ namespace PostSharp.Toolkit.Threading.Tests
                                                      () => { o.TestProperty = 3; } );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
+#endif
         public void ThreadSafeMethod_InvokedFromTwoThreads_DoesNotThrow()
         {
             SingleThreadedMethodsObject o = new SingleThreadedMethodsObject();
             TestHelpers.InvokeSimultaneouslyAndWait( o.ThreadSafeMethod, o.ThreadSafeMethod );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
+#endif
         public void PrivateThreadUnsafeMethod_InvokedFromThreadSafeInTwoThreads_DoesNotThrow()
         {
             SingleThreadedMethodsObject o = new SingleThreadedMethodsObject();
             TestHelpers.InvokeSimultaneouslyAndWait( o.ThreadSafeMethodInvokingThreadUnsafePrivateMethod, o.ThreadSafeMethodInvokingThreadUnsafePrivateMethod );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
+#endif
         public void PrivateThreadSafeMethod_InvokedFromTwoThreads_DoesNotThrow()
         {
             SingleThreadedMethodsObject o = new SingleThreadedMethodsObject();
             TestHelpers.InvokeSimultaneouslyAndWait( o.ThreadSafeMethodInvokingThreadSafePrivateMethod, o.ThreadSafeMethodInvokingThreadSafePrivateMethod );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
+#endif
         public void NonThreadSafeField_ModifiedFromThreadSafeMethod_DoesNotThrow()
         {
             ThreadUnsafeWithFieldAccessCheckObject o = new ThreadUnsafeWithFieldAccessCheckObject();
             o.ChangeNonThreadSafeFieldFromThreadSafe();
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
+#endif
         public void ThreadSafeField_ModifiedFromThreadSafeMethod_DoesNotThrow()
         {
             ThreadUnsafeWithFieldAccessCheckObject o = new ThreadUnsafeWithFieldAccessCheckObject();
             o.ChangeThreadSafeFieldFromThreadSafe();
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
         [ExpectedException( typeof(LockNotHeldException) )]
+#endif
         public void NonThreadSafeField_ModifiedFromStaticUnsafeMethod_Throws()
         {
             ThreadUnsafeWithFieldAccessCheckObject o = new ThreadUnsafeWithFieldAccessCheckObject();
             ThreadUnsafeWithFieldAccessCheckObject.ChangeNonThreadSafeField( o );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
         [ExpectedException( typeof(LockNotHeldException) )]
+#endif
         public void NonThreadSafeField_ModifiedFromStaticSafeMethod_Throws()
         {
             ThreadUnsafeWithFieldAccessCheckObject o = new ThreadUnsafeWithFieldAccessCheckObject();
             ThreadUnsafeWithFieldAccessCheckObject.ChangeNonThreadSafeFieldFromThreadSafe( o );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
+#endif
         public void ThreadSafeField_ModifiedFromStaticMethod_DoesNotThrow()
         {
             ThreadUnsafeWithFieldAccessCheckObject o = new ThreadUnsafeWithFieldAccessCheckObject();
             ThreadUnsafeWithFieldAccessCheckObject.ChangeThreadSafeField( o );
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
+#endif
         public void ThreadSafeStaticField_Modified_NeverThrows()
         {
             ThreadUnsafeWithFieldAccessCheckStaticClass o = new ThreadUnsafeWithFieldAccessCheckStaticClass();
@@ -183,32 +229,42 @@ namespace PostSharp.Toolkit.Threading.Tests
             ThreadUnsafeWithFieldAccessCheckStaticClass.ChangeThreadSafeStaticFieldStatic();
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
+#endif
         public void NonThreadSafeStaticField_ModifiedByStaticMethod_DoesNotThrow()
         {
             ThreadUnsafeWithFieldAccessCheckStaticClass.ChangeNonThreadSafeStaticFieldStatic();
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
         [ExpectedException( typeof(LockNotHeldException) )]
+#endif
         public void NonThreadSafeStaticField_ModifiedExternaly_Throws()
         {
             ThreadUnsafeWithFieldAccessCheckStaticClass.NonThreadSafeStaticField++;
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
+#endif
         public void ThreadSafeStaticField_ModifiedExternaly_DoesNotThrow()
         {
             ThreadUnsafeWithFieldAccessCheckStaticClass.ThreadSafeStaticField++;
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
+#endif
         public void ThreadSafeProperty_ModifiedExternaly_DoesNotThrow()
         {
             new ThreadUnsafeWithFieldAccessCheckObject().ThreadSafeProperty = 7;
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
+#endif
         public void NonThreadSafeProperty_ModifiedExternaly_DoesNotThrows()
         {
             new ThreadUnsafeWithFieldAccessCheckObject().NonThreadSafeProperty = 7;

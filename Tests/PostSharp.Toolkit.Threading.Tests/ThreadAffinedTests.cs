@@ -8,15 +8,26 @@ namespace PostSharp.Toolkit.Threading.Tests
     [TestFixture]
     public class ThreadAffinedTests
     {
+#if !(DEBUG || DEBUG_THREADING)
         [Test]
+#endif
+        public void BuildConfigurationTest()
+        {
+            Assert.Inconclusive("ThreadAffinedTests can run only in DEBUG configuration");
+        }
+
+#if (DEBUG || DEBUG_THREADING)
+        [Test]
+#endif
         public void ModifyingField_FromThreadSafeMethod_NeverThrows()
         {
             var o = new ThreadAffinedObject();
             TestHelpers.InvokeSimultaneouslyAndWait(() => o.ThreadSafeModifyField(200), () => o.ThreadSafeModifyField(200));
         }
-
+#if (DEBUG || DEBUG_THREADING)
         [Test]
         [ExpectedException(typeof(ThreadUnsafeException))]
+#endif
         public void UnsafeMethod_CallFromBackgroundThread_Throws()
         {
             var o = new ThreadAffinedObject();
@@ -31,8 +42,10 @@ namespace PostSharp.Toolkit.Threading.Tests
             }
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
         [ExpectedException(typeof(ThreadUnsafeException))]
+#endif
         public void ModifyingIsntanceField_FromStaticUnsafeMethod_Throws()
         {
             var o = new ThreadAffinedObject();
@@ -47,7 +60,9 @@ namespace PostSharp.Toolkit.Threading.Tests
             }
         }
 
+#if (DEBUG || DEBUG_THREADING)
         [Test]
+#endif
         public void ThreadSafeField_Modification_NeverThrows()
         {
             var o = new ThreadAffinedObject();
