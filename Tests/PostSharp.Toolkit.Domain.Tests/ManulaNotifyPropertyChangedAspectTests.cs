@@ -68,11 +68,26 @@ namespace PostSharp.Toolkit.Domain.Tests
                     {
                         c.InnerObject = new InpcInnrClass();
                         c.InnerObject.SuperInnrObject = new InpcSuperInnrClass();
-                        c.InnerObject.SuperInnrObject.Str1 = "afasf";
+                        c.InnerObject.SuperInnrObject.Str1 = "afaskhjkhf";
                         c.InnerObject.SuperInnrObject.Str2 = "sgfhdhd";
                     },
                 4,
                 "ConcatFromSuperInnerObject" );
+        }
+
+        [Test]
+        public void TwoLevelDependsOn_WithNonAutoProperty()
+        {
+            TestHelpers.DoInpcTest<InpcWithManualDependencies>(
+                c =>
+                {
+                    c.InnerObject = new InpcInnrClass();
+                    c.InnerObject.SuperInnrObjectNonAuto = new InpcSuperInnrClass();
+                    c.InnerObject.SuperInnrObjectNonAuto.Str1 = "afasf";
+                    c.InnerObject.SuperInnrObjectNonAuto.Str2 = "sgfhdhd";
+                },
+                4,
+                "ConcatFromSuperInnerObjectNonAuto");
         }
 
         [Test]
@@ -149,6 +164,7 @@ namespace PostSharp.Toolkit.Domain.Tests
         public string Str1;
 
         public string Str2;
+        private InpcSuperInnrClass superInnrObjectNonAuto;
 
         public string StrConcat
         {
@@ -168,6 +184,12 @@ namespace PostSharp.Toolkit.Domain.Tests
 
         //TODO: Why does making this normal property cause stack overflow?
         public InpcSuperInnrClass SuperInnrObject { get; set; }
+
+        public InpcSuperInnrClass SuperInnrObjectNonAuto
+        {
+            get { return this.superInnrObjectNonAuto; }
+            set { this.superInnrObjectNonAuto = value; }
+        }
     }
 
     [NotifyPropertyChanged]
@@ -205,6 +227,15 @@ namespace PostSharp.Toolkit.Domain.Tests
             get
             {
                 return this.InnerObject.SuperInnrObject.StrConcat;
+            }
+        }
+
+        [DependsOn("InnerObject.SuperInnrObjectNonAuto.StrConcat")]
+        public string ConcatFromSuperInnerObjectNonAuto
+        {
+            get
+            {
+                return this.InnerObject.SuperInnrObjectNonAuto.StrConcat;
             }
         }
 

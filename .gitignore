@@ -40,3 +40,4 @@ Private/Distribution/source-status
 /Build/source-status
 /Dependencies/PostSharp/PostSharpDir.Custom.targets
 /Build/NuGet/source-status
+/Dependencies/PostSharp/PostSharpDir.Custom.targets
