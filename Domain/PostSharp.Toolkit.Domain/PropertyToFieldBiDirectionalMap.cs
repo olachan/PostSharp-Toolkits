@@ -25,7 +25,7 @@ namespace PostSharp.Toolkit.Domain
 
         public PropertyToFieldBiDirectionalMap(PropertyToFieldBiDirectionalMap prototype)
         {
-            propertyToField = prototype.propertyToField.ToDictionary(kv => kv.Key, kv => kv.Value);
+            propertyToField = prototype.propertyToField.ToDictionary(kv => kv.Key, kv => new FieldByValueDependency(kv.Value));
             fieldToProperty = prototype.fieldToProperty.ToDictionary(kv => kv.Key, kv => kv.Value);
         }
 
@@ -130,11 +130,14 @@ namespace PostSharp.Toolkit.Domain
 
         public void RuntimeInitialize()
         {
-            ParameterExpression objectParameterExpression = Expression.Parameter(typeof(object));
-            UnaryExpression castExpression = Expression.Convert(objectParameterExpression, type);
-            Expression fieldExpr = Expression.PropertyOrField(castExpression, location.Name);
-            UnaryExpression resultCastExpression = Expression.Convert(fieldExpr, typeof(object));
-            GetValue = Expression.Lambda<Func<object, object>>(resultCastExpression, objectParameterExpression).Compile();
+            if (GetValue == null)
+            {
+                ParameterExpression objectParameterExpression = Expression.Parameter( typeof(object) );
+                UnaryExpression castExpression = Expression.Convert( objectParameterExpression, type );
+                Expression fieldExpr = Expression.PropertyOrField( castExpression, location.Name );
+                UnaryExpression resultCastExpression = Expression.Convert( fieldExpr, typeof(object) );
+                GetValue = Expression.Lambda<Func<object, object>>( resultCastExpression, objectParameterExpression ).Compile();
+            }
         }
 
         private LocationInfo location;

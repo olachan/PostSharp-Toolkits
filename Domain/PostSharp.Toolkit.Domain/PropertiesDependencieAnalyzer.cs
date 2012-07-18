@@ -204,9 +204,14 @@ namespace PostSharp.Toolkit.Domain
             {
                 MethodInfo methodInfo = (MethodInfo)expression.Method;
 
+                if (methodInfo.IsVoidNoRefOut() || methodInfo.IsIdempotentMethod() || methodInfo.IsInpcIgnoredMethod())
+                {
+                    return base.VisitMethodCallExpression(expression);
+                }
+
                 // Ignore void no ref/out, static framework and state independent methods
                 if ( (expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This) &&
-                     (methodInfo.IsVoidNoRefOut() || methodInfo.IsStateIndependentMethod() || methodInfo.IsFrameworkStaticMethod()) )
+                     ( methodInfo.IsFrameworkStaticMethod()) )
                 {
                     return base.VisitMethodCallExpression( expression );
                 }

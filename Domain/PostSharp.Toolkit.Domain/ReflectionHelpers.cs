@@ -42,9 +42,14 @@ namespace PostSharp.Toolkit.Domain
             return memberInfo.DeclaringType == null ? memberInfo.Name : string.Format( "{0}.{1}", memberInfo.DeclaringType.FullName, memberInfo.Name );
         }
 
-        public static bool IsStateIndependentMethod( this MethodBase method )
+        public static bool IsIdempotentMethod( this MethodBase method )
         {
             return method.GetCustomAttributes( typeof(IdempotentMethodAttribute), false ).Any();
+        }
+
+        public static bool IsInpcIgnoredMethod(this MethodBase method)
+        {
+            return method.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), false).Any();
         }
 
         public static bool IsVoidNoRefOut( this MethodInfo methodInfo )
