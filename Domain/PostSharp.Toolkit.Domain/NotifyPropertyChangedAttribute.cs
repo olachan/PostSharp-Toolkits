@@ -37,6 +37,8 @@ namespace PostSharp.Toolkit.Domain
         [NonSerialized]
         private static Lazy<PropertiesDependencieAnalyzer> analyzer = new Lazy<PropertiesDependencieAnalyzer>();
 
+        // Compile-time use only
+
         // Used for serializing propertyDependencyMap
         private PropertyDependencySerializationStore propertyDependencySerializationStore;
 
@@ -150,17 +152,7 @@ namespace PostSharp.Toolkit.Domain
         {
             analyzer.Value.AnalyzeType(type);
 
-            var allProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            
-            var properties = allProperties
-                .Where(p => !p.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any())
-                .Select(p => new { Property = p, DependsOn = p.GetCustomAttributes(typeof(DependsOnAttribute), false) })
-                .Where(p => p.DependsOn.Any());
-
-            this.explicitDependencyMap =
-                new ExplicitDependencyMap(
-                    properties.Select(p => new ExplicitDependency(p.Property.Name, p.DependsOn.SelectMany(d => ((DependsOnAttribute)d).Dependencies))));
-
+            this.explicitDependencyMap = ExplicitDependencyAnalyzer.Analyze( type );
             this.childPropertyChangedProcessor = ChildPropertyChangedProcessor.CompileTimeCreate(type, analyzer.Value.MethodFieldDependencies);
         }
 

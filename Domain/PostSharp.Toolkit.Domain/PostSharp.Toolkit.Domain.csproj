@@ -82,6 +82,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ExplicitDependencyAnalyzer.cs" />
     <Compile Include="PropertyToFieldBiDirectionalMap.cs" />
     <Compile Include="ChangedPropertiesAccumulator.cs" />
     <Compile Include="CollectionHelpers.cs" />

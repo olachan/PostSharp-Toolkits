@@ -7,6 +7,7 @@
 
 #endregion
 
+using System;
 using System.Linq;
 using System.Reflection;
 
@@ -50,6 +51,21 @@ namespace PostSharp.Toolkit.Domain
         public static bool IsVoidNoRefOut( this MethodInfo methodInfo )
         {
             return (methodInfo.ReturnType == typeof(void) && !methodInfo.GetParameters().Any( p => p.ParameterType.IsByRef ));
+        }
+
+        public static bool IsObjectToString ( this MethodInfo methodInfo )
+        {
+            return (methodInfo.Name == "ToString" && methodInfo.DeclaringType == typeof(object));
+        }
+
+        public static bool IsIntrinsicArray(this Type type)
+        {
+            return type.IsArray && type.GetElementType().IsIntrinsic();
+        }
+
+        public static bool IsIntrinsic(this Type type)
+        {
+            return type.IsPrimitive || type == typeof(string);
         }
     }
 }

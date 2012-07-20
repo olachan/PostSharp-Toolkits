@@ -376,7 +376,7 @@ namespace PostSharp.Toolkit.Domain.Tests
         }
 
         [IdempotentMethod]
-        public static string StateIndependentMethod(string format, params object[] parameters)
+        public static string StateIndependentMethod(string format, params string[] parameters)
         {
             return string.Format( format, parameters );
         }
@@ -427,7 +427,7 @@ namespace PostSharp.Toolkit.Domain.Tests
         {
             get
             {
-                return InpcDerrivedClass.StateIndependentMethod("{0}", this);
+                return InpcDerrivedClass.StateIndependentMethod("{0}", this.ToString());
             }
         }
 

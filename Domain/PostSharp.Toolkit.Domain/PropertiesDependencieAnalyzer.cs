@@ -177,7 +177,10 @@ namespace PostSharp.Toolkit.Domain
                 {
                     ISyntaxMethodBody body = this.syntaxService.GetMethodBody( method, SyntaxAbstractionLevel.ExpressionTree );
 
-                    this.VisitMethodBody( body );
+                    if (body != null)
+                    {
+                        this.VisitMethodBody(body);
+                    }
                 }
             }
 
@@ -205,8 +208,9 @@ namespace PostSharp.Toolkit.Domain
                 MethodInfo methodInfo = (MethodInfo)expression.Method;
 
                 // Ignore void no ref/out, static framework and state independent methods
-                if ( (expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This) &&
-                     (methodInfo.IsVoidNoRefOut() || methodInfo.IsStateIndependentMethod() || methodInfo.IsFrameworkStaticMethod()) )
+                if ( methodInfo.IsObjectToString() ||
+                     ((expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This) &&
+                     (methodInfo.IsVoidNoRefOut() || methodInfo.IsStateIndependentMethod() || methodInfo.IsFrameworkStaticMethod())) )
                 {
                     return base.VisitMethodCallExpression( expression );
                 }
