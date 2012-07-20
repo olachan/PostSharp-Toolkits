@@ -38,6 +38,12 @@ namespace PostSharp.Toolkit.Domain
                         return "NotifyPropertyChangedAttribute: automatic analysis of property {0} failed. " + 
                                "Method {1} contains delegate call." +
                                "Use InstanceScopedProperty attribute to specify that property value depends only on state of current instance or DependsOn attribute to explicitly specify dependencies.";
+                    case 4:
+                        return "Method {0} contains parameters of not intrinsic type. IdempotentMethodAttribute can be applied only to methods with intrinsic(primitive) parameters";
+                    case 5:
+                        return "Type {0} implements INotifyPropertyChanged without implementing INotifyChildPropertyChanged";
+                    case 6:
+                        return "Base class of type {0} implements INotifyChildPropertyChanged or INotifyPropertyChanged but is not instrumented with NotifyPropertyChangedAttribute";
                     default:
                         return null;
                 }

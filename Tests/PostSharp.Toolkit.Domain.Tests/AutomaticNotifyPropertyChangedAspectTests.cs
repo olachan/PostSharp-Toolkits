@@ -24,7 +24,7 @@ namespace PostSharp.Toolkit.Domain.Tests
             for (int i = 0; i < 5; i++)
             {
                 int j = i;
-                objects1[i].PropertyChanged += (s, e) => firedEvents1[j]++;
+                ((INotifyPropertyChanged)objects1[i]).PropertyChanged += (s, e) => firedEvents1[j]++;
                 ((INotifyPropertyChanged)objects2[i]).PropertyChanged += (s, e) => firedEvents2[j]++;
             }
 
@@ -300,7 +300,7 @@ namespace PostSharp.Toolkit.Domain.Tests
     }
 
     [NotifyPropertyChanged]
-    public class InpcBaseClass : INotifyPropertyChanged
+    public class InpcBaseClass: INotifyChildPropertyChanged
     {
         public int BaseField1;
 
@@ -311,8 +311,7 @@ namespace PostSharp.Toolkit.Domain.Tests
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        [NotifyPropertyChangedIgnore]
-        public virtual void OnPropertyChanged(string propertyName)
+        public virtual void RaisePropertyChanged(string propertyName)
         {
             PropertyChangedEventHandler handler = this.PropertyChanged;
             if (handler != null)
@@ -320,6 +319,17 @@ namespace PostSharp.Toolkit.Domain.Tests
                 handler(this, new PropertyChangedEventArgs(propertyName));
             }
         }
+
+        public void RaiseChildPropertyChanged(NotifyChildPropertyChangedEventArgs args)
+        {
+            EventHandler<NotifyChildPropertyChangedEventArgs> handler = this.ChildPropertyChanged;
+            if (handler != null)
+            {
+                handler(this, args);
+            }
+        }
+
+        public event EventHandler<NotifyChildPropertyChangedEventArgs> ChildPropertyChanged;
     }
 
     public class InpcDerrivedClass : InpcBaseClass
@@ -376,7 +386,7 @@ namespace PostSharp.Toolkit.Domain.Tests
         }
 
         [IdempotentMethod]
-        public static string StateIndependentMethod(string format, params object[] parameters)
+        public static string StateIndependentMethod(string format, params string[] parameters)
         {
             return string.Format( format, parameters );
         }
@@ -427,7 +437,7 @@ namespace PostSharp.Toolkit.Domain.Tests
         {
             get
             {
-                return InpcDerrivedClass.StateIndependentMethod("{0}", this);
+                return InpcDerrivedClass.StateIndependentMethod("{0}", this.ToString());
             }
         }
 
@@ -521,4 +531,35 @@ namespace PostSharp.Toolkit.Domain.Tests
             return Field1 + Field2;
         }
     }
+
+    //public class Base: INotifyChildPropertyChanged
+    //{
+    //    public event PropertyChangedEventHandler PropertyChanged;
+
+    //    public virtual void RaisePropertyChanged(string propertyName)
+    //    {
+    //        PropertyChangedEventHandler handler = this.PropertyChanged;
+    //        if (handler != null)
+    //        {
+    //            handler(this, new PropertyChangedEventArgs(propertyName));
+    //        }
+    //    }
+
+    //    public void RaiseChildPropertyChanged(NotifyChildPropertyChangedEventArgs args)
+    //    {
+    //        EventHandler<NotifyChildPropertyChangedEventArgs> handler = this.ChildPropertyChanged;
+    //        if (handler != null)
+    //        {
+    //            handler(this, args);
+    //        }
+    //    }
+
+    //    public event EventHandler<NotifyChildPropertyChangedEventArgs> ChildPropertyChanged;
+    //}
+
+    //[NotifyPropertyChanged]
+    //public class Derrived : Base
+    //{
+       
+    //}
 }

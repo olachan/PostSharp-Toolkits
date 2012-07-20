@@ -18,11 +18,11 @@ namespace PostSharp.Toolkit.Domain
     internal static class PropertyChangesTracker
     {
         private static readonly ThreadLocal<ChangedPropertiesAccumulator> propertyChangesAcumulator =
-            new ThreadLocal<ChangedPropertiesAccumulator>( () => new ChangedPropertiesAccumulator() );
+            new ThreadLocal<ChangedPropertiesAccumulator>(() => new ChangedPropertiesAccumulator());
         private static readonly ThreadLocal<ChangedPropertiesAccumulator> childPropertyChangesAcumulator =
             new ThreadLocal<ChangedPropertiesAccumulator>(() => new ChangedPropertiesAccumulator());
 
-        private static readonly ThreadLocal<StackContext> stackTrace = new ThreadLocal<StackContext>( () => new StackContext() );
+        private static readonly ThreadLocal<StackContext> stackTrace = new ThreadLocal<StackContext>(() => new StackContext());
 
         private static ChangedPropertiesAccumulator PropertyChangesAccumulator
         {
@@ -48,9 +48,9 @@ namespace PostSharp.Toolkit.Domain
             }
         }
 
-        public static void PushOnStack( object o )
+        public static void PushOnStack(object o)
         {
-            StackContext.PushOnStack( o );
+            StackContext.PushOnStack(o);
         }
 
         public static object PopFromStack()
@@ -63,7 +63,7 @@ namespace PostSharp.Toolkit.Domain
             return StackContext.Count == 0 ? null : StackContext.Peek();
         }
 
-        public static void HandleFieldChange( LocationInterceptionArgs args)
+        public static void HandleFieldChange(LocationInterceptionArgs args)
         {
             List<string> propertyList;
             if (FieldDependenciesMap.FieldDependentProperties.TryGetValue(args.LocationFullName, out propertyList))
@@ -80,13 +80,13 @@ namespace PostSharp.Toolkit.Domain
 
         public static void StoreChangedProperties(object instance, List<string> properties)
         {
-            StoreChangedChildProperties( instance, properties );
+            StoreChangedChildProperties(instance, properties);
             PropertyChangesAccumulator.AddProperties(instance, properties);
         }
 
         public static void StoreChangedChildProperty(object instance, string propertyPath)
         {
-            ChildPropertyChangesAccumulator.AddProperty( instance, propertyPath );
+            ChildPropertyChangesAccumulator.AddProperty(instance, propertyPath);
         }
 
         public static void StoreChangedChildProperties(object instance, List<string> propertyPaths)
@@ -96,42 +96,67 @@ namespace PostSharp.Toolkit.Domain
 
         public static void RaisePropertyChanged()
         {
-            RaisePropertyChangesInternal( childPropertyChangesAcumulator.Value, true );
+            RaiseChildPropertyChanged();
             RaisePropertyChangesInternal(propertyChangesAcumulator.Value, false);
         }
 
-        private static void RaisePropertyChangesInternal( ChangedPropertiesAccumulator accumulator, bool raiseChildPropertyChanges )
+        public static void RaisePropertyChanged(object instance)
+        {
+            RaiseChildPropertyChanged();
+            RaisePropertyChangesInternal(propertyChangesAcumulator.Value, false, instance);
+        }
+
+        public static void RaiseChildPropertyChanged()
+        {
+            RaisePropertyChangesInternal(childPropertyChangesAcumulator.Value, true);
+        }
+        
+        private static void RaisePropertyChangesInternal(ChangedPropertiesAccumulator accumulator, bool raiseChildPropertyChanges, object instance = null)
         {
             accumulator.Compact();
 
-            List<WeakPropertyDescriptor> objectsToRaisePropertyChanged =
-                accumulator.Where( w => w.Instance.IsAlive && !stackTrace.Value.Contains( w.Instance.Target ) ).ToList();
+            List<WeakPropertyDescriptor> objectsToRaisePropertyChanged;
 
-            foreach ( WeakPropertyDescriptor w in objectsToRaisePropertyChanged )
+            int loopCount = 0;
+
+            do
             {
-                //INPC handler may raise INPC again and process some of our events;
-                //we're working on accumulator copy, so only way to know it is to have a flag on the descriptor
-                if ( w.Processed )
-                {
-                    continue;
-                }
+                objectsToRaisePropertyChanged = instance == null ? 
+                    accumulator.Where(w => w.Instance.IsAlive && !stackTrace.Value.Contains(w.Instance.Target)).ToList() : 
+                    accumulator.Where(w => w.Instance.IsAlive && ReferenceEquals(w.Instance.Target, instance)).ToList();
 
-                w.Processed = true;
-                accumulator.Remove( w );
-                INotifyChildPropertyChanged cpc = w.Instance.Target as INotifyChildPropertyChanged;
-
-                if ( cpc != null ) //Target may not be alive any more
+                foreach (WeakPropertyDescriptor w in objectsToRaisePropertyChanged)
                 {
-                    if (raiseChildPropertyChanges)
+                    //INPC handler may raise INPC again and process some of our events;
+                    //we're working on accumulator copy, so only way to know it is to have a flag on the descriptor
+                    if (w.Processed)
                     {
-                        cpc.RaiseChildPropertyChanged(new NotifyChildPropertyChangedEventArgs(w.PropertyPath));
+                        continue;
                     }
-                    else
+
+                    w.Processed = true;
+                    accumulator.Remove(w);
+                    INotifyChildPropertyChanged cpc = w.Instance.Target as INotifyChildPropertyChanged;
+
+                    if (cpc != null) //Target may not be alive any more
                     {
-                        cpc.RaisePropertyChanged( w.PropertyPath );
+                        if (raiseChildPropertyChanges)
+                        {
+                            cpc.RaiseChildPropertyChanged(new NotifyChildPropertyChangedEventArgs(w.PropertyPath));
+                        }
+                        else
+                        {
+                            cpc.RaisePropertyChanged(w.PropertyPath);
+                        }
                     }
                 }
+                //Notifications may cause generation of new notifications, continue until there is nothing left to raise
             }
+            while (objectsToRaisePropertyChanged.Count > 0 && loopCount++ <= 12);
+
+            //TODO: Verify the loop above will always stop.
+            //If there's a risk it won't, call RaiseChildPropertyChanged from NPCAttribute.ChildPropertyChangedEventHandler to bubble up CNPC notifications
+            //(this may lead to a lot of unneccessary recursion, however, and a lot of continuations on w.Processed check above)
         }
     }
 }

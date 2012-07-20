@@ -280,6 +280,7 @@ namespace PostSharp.Toolkit.Domain.Tests
 
         public decimal Salary { get; set; }
 
+        [NotifyPropertyChangedSafe]
         public long Fibonacci10
         {
             get
@@ -288,6 +289,7 @@ namespace PostSharp.Toolkit.Domain.Tests
             }
         }
 
+        [NotifyPropertyChangedSafe]
         public double Fibonacci30Average
         {
             get

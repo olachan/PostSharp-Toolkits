@@ -7,6 +7,7 @@
 
 #endregion
 
+using System;
 using System.Linq;
 using System.Reflection;
 
@@ -16,12 +17,8 @@ namespace PostSharp.Toolkit.Domain
     {
         public static bool IsFrameworkStaticMethod( this MethodBase method )
         {
-            if ( !method.IsStatic )
-            {
-                return false;
-            }
-
-            if (method.DeclaringType == null)
+            // TODO Intrinsic type validation. Problem : string.Format gets objects which are not intrinsic
+            if (!method.IsStatic || method.DeclaringType == null) // || !method.HasOnlyIntrinsicParameters())
             {
                 return false;
             }
@@ -55,6 +52,27 @@ namespace PostSharp.Toolkit.Domain
         public static bool IsVoidNoRefOut( this MethodInfo methodInfo )
         {
             return (methodInfo.ReturnType == typeof(void) && !methodInfo.GetParameters().Any( p => p.ParameterType.IsByRef ));
+        }
+
+        public static bool IsObjectToString(this MethodBase methodInfo)
+        {
+            return (methodInfo.Name == "ToString" && methodInfo.DeclaringType == typeof(object));
+        }
+
+        public static bool IsIntrinsicArray(this Type type)
+        {
+            //TODO : feature decision about intrinsic colection
+            return type.IsArray && type.GetElementType().IsIntrinsic();
+        }
+
+        public static bool IsIntrinsic(this Type type)
+        {
+            return type.IsPrimitive || type == typeof(string);
+        }
+
+        public static bool HasOnlyIntrinsicParameters(this MethodBase methodInfo)
+        {
+            return methodInfo.GetParameters().All( p => p.ParameterType.IsIntrinsic() || p.ParameterType.IsIntrinsicArray() );
         }
     }
 }

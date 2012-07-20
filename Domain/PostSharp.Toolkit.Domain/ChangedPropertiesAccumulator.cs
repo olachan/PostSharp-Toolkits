@@ -19,13 +19,16 @@ namespace PostSharp.Toolkit.Domain
 
         public void AddProperty( object obj, string propertyName )
         {
-            //TODO: Reset IsProcessed!
-
             foreach ( WeakPropertyDescriptor weakPropertyDescriptor in this.changedProperties )
             {
                 if ( weakPropertyDescriptor.Instance.IsAlive && ReferenceEquals( weakPropertyDescriptor.Instance.Target, obj ) &&
                      weakPropertyDescriptor.PropertyPath == propertyName )
                 {
+                    if (weakPropertyDescriptor.Processed)
+                    {
+                        weakPropertyDescriptor.Processed = false;
+                    }
+
                     return;
                 }
             }

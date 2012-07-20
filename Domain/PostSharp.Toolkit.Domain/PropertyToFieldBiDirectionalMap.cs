@@ -134,11 +134,25 @@ namespace PostSharp.Toolkit.Domain
             {
                 ParameterExpression objectParameterExpression = Expression.Parameter( typeof(object) );
                 UnaryExpression castExpression = Expression.Convert( objectParameterExpression, type );
-                Expression fieldExpr = Expression.PropertyOrField( castExpression, location.Name );
+            string locationName = (location.FieldInfo == null) ? location.PropertyInfo.Name : location.FieldInfo.Name;
+            Expression fieldExpr = PropertyOrFieldCaseSensitive(castExpression, locationName);
                 UnaryExpression resultCastExpression = Expression.Convert( fieldExpr, typeof(object) );
                 GetValue = Expression.Lambda<Func<object, object>>( resultCastExpression, objectParameterExpression ).Compile();
             }
         }
+
+        public static MemberExpression PropertyOrFieldCaseSensitive(Expression expression, string propertyOrFieldName)
+        {
+            PropertyInfo property1 = expression.Type.GetProperty(propertyOrFieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+            if (property1 != (PropertyInfo)null)
+                return Expression.Property(expression, property1);
+            FieldInfo field1 = expression.Type.GetField(propertyOrFieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+            if (field1 != (FieldInfo)null)
+                return Expression.Field(expression, field1);
+            else
+                throw new ArgumentException("Invalid field or property name");
+        }
+
 
         private LocationInfo location;
 
@@ -152,6 +166,7 @@ namespace PostSharp.Toolkit.Domain
             }
         }
 
-        public Func<object, object> GetValue { get; private set; }
+
+        public Func<object, object> GetValue { get; set; }
     }
 }

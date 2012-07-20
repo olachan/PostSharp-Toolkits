@@ -28,7 +28,7 @@ namespace PostSharp.Toolkit.Domain
     /// Under development. Early version !!!
     /// </summary>
     [Serializable]
-    [MulticastAttributeUsage(MulticastTargets.Class, Inheritance = MulticastInheritance.Strict)]
+    [MulticastAttributeUsage(MulticastTargets.Class, Inheritance = MulticastInheritance.Strict, PersistMetaData = true)]
     [IntroduceInterface(typeof(INotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore)]
     [IntroduceInterface(typeof(INotifyChildPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore)]
     public class NotifyPropertyChangedAttribute : InstanceLevelAspect, INotifyPropertyChanged, INotifyChildPropertyChanged
@@ -36,6 +36,8 @@ namespace PostSharp.Toolkit.Domain
         // Compile-time use only
         [NonSerialized]
         private static Lazy<PropertiesDependencieAnalyzer> analyzer = new Lazy<PropertiesDependencieAnalyzer>();
+
+        // Compile-time use only
 
         // Used for serializing propertyDependencyMap
         private PropertyDependencySerializationStore propertyDependencySerializationStore;
@@ -84,7 +86,7 @@ namespace PostSharp.Toolkit.Domain
 
             this.childPropertyChangedProcessor.ReHookNotifyChildPropertyChangedHandler(args);
 
-            PropertyChangesTracker.HandleFieldChange( args );
+            PropertyChangesTracker.HandleFieldChange(args);
         }
 
         private IEnumerable<FieldInfo> SelectFields(Type type)
@@ -100,23 +102,33 @@ namespace PostSharp.Toolkit.Domain
         {
             List<string> changedProperties = this.explicitDependencyMap.GetDependentProperties(args.Path).ToList();
 
-            PropertyChangesTracker.StoreChangedProperties( this.Instance, changedProperties );
-            
+            PropertyChangesTracker.StoreChangedProperties(this.Instance, changedProperties);
+
             var paths = this.childPropertyChangedProcessor.GetEffectedPaths(args);
 
             PropertyChangesTracker.StoreChangedChildProperties(this.Instance, paths.ToList());
+
+            //Don't have to raise events here, because we're already in event raising loop which should pick up our new notifications
+            //PropertyChangesTracker.RaiseChildPropertyChanged();
         }
 
         [OnLocationGetValueAdvice]
         [ProvideAspectRole("INPC_EventHook")]
         [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, "INPC_EventRaise")]
-        [MulticastPointcut(Targets = MulticastTargets.Property)]
+        //[MulticastPointcut(Targets = MulticastTargets.Property)]
+        [MethodPointcut("SelectProperties")]
         public void OnPropertyGet(LocationInterceptionArgs args)
         {
             args.ProceedGetValue();
 
-            this.childPropertyChangedProcessor.ProcessGet( args );
+            this.childPropertyChangedProcessor.ProcessGet(args);
         }
+
+        private IEnumerable<PropertyInfo> SelectProperties(Type type)
+        {
+            return type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+        }
+
 
         [OnMethodInvokeAdvice]
         [ProvideAspectRole("INPC_EventRaise")]
@@ -146,21 +158,31 @@ namespace PostSharp.Toolkit.Domain
                     m => !m.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any());
         }
 
+        public override bool CompileTimeValidate(Type type)
+        {
+            if (!(type.BaseType != null && type.BaseType.GetCustomAttributes( true ).Any(a => a is NotifyPropertyChangedAttribute )))
+            {
+                if (!typeof(INotifyChildPropertyChanged).IsAssignableFrom(type) && typeof(INotifyPropertyChanged).IsAssignableFrom(type))
+                {
+                    DomainMessageSource.Instance.Write(type, SeverityType.Error, "INPC005", type.FullName);
+                    return false;
+                }
+
+                if (typeof(INotifyChildPropertyChanged).IsAssignableFrom(type.BaseType) || typeof(INotifyPropertyChanged).IsAssignableFrom(type.BaseType))
+                {
+                    DomainMessageSource.Instance.Write(type, SeverityType.Error, "INPC006", type.FullName);
+                    return false;
+                }
+            }
+            
+            return base.CompileTimeValidate(type);
+        }
+
         public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
         {
             analyzer.Value.AnalyzeType(type);
 
-            var allProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            
-            var properties = allProperties
-                .Where(p => !p.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any())
-                .Select(p => new { Property = p, DependsOn = p.GetCustomAttributes(typeof(DependsOnAttribute), false) })
-                .Where(p => p.DependsOn.Any());
-
-            this.explicitDependencyMap =
-                new ExplicitDependencyMap(
-                    properties.Select(p => new ExplicitDependency(p.Property.Name, p.DependsOn.SelectMany(d => ((DependsOnAttribute)d).Dependencies))));
-
+            this.explicitDependencyMap = ExplicitDependencyAnalyzer.Analyze(type);
             this.childPropertyChangedProcessor = ChildPropertyChangedProcessor.CompileTimeCreate(type, analyzer.Value.MethodFieldDependencies);
         }
 
@@ -179,22 +201,21 @@ namespace PostSharp.Toolkit.Domain
             return clone;
         }
 
-        //[ImportMember("OnPropertyChanged")]
-        //public Action<string> OnPropertyChangedMethod;
-
-        //[IntroduceMember(Visibility = Visibility.Family, IsVirtual = true, OverrideAction = MemberOverrideAction.Ignore)]
-        //public void OnPropertyChanged(string propertyName)
-        //{
-        //    PropertyChangedEventHandler handler = this.PropertyChanged;
-        //    if (handler != null)
-        //    {
-        //        handler(this.Instance, new PropertyChangedEventArgs(propertyName));
-        //    }
-        //}
-
         //TODO: Serious problem: this will work only if the aspect is applied on the class declaring PropertyChanged and not at all if it's applied lower in the class hierarchy!
-        [IntroduceMember(OverrideAction = MemberOverrideAction.OverrideOrIgnore)]
+        [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
         public event PropertyChangedEventHandler PropertyChanged;
+
+        public void RaisePropertyChanged(string propertyName)
+        {
+            PropertyChangedEventHandler handler = this.PropertyChanged;
+            if (handler != null)
+            {
+                handler(this.Instance, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+
+        [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
+        public event EventHandler<NotifyChildPropertyChangedEventArgs> ChildPropertyChanged;
 
         public void RaiseChildPropertyChanged(NotifyChildPropertyChangedEventArgs args)
         {
@@ -204,19 +225,5 @@ namespace PostSharp.Toolkit.Domain
                 handler(this.Instance, args);
             }
         }
-
-        public void RaisePropertyChanged(string propertyName)
-        {
-            PropertyChangedEventHandler handler = this.PropertyChanged;
-            if (handler != null)
-            {
-                handler(this.Instance, new PropertyChangedEventArgs( propertyName ));
-            }
-        }
-
-        [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
-        public event EventHandler<NotifyChildPropertyChangedEventArgs> ChildPropertyChanged;
-
-        
     }
 }

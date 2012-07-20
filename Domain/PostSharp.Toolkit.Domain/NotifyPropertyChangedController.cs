@@ -9,12 +9,12 @@ namespace PostSharp.Toolkit.Domain
     {
         public static void RaiseEvents()
         {
-            throw new NotImplementedException();
+            PropertyChangesTracker.RaisePropertyChanged();
         }
 
         public static void RaiseEvents(object instance)
         {
-            throw new NotImplementedException();
+            PropertyChangesTracker.RaisePropertyChanged(instance);
         }
     }
 }
