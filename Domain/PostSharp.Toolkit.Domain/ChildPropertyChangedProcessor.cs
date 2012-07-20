@@ -12,40 +12,32 @@ namespace PostSharp.Toolkit.Domain
     [Serializable]
     internal sealed class ChildPropertyChangedProcessor
     {
-        private enum FieldType
-        {
-            ValueType,
-            ReferenceType
-        }
-
+        // collection of handelers attached to objects. Maintained to unhook handler when no longer needed.
         [NonSerialized]
         private Dictionary<string, NotifyChildPropertyChangedEventHandlerDescriptor> notifyChildPropertyChangedHandlers;
 
-        private Dictionary<string, FieldType> FieldTypes { get; set; }
+        // comparer to compare old and new value based on field type (reference, value)
+        private readonly FieldValueComparer fieldValueComparer;
 
-        private PropertyToFieldBiDirectionalMap propertyToFieldMapping;
+        // map connecting property to field if property depends exactly on one field. Moreover return types of property and field match.
+        private PropertyToFieldBiDirectionalBinding propertyToFieldBindings;
 
         private ChildPropertyChangedProcessor(ChildPropertyChangedProcessor prototype)
         {
-            this.FieldTypes = prototype.FieldTypes;
-            this.propertyToFieldMapping = new PropertyToFieldBiDirectionalMap( prototype.propertyToFieldMapping );
+            this.fieldValueComparer = prototype.fieldValueComparer;
+            this.propertyToFieldBindings = PropertyToFieldBiDirectionalBinding.CreateFromPrototype( prototype.propertyToFieldBindings );
         }
 
-        private ChildPropertyChangedProcessor(Type type, Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies)
+        private ChildPropertyChangedProcessor(Type type, Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies, FieldValueComparer fieldValueComparer)
         {
+            this.fieldValueComparer = fieldValueComparer;
             this.CompileTimeInitialize(type, methodFieldDependencies);
         }
 
         private void CompileTimeInitialize( Type type, Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies )
         {
-            var fieldTypes = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-                .ToDictionary(f => f.FullName(), f => f.FieldType.IsValueType ? FieldType.ValueType : FieldType.ReferenceType);
-
-            this.FieldTypes = fieldTypes.Union(
-                type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly).ToDictionary(
-                f => f.FullName(), f => f.PropertyType.IsValueType ? FieldType.ValueType : FieldType.ReferenceType)).ToDictionary(kv => kv.Key, kv => kv.Value);
-
-            this.propertyToFieldMapping = new PropertyToFieldBiDirectionalMap();
+            // build propertyToFieldBindings
+            this.propertyToFieldBindings = new PropertyToFieldBiDirectionalBinding();
 
             var allProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
@@ -56,37 +48,57 @@ namespace PostSharp.Toolkit.Domain
                     fieldList.Count == 1 &&
                     propertyInfo.PropertyType == fieldList.First().FieldType)
                 {
-                    this.propertyToFieldMapping.Add(propertyInfo.Name, new FieldByValueDependency(fieldList.First(), type));
+                    this.propertyToFieldBindings.AddBinding(propertyInfo.Name, fieldList.Single(), type);
                 }
             }
         }
 
+        // get properties affected by the change described in args
+        public IEnumerable<string> GetAffectedPaths(NotifyChildPropertyChangedEventArgs args)
+        {
+            int dotIndex = args.Path.IndexOf('.');
+            if (dotIndex == -1)
+            {
+                return Enumerable.Empty<string>();
+            }
+
+            string changedField = args.Path.Substring(0, dotIndex);
+            string changedPath = args.Path.Substring(dotIndex + 1);
+            return this.propertyToFieldBindings.GetDependentPropertiesBindings(changedField)
+                .Where(d => d.IsActive)
+                .Select(d => string.Format("{0}.{1}", d.PropertyName, changedPath));
+        }
+
+        // Initialize at runtime - compile field getters. Can't be done compile time becouse generated code is not serializable
         public void RuntimeInitialize()
         {
-            this.propertyToFieldMapping.RuntimeInitialize();
+            this.propertyToFieldBindings.RuntimeInitialize();
         }
 
         public void ProcessGet(LocationInterceptionArgs args)
         {
-            FieldByValueDependency dependentField;
-            if (this.propertyToFieldMapping.TryGetByProperty(args.LocationName, out dependentField))
+            FieldValueBinding sourceField;
+            // try find source field for property
+            if (this.propertyToFieldBindings.TryGetSourceFieldBinding(args.LocationName, out sourceField))
             {
-                object value = dependentField.Field.GetValue(args.Instance);
+                object value = sourceField.Field.GetValue(args.Instance);
 
                 if (ReferenceEquals(value, args.Value))
                 {
-                    dependentField.IsActive = true;
+                    // field and property values are equal, mark source field binding as active and if there is a handler hooked to the property un hook it
+                    sourceField.IsActive = true;
                     UnHookNotifyChildPropertyChangedHandler(args);
-
                 }
                 else
                 {
-                    dependentField.IsActive = false;
+                    // field and property values differ, mark source field binding as inactive and re hook a handler to the property
+                    sourceField.IsActive = false;
                     ReHookNotifyChildPropertyChangedHandler(args);
                 }
             }
             else
             {
+                // no source field binding just re hook property handler
                 ReHookNotifyChildPropertyChangedHandler(args);
             }
         }
@@ -97,7 +109,7 @@ namespace PostSharp.Toolkit.Domain
             
             if (this.notifyChildPropertyChangedHandlers.TryGetValue(args.LocationName, out handlerDescriptor) && handlerDescriptor.Reference.IsAlive)
             {
-                if (this.IsValueChanged(args.LocationFullName, args.Value, handlerDescriptor.Reference))
+                if (this.fieldValueComparer.IsValueChanged(args.LocationFullName, args.Value, handlerDescriptor.Reference))
                 {
                     this.UnHookNotifyChildPropertyChangedHandler(handlerDescriptor);
                     this.HookNotifyChildPropertyChangedHandler(args);
@@ -117,14 +129,6 @@ namespace PostSharp.Toolkit.Domain
             {
                 this.UnHookNotifyChildPropertyChangedHandler( handlerDescriptor );
             }
-        }
-
-        public bool IsValueChanged(string locationFullName, object currentValue, object newValue)
-        {
-            FieldType fieldType;
-            this.FieldTypes.TryGetValue(locationFullName, out fieldType);
-
-            return fieldType == FieldType.ValueType ? !Equals(currentValue, newValue) : !ReferenceEquals(currentValue, newValue);
         }
 
         private void GenericNotifyChildPropertyChangedEventHandler(string locationName, object instance, object sender, NotifyChildPropertyChangedEventArgs args)
@@ -157,6 +161,18 @@ namespace PostSharp.Toolkit.Domain
             }
         }
 
+       
+
+        public static ChildPropertyChangedProcessor CompileTimeCreate(Type type, Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies, FieldValueComparer fieldValueComparer)
+        {
+            return new ChildPropertyChangedProcessor(type, methodFieldDependencies, fieldValueComparer);
+        }
+
+        public static ChildPropertyChangedProcessor CreateFromPrototype(ChildPropertyChangedProcessor prototype)
+        {
+            return new ChildPropertyChangedProcessor(prototype) { notifyChildPropertyChangedHandlers = new Dictionary<string, NotifyChildPropertyChangedEventHandlerDescriptor>() };
+        }
+
         [Serializable]
         private sealed class NotifyChildPropertyChangedEventHandlerDescriptor
         {
@@ -169,31 +185,6 @@ namespace PostSharp.Toolkit.Domain
             public WeakReference Reference { get; private set; }
 
             public EventHandler<NotifyChildPropertyChangedEventArgs> Handler { get; private set; }
-        }
-
-        public static ChildPropertyChangedProcessor CompileTimeCreate(Type type, Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies)
-        {
-            return new ChildPropertyChangedProcessor(type, methodFieldDependencies);
-        }
-
-        public static ChildPropertyChangedProcessor CreateFromPrototype(ChildPropertyChangedProcessor prototype)
-        {
-            return new ChildPropertyChangedProcessor(prototype) {notifyChildPropertyChangedHandlers = new Dictionary<string, NotifyChildPropertyChangedEventHandlerDescriptor>()};
-        }
-
-        public IEnumerable<string> GetEffectedPaths( NotifyChildPropertyChangedEventArgs args )
-        {
-            int dotIndex = args.Path.IndexOf('.');
-            if(dotIndex == -1)
-            {
-                return Enumerable.Empty<string>();
-            }
-
-            string changedField = args.Path.Substring(0, dotIndex);
-            string changedPath = args.Path.Substring(dotIndex + 1);
-            return this.propertyToFieldMapping.GetByField(changedField)
-                .Where(d => d.Value.IsActive)
-                .Select(d => string.Format("{0}.{1}", d.Key, changedPath));
         }
     }
 }

@@ -59,10 +59,10 @@ namespace PostSharp.Toolkit.Domain
             return (methodInfo.Name == "ToString" && methodInfo.DeclaringType == typeof(object));
         }
 
-        public static bool IsIntrinsicArray(this Type type)
+        public static bool IsIntrinsicOrObjectArray(this Type type)
         {
             //TODO : feature decision about intrinsic colection
-            return type.IsArray && type.GetElementType().IsIntrinsic();
+            return type.IsArray && (type.GetElementType().IsIntrinsic() || type.GetElementType() == typeof(object));
         }
 
         public static bool IsIntrinsic(this Type type)
@@ -70,9 +70,9 @@ namespace PostSharp.Toolkit.Domain
             return type.IsPrimitive || type == typeof(string);
         }
 
-        public static bool HasOnlyIntrinsicParameters(this MethodBase methodInfo)
+       public static bool HasOnlyIntrinsicOrObjectParameters(this MethodBase methodInfo)
         {
-            return methodInfo.GetParameters().All( p => p.ParameterType.IsIntrinsic() || p.ParameterType.IsIntrinsicArray() );
+            return methodInfo.GetParameters().All(p => p.ParameterType.IsIntrinsic() || p.ParameterType.IsIntrinsicOrObjectArray() || p.ParameterType == typeof(object));
         }
     }
 }

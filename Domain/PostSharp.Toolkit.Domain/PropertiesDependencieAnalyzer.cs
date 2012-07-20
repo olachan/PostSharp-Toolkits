@@ -207,14 +207,16 @@ namespace PostSharp.Toolkit.Domain
             {
                 MethodInfo methodInfo = (MethodInfo)expression.Method;
 
-                if (methodInfo.IsObjectToString() || methodInfo.IsVoidNoRefOut() || methodInfo.IsIdempotentMethod() || methodInfo.IsInpcIgnoredMethod())
+                // Ignore void no ref/out, Idempotent, InpcIgnored methods
+                if (methodInfo.IsObjectToString() || methodInfo.IsVoidNoRefOut() || methodInfo.IsInpcIgnoredMethod() ||
+                    (methodInfo.IsIdempotentMethod() && expression.Arguments.All(e => e.ReturnType.IsIntrinsic() || e.ReturnType.IsIntrinsicOrObjectArray())))
                 {
                     return base.VisitMethodCallExpression(expression);
                 }
 
-                // Ignore void no ref/out, static framework and state independent methods
+                // Ignore static framework idempotent methods
                 if ((expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This) &&
-                    (methodInfo.IsFrameworkStaticMethod() && expression.Arguments.All(e => e.ReturnType.IsIntrinsic() || e.ReturnType.IsIntrinsicArray())))
+                    (methodInfo.IsFrameworkStaticMethod() && expression.Arguments.All(e => e.ReturnType.IsIntrinsic() || e.ReturnType.IsIntrinsicOrObjectArray())))
                 {
                     return base.VisitMethodCallExpression(expression);
                 }
@@ -222,10 +224,10 @@ namespace PostSharp.Toolkit.Domain
                 //Check for method calls on external objects
                 if (expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This)
                 {
+                    // emit error only fi we are not in NotifyPropertyChangedSafeProperty
                     if (!this.context.Current.IsNotifyPropertyChangedSafeProperty)
                     {
                         // Method contains call to non void (ref/out param) method of another class.
-
                         DomainMessageSource.Instance.Write(
                            this.context.Current.CurrentProperty,
                            SeverityType.Error,

@@ -37,8 +37,6 @@ namespace PostSharp.Toolkit.Domain
         [NonSerialized]
         private static Lazy<PropertiesDependencieAnalyzer> analyzer = new Lazy<PropertiesDependencieAnalyzer>();
 
-        // Compile-time use only
-
         // Used for serializing propertyDependencyMap
         private PropertyDependencySerializationStore propertyDependencySerializationStore;
 
@@ -46,6 +44,9 @@ namespace PostSharp.Toolkit.Domain
         private ExplicitDependencyMap explicitDependencyMap;
 
         private ChildPropertyChangedProcessor childPropertyChangedProcessor;
+
+        //camparer to compare old and new value based on field type (reference, value)
+        private FieldValueComparer fieldValueComparer;
 
 
         [OnSerializing]
@@ -76,7 +77,7 @@ namespace PostSharp.Toolkit.Domain
         [MethodPointcut("SelectFields")]
         public void OnFieldSet(LocationInterceptionArgs args)
         {
-            if (!this.childPropertyChangedProcessor.IsValueChanged(args.LocationFullName, args.GetCurrentValue(), args.Value))
+            if (!this.fieldValueComparer.IsValueChanged(args.LocationFullName, args.GetCurrentValue(), args.Value))
             {
                 args.ProceedSetValue();
                 return;
@@ -104,7 +105,7 @@ namespace PostSharp.Toolkit.Domain
 
             PropertyChangesTracker.StoreChangedProperties(this.Instance, changedProperties);
 
-            var paths = this.childPropertyChangedProcessor.GetEffectedPaths(args);
+            var paths = this.childPropertyChangedProcessor.GetAffectedPaths(args);
 
             PropertyChangesTracker.StoreChangedChildProperties(this.Instance, paths.ToList());
 
@@ -115,7 +116,6 @@ namespace PostSharp.Toolkit.Domain
         [OnLocationGetValueAdvice]
         [ProvideAspectRole("INPC_EventHook")]
         [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, "INPC_EventRaise")]
-        //[MulticastPointcut(Targets = MulticastTargets.Property)]
         [MethodPointcut("SelectProperties")]
         public void OnPropertyGet(LocationInterceptionArgs args)
         {
@@ -183,7 +183,8 @@ namespace PostSharp.Toolkit.Domain
             analyzer.Value.AnalyzeType(type);
 
             this.explicitDependencyMap = ExplicitDependencyAnalyzer.Analyze(type);
-            this.childPropertyChangedProcessor = ChildPropertyChangedProcessor.CompileTimeCreate(type, analyzer.Value.MethodFieldDependencies);
+            this.fieldValueComparer = new FieldValueComparer( type );
+            this.childPropertyChangedProcessor = ChildPropertyChangedProcessor.CompileTimeCreate(type, analyzer.Value.MethodFieldDependencies, this.fieldValueComparer);
         }
 
         public override void RuntimeInitializeInstance()
@@ -201,7 +202,6 @@ namespace PostSharp.Toolkit.Domain
             return clone;
         }
 
-        //TODO: Serious problem: this will work only if the aspect is applied on the class declaring PropertyChanged and not at all if it's applied lower in the class hierarchy!
         [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
         public event PropertyChangedEventHandler PropertyChanged;
 

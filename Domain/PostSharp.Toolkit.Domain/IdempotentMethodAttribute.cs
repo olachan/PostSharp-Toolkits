@@ -13,7 +13,7 @@ namespace PostSharp.Toolkit.Domain
     {
         public override bool CompileTimeValidate(MethodBase method)
         {
-            if (!method.HasOnlyIntrinsicParameters())
+            if (!method.HasOnlyIntrinsicOrObjectParameters())
             {
                 DomainMessageSource.Instance.Write( method, SeverityType.Error, "INPC004", method.FullName() );
                 return false;
