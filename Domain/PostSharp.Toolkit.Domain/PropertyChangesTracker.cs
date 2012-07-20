@@ -96,42 +96,57 @@ namespace PostSharp.Toolkit.Domain
 
         public static void RaisePropertyChanged()
         {
-            RaisePropertyChangesInternal( childPropertyChangesAcumulator.Value, true );
+            RaiseChildPropertyChanged();
             RaisePropertyChangesInternal(propertyChangesAcumulator.Value, false);
         }
 
-        private static void RaisePropertyChangesInternal( ChangedPropertiesAccumulator accumulator, bool raiseChildPropertyChanges )
+        public static void RaiseChildPropertyChanged()
+        {
+            RaisePropertyChangesInternal(childPropertyChangesAcumulator.Value, true);
+        }
+
+        private static void RaisePropertyChangesInternal(ChangedPropertiesAccumulator accumulator, bool raiseChildPropertyChanges)
         {
             accumulator.Compact();
 
-            List<WeakPropertyDescriptor> objectsToRaisePropertyChanged =
-                accumulator.Where( w => w.Instance.IsAlive && !stackTrace.Value.Contains( w.Instance.Target ) ).ToList();
+            List<WeakPropertyDescriptor> objectsToRaisePropertyChanged;
 
-            foreach ( WeakPropertyDescriptor w in objectsToRaisePropertyChanged )
+            do
             {
-                //INPC handler may raise INPC again and process some of our events;
-                //we're working on accumulator copy, so only way to know it is to have a flag on the descriptor
-                if ( w.Processed )
-                {
-                    continue;
-                }
+                objectsToRaisePropertyChanged =
+                    accumulator.Where( w => w.Instance.IsAlive && !stackTrace.Value.Contains( w.Instance.Target ) ).ToList();
 
-                w.Processed = true;
-                accumulator.Remove( w );
-                INotifyChildPropertyChanged cpc = w.Instance.Target as INotifyChildPropertyChanged;
-
-                if ( cpc != null ) //Target may not be alive any more
+                foreach ( WeakPropertyDescriptor w in objectsToRaisePropertyChanged )
                 {
-                    if (raiseChildPropertyChanges)
+                    //INPC handler may raise INPC again and process some of our events;
+                    //we're working on accumulator copy, so only way to know it is to have a flag on the descriptor
+                    if ( w.Processed )
                     {
-                        cpc.RaiseChildPropertyChanged(new NotifyChildPropertyChangedEventArgs(w.PropertyPath));
+                        continue;
                     }
-                    else
+
+                    w.Processed = true;
+                    accumulator.Remove( w );
+                    INotifyChildPropertyChanged cpc = w.Instance.Target as INotifyChildPropertyChanged;
+
+                    if ( cpc != null ) //Target may not be alive any more
                     {
-                        cpc.RaisePropertyChanged( w.PropertyPath );
+                        if ( raiseChildPropertyChanges )
+                        {
+                            cpc.RaiseChildPropertyChanged( new NotifyChildPropertyChangedEventArgs( w.PropertyPath ) );
+                        }
+                        else
+                        {
+                            cpc.RaisePropertyChanged( w.PropertyPath );
+                        }
                     }
                 }
-            }
+                //Notifications may cause generation of new notifications, continue until there is nothing left to raise
+            } while ( objectsToRaisePropertyChanged.Count > 0 );
+                
+            //TODO: Verify the loop above will always stop.
+            //If there's a risk it won't, call RaiseChildPropertyChanged from NPCAttribute.ChildPropertyChangedEventHandler to bubble up CNPC notifications
+            //(this may lead to a lot of unneccessary recursion, however, and a lot of continuations on w.Processed check above)
         }
     }
 }

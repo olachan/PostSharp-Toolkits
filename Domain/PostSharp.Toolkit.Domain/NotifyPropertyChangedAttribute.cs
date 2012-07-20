@@ -107,18 +107,28 @@ namespace PostSharp.Toolkit.Domain
             var paths = this.childPropertyChangedProcessor.GetEffectedPaths(args);
 
             PropertyChangesTracker.StoreChangedChildProperties(this.Instance, paths.ToList());
+
+            //Don't have to raise events here, because we're already in event raising loop which should pick up our new notifications
+            //PropertyChangesTracker.RaiseChildPropertyChanged();
         }
 
         [OnLocationGetValueAdvice]
         [ProvideAspectRole("INPC_EventHook")]
         [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, "INPC_EventRaise")]
-        [MulticastPointcut(Targets = MulticastTargets.Property)]
+        //[MulticastPointcut(Targets = MulticastTargets.Property)]
+        [MethodPointcut("SelectProperties")]
         public void OnPropertyGet(LocationInterceptionArgs args)
         {
             args.ProceedGetValue();
 
             this.childPropertyChangedProcessor.ProcessGet( args );
         }
+
+        private IEnumerable<PropertyInfo> SelectProperties(Type type)
+        {
+            return type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+        }
+
 
         [OnMethodInvokeAdvice]
         [ProvideAspectRole("INPC_EventRaise")]
