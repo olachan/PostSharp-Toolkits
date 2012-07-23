@@ -53,8 +53,7 @@ namespace PostSharp.Toolkit.Domain
                 return empty;
             }
 
-            return list.Select(p => this.propertyToFieldMapping[p])
-                .Where(d => d.IsActive).ToList();
+            return list.Select( p => this.propertyToFieldMapping[p] ).ToList();
         }
 
         public bool TryGetSourceFieldBinding(string property, out FieldValueBinding second)

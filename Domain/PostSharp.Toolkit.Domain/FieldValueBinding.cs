@@ -53,6 +53,7 @@ namespace PostSharp.Toolkit.Domain
             }
         }
 
+        // TODO: should be compiled and stored per field not per binding
         // Binding to field with compiled getter for performance
         [Serializable]
         internal sealed class FieldInfoWithCompiledGetter

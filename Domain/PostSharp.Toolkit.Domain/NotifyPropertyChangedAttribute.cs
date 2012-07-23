@@ -77,7 +77,7 @@ namespace PostSharp.Toolkit.Domain
         [MethodPointcut("SelectFields")]
         public void OnFieldSet(LocationInterceptionArgs args)
         {
-            if (!this.fieldValueComparer.IsValueChanged(args.LocationFullName, args.GetCurrentValue(), args.Value))
+            if (this.fieldValueComparer.AreEqual(args.LocationFullName, args.GetCurrentValue(), args.Value))
             {
                 args.ProceedSetValue();
                 return;
@@ -85,9 +85,9 @@ namespace PostSharp.Toolkit.Domain
 
             args.ProceedSetValue();
 
-            this.childPropertyChangedProcessor.ReHookNotifyChildPropertyChangedHandler(args);
+            this.childPropertyChangedProcessor.HandleFieldChange( args );
 
-            PropertyChangesTracker.HandleFieldChange(args);
+            PropertyChangesTracker.RaisePropertyChangedIfNeeded(args);
         }
 
         private IEnumerable<FieldInfo> SelectFields(Type type)
@@ -99,20 +99,6 @@ namespace PostSharp.Toolkit.Domain
                              explicitDependencyMap.GetDependentProperties(f.Name).Any());
         }
 
-        private void ChildPropertyChangedEventHandler(object sender, NotifyChildPropertyChangedEventArgs args)
-        {
-            List<string> changedProperties = this.explicitDependencyMap.GetDependentProperties(args.Path).ToList();
-
-            PropertyChangesTracker.StoreChangedProperties(this.Instance, changedProperties);
-
-            var paths = this.childPropertyChangedProcessor.GetAffectedPaths(args);
-
-            PropertyChangesTracker.StoreChangedChildProperties(this.Instance, paths.ToList());
-
-            //Don't have to raise events here, because we're already in event raising loop which should pick up our new notifications
-            //PropertyChangesTracker.RaiseChildPropertyChanged();
-        }
-
         [OnLocationGetValueAdvice]
         [ProvideAspectRole("INPC_EventHook")]
         [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, "INPC_EventRaise")]
@@ -121,14 +107,13 @@ namespace PostSharp.Toolkit.Domain
         {
             args.ProceedGetValue();
 
-            this.childPropertyChangedProcessor.ProcessGet(args);
+            this.childPropertyChangedProcessor.HandleGetProperty(args);
         }
 
         private IEnumerable<PropertyInfo> SelectProperties(Type type)
         {
             return type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
         }
-
 
         [OnMethodInvokeAdvice]
         [ProvideAspectRole("INPC_EventRaise")]
@@ -184,20 +169,20 @@ namespace PostSharp.Toolkit.Domain
 
             this.explicitDependencyMap = ExplicitDependencyAnalyzer.Analyze(type);
             this.fieldValueComparer = new FieldValueComparer( type );
-            this.childPropertyChangedProcessor = ChildPropertyChangedProcessor.CompileTimeCreate(type, analyzer.Value.MethodFieldDependencies, this.fieldValueComparer);
+            this.childPropertyChangedProcessor = ChildPropertyChangedProcessor.CompileTimeCreate(type, analyzer.Value.MethodFieldDependencies, this.fieldValueComparer, this.explicitDependencyMap);
         }
 
         public override void RuntimeInitializeInstance()
         {
             base.RuntimeInitializeInstance();
             childPropertyChangedProcessor.RuntimeInitialize();
-            ((INotifyChildPropertyChanged)this.Instance).ChildPropertyChanged += this.ChildPropertyChangedEventHandler;
+            // ((INotifyChildPropertyChanged)this.Instance).ChildPropertyChanged += this.ChildPropertyChangedEventHandler;
         }
 
         public override object CreateInstance(AdviceArgs adviceArgs)
         {
             NotifyPropertyChangedAttribute clone = (NotifyPropertyChangedAttribute)base.CreateInstance(adviceArgs);
-            clone.childPropertyChangedProcessor = ChildPropertyChangedProcessor.CreateFromPrototype(this.childPropertyChangedProcessor);
+            clone.childPropertyChangedProcessor = ChildPropertyChangedProcessor.CreateFromPrototype(this.childPropertyChangedProcessor, adviceArgs.Instance);
 
             return clone;
         }
