@@ -6,17 +6,21 @@ using PostSharp.Reflection;
 
 namespace PostSharp.Toolkit.Domain
 {
+    /// <summary>
+    /// Represents heuristically identified association of property value with a field.
+    /// Denotes that the last time the property getter was called it returned value of the field.
+    /// </summary>
     [Serializable]
-    internal sealed class FieldValueBinding : IEquatable<FieldValueBinding>
+    internal sealed class PropertyFieldBinding : IEquatable<PropertyFieldBinding>
     {
-        public FieldValueBinding(string propertyName, FieldInfo field, Type type)
+        public PropertyFieldBinding(string propertyName, FieldInfo field, Type type)
         {
             this.PropertyName = propertyName;
             this.Field = new FieldInfoWithCompiledGetter(field, type);
             this.IsActive = true;
         }
 
-        public FieldValueBinding(FieldValueBinding prototype)
+        public PropertyFieldBinding(PropertyFieldBinding prototype)
         {
             this.Field = prototype.Field;
             this.PropertyName = prototype.PropertyName;
@@ -31,11 +35,11 @@ namespace PostSharp.Toolkit.Domain
 
         public override bool Equals(object obj)
         {
-            FieldValueBinding other = obj as FieldValueBinding;
+            PropertyFieldBinding other = obj as PropertyFieldBinding;
             return this.Equals(other);
         }
 
-        public bool Equals(FieldValueBinding other)
+        public bool Equals(PropertyFieldBinding other)
         {
             if (other == null)
             {

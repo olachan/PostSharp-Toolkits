@@ -20,12 +20,12 @@ namespace PostSharp.Toolkit.Domain
         private readonly FieldValueComparer fieldValueComparer;
 
         // map connecting property to field if property depends exactly on one field. Moreover return types of property and field match.
-        private PropertyToFieldBiDirectionalBinding propertyToFieldBindings;
+        private PropertyFieldBindingsMap propertyFieldBindings;
 
         private ChildPropertyChangedProcessor(ChildPropertyChangedProcessor prototype)
         {
             this.fieldValueComparer = prototype.fieldValueComparer;
-            this.propertyToFieldBindings = PropertyToFieldBiDirectionalBinding.CreateFromPrototype( prototype.propertyToFieldBindings );
+            this.propertyFieldBindings = PropertyFieldBindingsMap.CreateFromPrototype( prototype.propertyFieldBindings );
         }
 
         private ChildPropertyChangedProcessor(Type type, Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies, FieldValueComparer fieldValueComparer)
@@ -36,8 +36,8 @@ namespace PostSharp.Toolkit.Domain
 
         private void CompileTimeInitialize( Type type, Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies )
         {
-            // build propertyToFieldBindings
-            this.propertyToFieldBindings = new PropertyToFieldBiDirectionalBinding();
+            // build propertyFieldBindings
+            this.propertyFieldBindings = new PropertyFieldBindingsMap();
 
             var allProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
@@ -48,7 +48,7 @@ namespace PostSharp.Toolkit.Domain
                     fieldList.Count == 1 &&
                     propertyInfo.PropertyType == fieldList.First().FieldType)
                 {
-                    this.propertyToFieldBindings.AddBinding(propertyInfo.Name, fieldList.Single(), type);
+                    this.propertyFieldBindings.AddBinding(propertyInfo.Name, fieldList.Single(), type);
                 }
             }
         }
@@ -64,22 +64,21 @@ namespace PostSharp.Toolkit.Domain
 
             string changedField = args.Path.Substring(0, dotIndex);
             string changedPath = args.Path.Substring(dotIndex + 1);
-            return this.propertyToFieldBindings.GetDependentPropertiesBindings(changedField)
-                .Where(d => d.IsActive)
+            return this.propertyFieldBindings.GetDependentPropertiesBindings(changedField)
                 .Select(d => string.Format("{0}.{1}", d.PropertyName, changedPath));
         }
 
         // Initialize at runtime - compile field getters. Can't be done compile time becouse generated code is not serializable
         public void RuntimeInitialize()
         {
-            this.propertyToFieldBindings.RuntimeInitialize();
+            this.propertyFieldBindings.RuntimeInitialize();
         }
 
         public void ProcessGet(LocationInterceptionArgs args)
         {
-            FieldValueBinding sourceField;
+            PropertyFieldBinding sourceField;
             // try find source field for property
-            if (this.propertyToFieldBindings.TryGetSourceFieldBinding(args.LocationName, out sourceField))
+            if (this.propertyFieldBindings.TryGetSourceFieldBinding(args.LocationName, out sourceField))
             {
                 object value = sourceField.Field.GetValue(args.Instance);
 
