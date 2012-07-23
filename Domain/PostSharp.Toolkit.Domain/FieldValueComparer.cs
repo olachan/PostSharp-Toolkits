@@ -26,12 +26,12 @@ namespace PostSharp.Toolkit.Domain
                     f => f.FullName(), f => f.PropertyType.IsValueType ? FieldType.ValueType : FieldType.ReferenceType)).ToDictionary(kv => kv.Key, kv => kv.Value);
         }
 
-        public bool IsValueChanged(string locationFullName, object currentValue, object newValue)
+        public bool AreEqual(string locationFullName, object currentValue, object newValue)
         {
             FieldType fieldType;
             this.FieldTypes.TryGetValue(locationFullName, out fieldType);
 
-            return fieldType == FieldType.ValueType ? !Equals(currentValue, newValue) : !ReferenceEquals(currentValue, newValue);
+            return fieldType == FieldType.ValueType ? Equals(currentValue, newValue) : ReferenceEquals(currentValue, newValue);
         }
     }
 }

@@ -106,7 +106,6 @@ namespace PostSharp.Toolkit.Domain.Tests
         }
 
         [Test]
- // Test showing problem when not executing getters
         public void TwoLevelDependsOn_ViaProperty_SideObjectChange()
         {
             TestHelpers.DoInpcTest<InpcWithManualDependencies>(
@@ -124,7 +123,6 @@ namespace PostSharp.Toolkit.Domain.Tests
         }
 
         [Test]
- // Test showing problem when not executing getters
         public void TwoLevelDependsOn_ViaProperty_PartlySideObjectChange()
         {
             TestHelpers.DoInpcTest<InpcWithManualDependencies>(
@@ -139,6 +137,46 @@ namespace PostSharp.Toolkit.Domain.Tests
                 },
                 4,
                 "ConcatFromSuperInnerObjectViaProperty");
+        }
+
+        [Test]
+        [Ignore]
+        public void CyclicDependsOn()
+        {
+            TestHelpers.DoInpcTest<InpcCyclicDependency>(
+                c =>
+                    { 
+                        c.Str1 = "sdaf";
+                        c.Str2 = "sdgfdsf";
+                    },
+                4,
+                "A");
+        }
+    }
+
+    [NotifyPropertyChanged]
+    public class InpcCyclicDependency
+    {
+        public string Str1;
+
+        public string Str2;
+
+        [DependsOn("B", "Str1")]
+        public string A
+        {
+            get
+            {
+                return this.Str1;
+            }
+        }
+        
+        [DependsOn("A", "Str2")]
+        public string B
+        {
+            get
+            {
+                return this.Str2;
+            }
         }
     }
 
@@ -182,7 +220,6 @@ namespace PostSharp.Toolkit.Domain.Tests
             c.Str2 = "sdjkafh";
         }
 
-        //TODO: Why does making this normal property cause stack overflow?
         public InpcSuperInnrClass SuperInnrObject { get; set; }
 
         public InpcSuperInnrClass SuperInnrObjectNonAuto

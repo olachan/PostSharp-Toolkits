@@ -63,15 +63,8 @@ namespace PostSharp.Toolkit.Domain
             return StackContext.Count == 0 ? null : StackContext.Peek();
         }
 
-        public static void HandleFieldChange(LocationInterceptionArgs args)
+        public static void RaisePropertyChangedIfNeeded(LocationInterceptionArgs args)
         {
-            List<string> propertyList;
-            if (FieldDependenciesMap.FieldDependentProperties.TryGetValue(args.LocationFullName, out propertyList))
-            {
-                StoreChangedProperties(args.Instance, propertyList);
-            }
-            StoreChangedChildProperty(args.Instance, args.LocationName);
-
             if (StackPeek() != args.Instance)
             {
                 RaisePropertyChanged();
@@ -80,7 +73,7 @@ namespace PostSharp.Toolkit.Domain
 
         public static void StoreChangedProperties(object instance, List<string> properties)
         {
-            StoreChangedChildProperties(instance, properties);
+            // StoreChangedChildProperties(instance, properties);
             PropertyChangesAccumulator.AddProperties(instance, properties);
         }
 
