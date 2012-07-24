@@ -7,35 +7,22 @@
     <BuildDirectory>..\..</BuildDirectory>
     <NuGet>..\..\Dependencies\NuGet\NuGet.exe</NuGet>
     <ImageDir>$(BuildDirectory)\Build\bin</ImageDir>
-    <IntermediateNuGetDir>$(ImageDir)\NuGet</IntermediateNuGetDir>
-    
-    <PostSharpDiagnosticsSpecDir>$(MSBuildProjectDirectory)\Logging</PostSharpDiagnosticsSpecDir>
-    <PostSharpDiagnosticsNLogSpecDir>$(MSBuildProjectDirectory)\Logging.NLog</PostSharpDiagnosticsNLogSpecDir>
-    <PostSharpDiagnosticsLog4NetSpecDir>$(MSBuildProjectDirectory)\Logging.Log4Net</PostSharpDiagnosticsLog4NetSpecDir>
-	<PostSharpThreadingSpecDir>$(MSBuildProjectDirectory)\Threading</PostSharpThreadingSpecDir>
+    <IntermediateNuGetDir>obj</IntermediateNuGetDir>
+    <OutputNuGetDir>$(ImageDir)\NuGet</OutputNuGetDir>
   </PropertyGroup>
   
   <ItemGroup>
-    <NuGetSourceFiles Include="**\*.nuspec" />
+    <NuGetSourceFiles Include="**\*.nuspec" Exclude="obj\**" />
   </ItemGroup>
   
   <Target Name="CreateSpecFiles" DependsOnTargets="GetRevisionNumber">
     <MakeDir Directories="$(IntermediateNugetDir)"/>
     <Copy SourceFiles="@(NuGetSourceFiles)" DestinationFolder="$(IntermediateNuGetDir)"/>
-    <FileUpdate Files="$(IntermediateNuGetDir)\PostSharpDiagnosticsToolkit.nuspec" Regex="_SRC_" ReplacementText="$(PostSharpDiagnosticsSpecDir)" />
-    <FileUpdate Files="$(IntermediateNuGetDir)\PostSharpDiagnosticsToolkit.nuspec" Regex="_VERSION_" ReplacementText="$(Version)" />
-    <FileUpdate Files="$(IntermediateNuGetDir)\PostSharpDiagnosticsToolkitForNLog.nuspec" Regex="_SRC_" ReplacementText="$(PostSharpDiagnosticsNLogSpecDir)" />
-    <FileUpdate Files="$(IntermediateNuGetDir)\PostSharpDiagnosticsToolkitForNLog.nuspec" Regex="_VERSION_" ReplacementText="$(Version)" />
-    <FileUpdate Files="$(IntermediateNuGetDir)\PostSharpDiagnosticsToolkitForLog4Net.nuspec" Regex="_SRC_" ReplacementText="$(PostSharpDiagnosticsLog4NetSpecDir)" />
-    <FileUpdate Files="$(IntermediateNuGetDir)\PostSharpDiagnosticsToolkitForLog4Net.nuspec" Regex="_VERSION_" ReplacementText="$(Version)" />
-	<FileUpdate Files="$(IntermediateNuGetDir)\PostSharpThreadingToolkit.nuspec" Regex="_SRC_" ReplacementText="$(PostSharpThreadingSpecDir)" />
-    <FileUpdate Files="$(IntermediateNuGetDir)\PostSharpThreadingToolkit.nuspec" Regex="_VERSION_" ReplacementText="$(Version)" />
+    <FileUpdate Files="$(IntermediateNuGetDir)\%(NuGetSourceFiles.Filename).nuspec" Regex="_SRC_" ReplacementText="%(NuGetSourceFiles.RootDir)%(NuGetSourceFiles.Directory)" />
+    <FileUpdate Files="$(IntermediateNuGetDir)\%(NuGetSourceFiles.Filename).nuspec" Regex="_VERSION_" ReplacementText="$(Version)" />
   </Target>
 
   <Target Name="Build" DependsOnTargets="CreateSpecFiles">
-    <Exec Command="$(NuGet) pack $(IntermediateNuGetDir)\PostSharpDiagnosticsToolkit.nuspec /BasePath $(ImageDir) /Verbose /OutputDirectory $(IntermediateNugetDir)" /> 
-    <Exec Command="$(NuGet) pack $(IntermediateNuGetDir)\PostSharpDiagnosticsToolkitForNLog.nuspec /BasePath $(ImageDir) /Verbose /OutputDirectory $(IntermediateNugetDir)" /> 
-    <Exec Command="$(NuGet) pack $(IntermediateNuGetDir)\PostSharpDiagnosticsToolkitForLog4Net.nuspec /BasePath $(ImageDir) /Verbose /OutputDirectory $(IntermediateNugetDir)" /> 
-	<Exec Command="$(NuGet) pack $(IntermediateNuGetDir)\PostSharpThreadingToolkit.nuspec /BasePath $(ImageDir) /Verbose /OutputDirectory $(IntermediateNugetDir)" /> 
+    <Exec Command="$(NuGet) pack $(IntermediateNuGetDir)\%(NuGetSourceFiles.Filename).nuspec /BasePath $(ImageDir) /Verbose /OutputDirectory $(OutputNuGetDir)" /> 
   </Target>
 </Project>

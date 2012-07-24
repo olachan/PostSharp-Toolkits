@@ -24,7 +24,7 @@
   <files>
     <file src="Release\PostSharp.Toolkit.Diagnostics.Weaver.NLog.dll" target="tools"/>
     <file src="Release\PostSharp.Toolkit.Diagnostics.Weaver.NLog.pdb" target="tools"/>
-    <file src="_SRC_\Tools\*.ps1" target="tools"/>
-    <file src="_SRC_\Content\PostSharpDummyFile.txt" target="content"/>
+    <file src="_SRC_Tools\*.ps1" target="tools"/>
+    <file src="_SRC_Content\PostSharpDummyFile.txt" target="content"/>
   </files>
 </package>

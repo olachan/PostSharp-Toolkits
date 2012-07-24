@@ -13,6 +13,10 @@
      <MSBuild Projects="PostSharp.Toolkits.sln" Properties="Configuration=Release;Platform=Any CPU" />
    </Target>
    
-   <Target Name="Build" DependsOnTargets="Prepare;QuickBuild" />
+   <Target Name="NuGet" DependsOnTargets="Prepare;QuickBuild">
+    <MSBuild Projects="Build\NuGet\NuGet.proj" />
+   </Target>
+   
+   <Target Name="Build" DependsOnTargets="NuGet" />
    	
 </Project>
