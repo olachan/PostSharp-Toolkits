@@ -1,12 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <package>
   <metadata>
-    <id>PostSharp-Threading-Toolkit</id>
+    <id>PostSharp.Toolkit.Domain</id>
     <version>_VERSION_</version>
-    <title>PostSharp Threading Toolkit</title>
+    <title>PostSharp Domain Toolkit</title>
     <authors>SharpCrafters s.r.o.</authors>
     <description>
-      A toolkit to add threading aspects, such as automatic method access synchronization, read-write locks on object etc.
+      INotifyPropertyChanged
     </description>
     <summary>
     </summary>
@@ -15,14 +15,12 @@
     <projectUrl>http://www.sharpcrafters.com/links/nuget-home</projectUrl>
     <iconUrl>http://www.sharpcrafters.com/nuget/icon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <tags>postsharp sharcrafters aop aspect toolkit toolkits threading synchronization lock locks</tags>
+    <tags>postsharp sharcrafters aop aspect toolkit toolkits INotifyPropertyChanged notifypropertychanged inpc</tags>
     <dependencies>
       <dependency id="PostSharp" version="2.1.7.1" />
     </dependencies>
   </metadata>
   <files>
-    <file src="Release\PostSharp.Toolkit.Threading.dll" target="lib"/>
-    <file src="Release\PostSharp.Toolkit.Threading.Weaver.dll" target="tools"/>
-    <file src="_SRC_Tools\*.ps1" target="tools"/>
+    <file src="Release\PostSharp.Toolkit.Domain.dll" target="lib"/>
   </files>
 </package>

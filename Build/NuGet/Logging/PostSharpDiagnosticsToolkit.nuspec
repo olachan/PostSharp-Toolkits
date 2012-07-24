@@ -25,6 +25,6 @@
     <file src="Release\PostSharp.Toolkit.Diagnostics.pdb" target="lib"/>
     <file src="Release\PostSharp.Toolkit.Diagnostics.Weaver.dll" target="tools"/>
     <file src="Release\PostSharp.Toolkit.Diagnostics.Weaver.pdb" target="tools"/>
-    <file src="_SRC_\Tools\*.ps1" target="tools"/>
+    <file src="_SRC_Tools\*.ps1" target="tools"/>
   </files>
 </package>
