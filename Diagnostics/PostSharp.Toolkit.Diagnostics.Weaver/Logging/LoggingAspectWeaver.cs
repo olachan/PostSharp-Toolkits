@@ -10,6 +10,7 @@
 using PostSharp.Extensibility;
 using PostSharp.Sdk.AspectWeaver;
 using PostSharp.Sdk.AspectWeaver.AspectWeavers;
+using PostSharp.Sdk.CodeModel;
 
 namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 {
@@ -49,6 +50,20 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             this.transformation = new LoggingAspectTransformation( this, this.instrumentationPlugIn.Backend );
 
             ApplyWaivedEffects( this.transformation );
+        }
+
+        public override bool ValidateAspectInstance(AspectInstanceInfo aspectInstanceInfo)
+        {
+            IMethod targetMethod = (IMethod) aspectInstanceInfo.TargetElement;
+            
+            if ( targetMethod.IsAbstract )
+            {
+                InstrumentationMessageSource.Instance.Write( targetMethod, SeverityType.Error, "DIA002", new object[]{ targetMethod } );
+                return false;
+            }
+
+            return true;
+
         }
 
         protected override AspectWeaverInstance CreateAspectWeaverInstance( AspectInstanceInfo aspectInstanceInfo )

@@ -14,12 +14,12 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver
 {
     internal static class InstrumentationMessageSource
     {
-        public static SdkMessageSource Instance = new SdkMessageSource( "PostSharp.Toolkit.Instrumentation", new InstrumentationMessageDispenser() );
+        public static readonly SdkMessageSource Instance = new SdkMessageSource( "PostSharp.Toolkit.Instrumentation", new InstrumentationMessageDispenser() );
 
         private class InstrumentationMessageDispenser : MessageDispenser
         {
             public InstrumentationMessageDispenser()
-                : base( "IN" )
+                : base( "DIA" )
             {
             }
 
@@ -29,6 +29,9 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver
                 {
                     case 1:
                         return "Cannot find the logging backend '{0}'. Make sure the correct plug-in is installed.";
+
+                    case 2:
+                        return "Cannot apply the [Log] aspect to method '{0}' because it is abstract.";
 
                     default:
                         return null;

@@ -23,6 +23,7 @@ namespace PostSharp.Toolkit.Diagnostics
         Inherited = false )]
     [MulticastAttributeUsage(
         MulticastTargets.InstanceConstructor | MulticastTargets.StaticConstructor | MulticastTargets.Method,
+        TargetMemberAttributes = MulticastAttributes.NonAbstract,
         AllowMultiple = true )]
     [Metric( "UsedFeatures", "Toolkit.Diagnostics.Logging" )]
     [AspectConfigurationAttributeType( typeof(LogAspectConfigurationAttribute) )]

@@ -49,7 +49,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver
 
             if ( this.backend == null )
             {
-                InstrumentationMessageSource.Instance.Write( MessageLocation.Unknown, SeverityType.Fatal, "IN0001",
+                InstrumentationMessageSource.Instance.Write( MessageLocation.Unknown, SeverityType.Fatal, "DIA0001",
                                                              loggingBackendName );
                 return;
             }
