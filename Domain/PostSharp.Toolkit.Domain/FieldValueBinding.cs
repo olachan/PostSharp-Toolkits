@@ -1,26 +1,23 @@
 using System;
-using System.Linq.Expressions;
 using System.Reflection;
-
-using PostSharp.Reflection;
 
 namespace PostSharp.Toolkit.Domain
 {
     [Serializable]
     internal sealed class FieldValueBinding : IEquatable<FieldValueBinding>
     {
-        public FieldValueBinding(string propertyName, FieldInfo field, Type type)
+        public FieldValueBinding(string propertyName, FieldInfoWithCompiledGetter field, bool isActive)
         {
             this.PropertyName = propertyName;
-            this.Field = new FieldInfoWithCompiledGetter(field, type);
-            this.IsActive = true;
+            this.Field = field;
+            this.IsActive = isActive;
         }
 
         public FieldValueBinding(FieldValueBinding prototype)
         {
             this.Field = prototype.Field;
             this.PropertyName = prototype.PropertyName;
-            this.IsActive = true;
+            this.IsActive = prototype.IsActive;
         }
 
         public FieldInfoWithCompiledGetter Field { get; private set; }
@@ -52,55 +49,8 @@ namespace PostSharp.Toolkit.Domain
                 return ((this.Field != null ? this.Field.FieldName.GetHashCode() : 0) * 397) ^ this.IsActive.GetHashCode();
             }
         }
-
-        // TODO: should be compiled and stored per field not per binding
-        // Binding to field with compiled getter for performance
-        [Serializable]
-        internal sealed class FieldInfoWithCompiledGetter
-        {
-            private readonly LocationInfo location;
-            private readonly Type type;
-
-            public FieldInfoWithCompiledGetter(FieldInfo field, Type type)
-            {
-                location = new LocationInfo(field);
-                this.type = type;
-            }
-
-            public string FieldName
-            {
-                get
-                {
-                    return location.Name;
-                }
-            }
-
-            public Func<object, object> GetValue { get; set; }
-
-            public void RuntimeInitialize()
-            {
-                if (GetValue == null)
-                {
-                    ParameterExpression objectParameterExpression = Expression.Parameter(typeof(object));
-                    UnaryExpression castExpression = Expression.Convert(objectParameterExpression, type);
-                    string locationName = (location.FieldInfo == null) ? location.PropertyInfo.Name : location.FieldInfo.Name;
-                    Expression fieldExpr = PropertyOrFieldCaseSensitive(castExpression, locationName);
-                    UnaryExpression resultCastExpression = Expression.Convert(fieldExpr, typeof(object));
-                    GetValue = Expression.Lambda<Func<object, object>>(resultCastExpression, objectParameterExpression).Compile();
-                }
-            }
-
-            public static MemberExpression PropertyOrFieldCaseSensitive(Expression expression, string propertyOrFieldName)
-            {
-                PropertyInfo property1 = expression.Type.GetProperty(propertyOrFieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
-                if (property1 != (PropertyInfo)null)
-                    return Expression.Property(expression, property1);
-                FieldInfo field1 = expression.Type.GetField(propertyOrFieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
-                if (field1 != (FieldInfo)null)
-                    return Expression.Field(expression, field1);
-                else
-                    throw new ArgumentException("Invalid field or property name");
-            }
-        }
     }
+
+    // TODO: should be compiled and stored per field not per binding
+    // Binding to field with compiled getter for performance
 }

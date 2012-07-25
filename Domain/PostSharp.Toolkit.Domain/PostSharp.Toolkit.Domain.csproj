@@ -83,6 +83,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ExplicitDependencyAnalyzer.cs" />
+    <Compile Include="FieldInfoWithCompiledGetter.cs" />
     <Compile Include="FieldValueBinding.cs" />
     <Compile Include="FieldValueComparer.cs" />
     <Compile Include="PropertyToFieldBiDirectionalBinding.cs" />

@@ -55,31 +55,48 @@ namespace PostSharp.Toolkit.Domain
 
         public void HandleGetProperty(LocationInterceptionArgs args)
         {
-            FieldValueBinding sourceField;
-            // TODO if there is no binding for the property we should scan all fields with return type matching return type of property and add binding if posible
-            // try find source field for property
-            if (this.propertyToFieldBindings.TryGetSourceFieldBinding(args.LocationName, out sourceField))
+            if (this.propertyToFieldBindings.RefreshPropertyBindings( args ))
             {
-                object value = sourceField.Field.GetValue(args.Instance);
-
-                if (fieldValueComparer.AreEqual(args.LocationFullName, value, args.Value))
-                {
-                    // field and property values are equal, mark source field binding as active and if there is a handler hooked to the property un hook it
-                    sourceField.IsActive = true;
-                    UnHookNotifyChildPropertyChangedHandler(args);
-                }
-                else
-                {
-                    // field and property values differ, mark source field binding as inactive and re hook a handler to the property
-                    sourceField.IsActive = false;
-                    ReHookNotifyChildPropertyChangedHandler(args);
-                }
+                UnHookNotifyChildPropertyChangedHandler(args);
             }
             else
             {
-                // no source field binding just re hook property handler
                 ReHookNotifyChildPropertyChangedHandler(args);
             }
+
+            //List<FieldValueBinding> sourceFields;
+            //// TODO if there is no binding for the property we should scan all fields with return type matching return type of property and add binding if posible
+            //// try find source field for property
+            //if (this.propertyToFieldBindings.TryGetSourceFieldBindings(args.LocationName, out sourceFields))
+            //{
+            //    foreach ( FieldValueBinding fieldValueBinding in sourceFields.OrderBy( f => f.IsActive ) )
+            //    {
+            //        object value = fieldValueBinding.Field.GetValue(args.Instance);
+
+            //        if (fieldValueComparer.AreEqual(args.LocationFullName, value, args.Value))
+            //        {
+            //            // field and property values are equal, mark source field binding as active and if there is a handler hooked to the property un hook it
+            //            if (fieldValueBinding.IsActive)
+            //            {
+            //                break;
+            //            }
+
+            //            fieldValueBinding.IsActive = true;
+            //            UnHookNotifyChildPropertyChangedHandler(args);
+            //        }
+            //        else
+            //        {
+            //            // field and property values differ, mark source field binding as inactive and re hook a handler to the property
+            //            fieldValueBinding.IsActive = false;
+            //            ReHookNotifyChildPropertyChangedHandler(args);
+            //        }
+            //    }
+            //}
+            //else
+            //{
+            //    // no source field binding just re hook property handler
+            //    ReHookNotifyChildPropertyChangedHandler(args);
+            //}
         }
 
         public void HandleFieldChange(LocationInterceptionArgs args)
@@ -200,7 +217,7 @@ namespace PostSharp.Toolkit.Domain
 
         public static ChildPropertyChangedProcessor CompileTimeCreate(Type type, Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies, FieldValueComparer fieldValueComparer, ExplicitDependencyMap explicitDependencyMap)
         {
-            PropertyToFieldBiDirectionalBinding propertyToFieldBindings = PropertyToFieldBindingGenerator.GenerateBindings( type, methodFieldDependencies );
+            PropertyToFieldBiDirectionalBinding propertyToFieldBindings = PropertyToFieldBindingGenerator.GenerateBindings( type, methodFieldDependencies, fieldValueComparer );
             return new ChildPropertyChangedProcessor(propertyToFieldBindings, fieldValueComparer, explicitDependencyMap);
         }
 
@@ -225,22 +242,20 @@ namespace PostSharp.Toolkit.Domain
 
         private static class PropertyToFieldBindingGenerator
         {
-            public static PropertyToFieldBiDirectionalBinding GenerateBindings(Type type, Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies)
+            public static PropertyToFieldBiDirectionalBinding GenerateBindings(Type type, Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies, FieldValueComparer fieldValueComparer)
             {
                 // build propertyToFieldBindings
-                PropertyToFieldBiDirectionalBinding propertyToFieldBindings = new PropertyToFieldBiDirectionalBinding();
+                PropertyToFieldBiDirectionalBinding propertyToFieldBindings = new PropertyToFieldBiDirectionalBinding(type, fieldValueComparer);
 
                 var allProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
                 foreach (PropertyInfo propertyInfo in allProperties)
                 {
-                    // TODO should add binding even if there are multiple fields that property depends on but only one with matching type
                     IList<FieldInfo> fieldList;
-                    if (methodFieldDependencies.TryGetValue(propertyInfo.GetGetMethod(), out fieldList) &&
-                        fieldList.Count == 1 &&
-                        propertyInfo.PropertyType == fieldList.First().FieldType)
+                    if (methodFieldDependencies.TryGetValue(propertyInfo.GetGetMethod(), out fieldList))
                     {
-                        propertyToFieldBindings.AddBinding(propertyInfo.Name, fieldList.Single(), type);
+                        var matchingFields = fieldList.Where(f => propertyInfo.PropertyType.IsAssignableFrom(f.FieldType)).ToList();
+                        propertyToFieldBindings.AddBindings(propertyInfo, matchingFields, type);
                     }
                 }
                 return propertyToFieldBindings;

@@ -44,6 +44,8 @@ namespace PostSharp.Toolkit.Domain
                         return "Type {0} implements INotifyPropertyChanged without implementing INotifyChildPropertyChanged";
                     case 6:
                         return "Base class of type {0} implements INotifyChildPropertyChanged or INotifyPropertyChanged but is not instrumented with NotifyPropertyChangedAttribute";
+                    case 7:
+                        return "Property {0} depends no more than 5 fields of matching type. Some optymalizations are not possible";
                     default:
                         return null;
                 }
