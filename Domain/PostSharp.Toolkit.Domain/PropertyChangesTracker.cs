@@ -90,21 +90,37 @@ namespace PostSharp.Toolkit.Domain
         public static void RaisePropertyChanged()
         {
             RaiseChildPropertyChanged();
-            RaisePropertyChangesInternal(propertyChangesAcumulator.Value, false);
+            RaisePropertyChangesInternal(
+                propertyChangesAcumulator.Value, 
+                false, 
+                w => w.Instance.IsAlive && !stackTrace.Value.Contains(w.Instance.Target));
         }
 
         public static void RaisePropertyChanged(object instance)
         {
             RaiseChildPropertyChanged();
-            RaisePropertyChangesInternal(propertyChangesAcumulator.Value, false, instance);
+            RaisePropertyChangesInternal(
+                propertyChangesAcumulator.Value, 
+                false, 
+                w => w.Instance.IsAlive && ReferenceEquals(w.Instance.Target, instance));
+        }
+
+        public static void RaisePropertyChangedIncludingCurrentObject()
+        {
+            object currentObject = StackPeek();
+            RaiseChildPropertyChanged();
+            RaisePropertyChangesInternal(
+                propertyChangesAcumulator.Value, 
+                false, 
+                w => w.Instance.IsAlive && (!stackTrace.Value.Contains(w.Instance.Target) || ReferenceEquals(w.Instance.Target, currentObject)));
         }
 
         public static void RaiseChildPropertyChanged()
         {
-            RaisePropertyChangesInternal(childPropertyChangesAcumulator.Value, true);
+            RaisePropertyChangesInternal(childPropertyChangesAcumulator.Value, true, w => w.Instance.IsAlive && !stackTrace.Value.Contains(w.Instance.Target));
         }
         
-        private static void RaisePropertyChangesInternal(ChangedPropertiesAccumulator accumulator, bool raiseChildPropertyChanges, object instance = null)
+        private static void RaisePropertyChangesInternal(ChangedPropertiesAccumulator accumulator, bool raiseChildPropertyChanges, Func<WeakPropertyDescriptor, bool> propertySelectorPredicate )
         {
             accumulator.Compact();
 
@@ -114,9 +130,7 @@ namespace PostSharp.Toolkit.Domain
 
             do
             {
-                objectsToRaisePropertyChanged = instance == null ? 
-                    accumulator.Where(w => w.Instance.IsAlive && !stackTrace.Value.Contains(w.Instance.Target)).ToList() : 
-                    accumulator.Where(w => w.Instance.IsAlive && ReferenceEquals(w.Instance.Target, instance)).ToList();
+                objectsToRaisePropertyChanged = accumulator.Where(propertySelectorPredicate).ToList();
 
                 foreach (WeakPropertyDescriptor w in objectsToRaisePropertyChanged)
                 {
@@ -151,5 +165,7 @@ namespace PostSharp.Toolkit.Domain
             //If there's a risk it won't, call RaiseChildPropertyChanged from NPCAttribute.ChildPropertyChangedEventHandler to bubble up CNPC notifications
             //(this may lead to a lot of unneccessary recursion, however, and a lot of continuations on w.Processed check above)
         }
+
+        
     }
 }

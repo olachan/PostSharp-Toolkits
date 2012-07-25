@@ -21,6 +21,7 @@ using PostSharp.Aspects.Advices;
 using PostSharp.Aspects.Dependencies;
 using PostSharp.Extensibility;
 using PostSharp.Reflection;
+using PostSharp.Constraints;
 
 namespace PostSharp.Toolkit.Domain
 {
