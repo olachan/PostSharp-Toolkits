@@ -21,6 +21,7 @@ using PostSharp.Aspects.Advices;
 using PostSharp.Aspects.Dependencies;
 using PostSharp.Extensibility;
 using PostSharp.Reflection;
+using PostSharp.Constraints;
 
 namespace PostSharp.Toolkit.Domain
 {
@@ -47,6 +48,8 @@ namespace PostSharp.Toolkit.Domain
 
         //camparer to compare old and new value based on field type (reference, value)
         private FieldValueComparer fieldValueComparer;
+
+        private bool initialized = false;
 
 
         [OnSerializing]
@@ -118,6 +121,7 @@ namespace PostSharp.Toolkit.Domain
         [OnMethodInvokeAdvice]
         [ProvideAspectRole("INPC_EventRaise")]
         [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.After, "INPC_EventHook")]
+        [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.After, "INPC_InitializersHook")]
         [MethodPointcut("SelectMethods")]
         public void OnMethodInvoke(MethodInterceptionArgs args)
         {
@@ -141,6 +145,29 @@ namespace PostSharp.Toolkit.Domain
             return
                 type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly).Where(
                     m => !m.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any());
+        }
+
+        // hook handlers to all fields that contain not null value before constructor execution (field initializer assigned values)
+        [OnMethodEntryAdvice]
+        [ProvideAspectRole("INPC_InitializersHook")]
+        [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, "INPC_EventRaise")]
+        [MethodPointcut("SelectConstructors")]
+        public void OnConstructorEntry(MethodExecutionArgs args)
+        {
+            if (initialized)
+            {
+                return;
+            }
+          
+            this.childPropertyChangedProcessor.HookHandlersToAllFields();
+
+            initialized = true;
+
+        }
+
+        private IEnumerable<MethodBase> SelectConstructors(Type type)
+        {
+            return type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
         }
 
         public override bool CompileTimeValidate(Type type)
@@ -176,12 +203,12 @@ namespace PostSharp.Toolkit.Domain
         {
             base.RuntimeInitializeInstance();
             childPropertyChangedProcessor.RuntimeInitialize();
-            // ((INotifyChildPropertyChanged)this.Instance).ChildPropertyChanged += this.ChildPropertyChangedEventHandler;
         }
 
         public override object CreateInstance(AdviceArgs adviceArgs)
         {
             NotifyPropertyChangedAttribute clone = (NotifyPropertyChangedAttribute)base.CreateInstance(adviceArgs);
+            clone.initialized = false;
             clone.childPropertyChangedProcessor = ChildPropertyChangedProcessor.CreateFromPrototype(this.childPropertyChangedProcessor, adviceArgs.Instance);
 
             return clone;
