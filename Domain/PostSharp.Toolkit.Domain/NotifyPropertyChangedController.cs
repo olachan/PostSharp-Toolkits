@@ -9,7 +9,7 @@ namespace PostSharp.Toolkit.Domain
     {
         public static void RaiseEvents()
         {
-            PropertyChangesTracker.RaisePropertyChanged();
+            PropertyChangesTracker.RaisePropertyChangedIncludingCurrentObject();
         }
 
         public static void RaiseEvents(object instance)

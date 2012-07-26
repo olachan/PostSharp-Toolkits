@@ -17,7 +17,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <tags>postsharp sharcrafters aop aspect toolkit toolkits INotifyPropertyChanged notifypropertychanged inpc</tags>
     <dependencies>
-      <dependency id="PostSharp" version="2.1.7.1" />
+      <dependency id="PostSharp" version="2.1.7.5" />
     </dependencies>
   </metadata>
   <files>

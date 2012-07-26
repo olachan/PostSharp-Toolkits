@@ -26,6 +26,18 @@ namespace PostSharp.Toolkit.Domain
             return false;
         }
 
+        public static void AddToListValue<TKey, TValue>(this Dictionary<TKey, List<TValue>> dictionary, TKey key, TValue value)
+        {
+            List<TValue> list;
+            if (!dictionary.TryGetValue(key, out list))
+            {
+                list = new List<TValue>();
+                dictionary.Add(key, list);
+            }
+
+            list.Add(value);
+        }
+
         public static bool AddIfNew<TKey, TValue>(
             this ConditionalWeakTable<TKey, IList<TValue>> dictionary, TKey obj, TValue item, Func<IList<TValue>> listFactory = null ) where TKey : class
         {
