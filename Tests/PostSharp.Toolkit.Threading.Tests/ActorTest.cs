@@ -23,15 +23,15 @@ namespace PostSharp.Toolkit.Threading.Tests
             ActorClass actorClass = new ActorClass();
             Task[] tasks = new Task[10];
 
-            for ( int i = 0; i < tasks.Length; i++ )
+            for (int i = 0; i < tasks.Length; i++)
             {
-                tasks[i] = new Task( actorClass.Foo );
+                tasks[i] = new Task(actorClass.Foo);
                 tasks[i].Start();
             }
 
             Assert.True(actorClass.CountdownEvent.Wait(10000));
 
-            Assert.AreEqual( 10, actorClass.Count );
+            Assert.AreEqual(10, actorClass.Count);
         }
 
         [Test]
@@ -40,58 +40,66 @@ namespace PostSharp.Toolkit.Threading.Tests
             const int n = 1000000;
             ActorClass[] actors = new ActorClass[Environment.ProcessorCount - 1];
 
-            for ( int i = 0; i < actors.Length; i++ )
+            for (int i = 0; i < actors.Length; i++)
             {
                 actors[i] = new ActorClass();
             }
 
 
-            for ( int i = 0; i < n; i++ )
+            for (int i = 0; i < n; i++)
             {
-                for ( int j = 0; j < actors.Length; j++ )
+                for (int j = 0; j < actors.Length; j++)
                 {
                     actors[j].Fast();
                 }
             }
 
             ManualResetEvent[] readyHandles = new ManualResetEvent[actors.Length];
-            for ( int i = 0; i < actors.Length; i++ )
+            for (int i = 0; i < actors.Length; i++)
             {
-                actors[i].Set( readyHandles[i] = new ManualResetEvent( false ) );
+                actors[i].Set(readyHandles[i] = new ManualResetEvent(false));
             }
 
-            if ( !WaitHandle.WaitAll( readyHandles, 20000 ) )
+            if (!WaitHandle.WaitAll(readyHandles, 20000))
                 throw new TimeoutException();
         }
     }
 
     internal class ActorClass : Actor
     {
-        public CountdownEvent CountdownEvent { [ThreadSafe]
-        get; [ThreadSafe]
-        set; }
+        public CountdownEvent CountdownEvent
+        {
+            [ThreadSafe]
+            get;
+            [ThreadSafe]
+            set;
+        }
 
-        public int Count { [ThreadSafe]
-        get; [ThreadSafe]
-        set; }
+        public int Count
+        {
+            [ThreadSafe]
+            get;
+            [ThreadSafe]
+            set;
+        }
 
         public ActorClass()
         {
-            this.CountdownEvent = new CountdownEvent( 10 );
+            this.CountdownEvent = new CountdownEvent(10);
         }
 
         public void Foo()
         {
-            if ( !Monitor.TryEnter( this ) )
+            if (!Monitor.TryEnter(this))
             {
                 throw new ThreadingException();
             }
 
             this.Count++;
 
-            Thread.Sleep( 100 );
+            Thread.Sleep(100);
             this.CountdownEvent.Signal();
-            Monitor.Exit( this );
+            Monitor.Exit(this);
         }
 
         public void Fast()
@@ -99,7 +107,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             this.Count++;
         }
 
-        public void Set( ManualResetEvent waitHandle )
+        public void Set(ManualResetEvent waitHandle)
         {
             waitHandle.Set();
         }
@@ -107,7 +115,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         [ThreadSafe]
         public override string ToString()
         {
-            return string.Format( "Actor Count={0}", this.Count );
+            return string.Format("Actor Count={0}", this.Count);
         }
     }
 }

@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>PostSharp.Toolkit.Diagnostics</id>
+    <version>{VERSION}</version>
+    <title>PostSharp Diagnostics Toolkit</title>
+    <authors>SharpCrafters s.r.o.</authors>
+    <description>
+      An official PostSharp toolkit. Adds detailed tracing to any method without modifying your source code. Several backends
+      are available as separate NuGet packages.
+    </description>
+    <summary>
+    </summary>
+    <language>en-US</language>
+    <licenseUrl>http://www.sharpcrafters.com/links/nuget-license</licenseUrl>
+    <projectUrl>http://www.sharpcrafters.com/links/nuget-home</projectUrl>
+    <iconUrl>http://www.sharpcrafters.com/nuget/icon.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <tags>postsharp sharcrafters aop aspect monitoring instrumentation log logging tracing nlog log4net elmah toolkit toolkits</tags>
+    <dependencies>
+      <dependency id="PostSharp" version="{POSTSHARP_VERSION}" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="Release\PostSharp.Toolkit.Diagnostics.dll" target="lib\net40"/>
+    <file src="Release\PostSharp.Toolkit.Diagnostics.pdb" target="lib\net40"/>
+    <file src="Release\PostSharp.Toolkit.Diagnostics.Weaver.dll" target="tools"/>
+    <file src="Release\PostSharp.Toolkit.Diagnostics.Weaver.pdb" target="tools"/>
+    <file src="{SRC}Tools\*.ps1" target="tools"/>
+    <file src="functions.ps1" target="tools"/>
+  </files>
+</package>

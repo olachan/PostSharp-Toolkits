@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>PostSharp.Toolkit.Threading</id>
+    <version>{VERSION}</version>
+    <title>PostSharp Threading Toolkit</title>
+    <authors>SharpCrafters s.r.o.</authors>
+    <description>
+      Official threading aspects from the makers of PostSharp. Implements locking models (thread unsafe, reader-writer synchronized, actor),
+      thread synchronization aspects (to background thread, to UI thread), and a deadlock detection facility.
+    </description>
+    <summary>
+    </summary>
+    <language>en-US</language>
+    <licenseUrl>http://www.sharpcrafters.com/links/nuget-license</licenseUrl>
+    <projectUrl>http://www.sharpcrafters.com/links/nuget-home</projectUrl>
+    <iconUrl>http://www.sharpcrafters.com/nuget/icon.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <tags>postsharp sharcrafters aop aspect toolkit toolkits threading synchronization lock locks deadlock parallel powerthreading retlang concurrent</tags>
+    <dependencies>
+      <dependency id="PostSharp" version="{POSTSHARP_VERSION}" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="Release\PostSharp.Toolkit.Threading.dll" target="lib\net40"/>
+    <file src="Release\PostSharp.Toolkit.Threading.Weaver.dll" target="tools"/>
+    <file src="{SRC}Tools\*.ps1" target="tools"/>
+    <file src="{SRC}..\functions.ps1" target="tools"/>
+  </files>
+</package>

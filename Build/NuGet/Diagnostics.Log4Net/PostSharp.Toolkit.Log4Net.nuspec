@@ -1,12 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <package>
   <metadata>
-    <id>PostSharp-Diagnostics-Toolkit-Log4Net</id>
-    <version>_VERSION_</version>
+    <id>PostSharp.Toolkit.Diagnostics.Log4Net</id>
+    <version>{VERSION}</version>
     <title>PostSharp Diagnostics Toolkit for Log4Net</title>
     <authors>SharpCrafters s.r.o.</authors>
     <description>
-      Adds Log4Net support for the PostSharp Diagnostics Toolkit.
+      Adds support for Log4Net to PostSharp.Toolkit.Diagnostics.
     </description>
     <summary>
     </summary>
@@ -15,16 +15,16 @@
     <projectUrl>http://www.sharpcrafters.com/links/nuget-home</projectUrl>
     <iconUrl>http://www.sharpcrafters.com/nuget/icon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <tags>postsharp sharcrafters aop aspect monitoring instrumentation log logging tracing nlog log4net elmah toolkit toolkits</tags>
+    <tags>postsharp sharcrafters aop aspect monitoring instrumentation log logging tracing log4net toolkit toolkits</tags>
     <dependencies>
-      <dependency id="PostSharp-Diagnostics-Toolkit" version="_VERSION_" />
+      <dependency id="PostSharp.Toolkit.Diagnostics" version="{VERSION}" />
       <dependency id="log4net" version="2.0.0" />
     </dependencies>
   </metadata>
   <files>
     <file src="Release\PostSharp.Toolkit.Diagnostics.Weaver.Log4Net.dll" target="tools"/>
     <file src="Release\PostSharp.Toolkit.Diagnostics.Weaver.Log4Net.pdb" target="tools"/>
-    <file src="_SRC_Tools\*.ps1" target="tools"/>
-    <file src="_SRC_Content\PostSharpDummyFile.txt" target="content"/>
+    <file src="{SRC}Tools\*.ps1" target="tools"/>
+    <file src="functions.ps1" target="tools"/>
   </files>
 </package>

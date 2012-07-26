@@ -2,11 +2,11 @@
 <package>
   <metadata>
     <id>PostSharp-Threading-Toolkit</id>
-    <version>_VERSION_</version>
+    <version>{VERSION}</version>
     <title>PostSharp Threading Toolkit</title>
     <authors>SharpCrafters s.r.o.</authors>
     <description>
-      A toolkit to add threading aspects, such as automatic method access synchronization, read-write locks on object etc.
+      A renaming package. Use PostSharp.Toolkit.Threading for new developments.
     </description>
     <summary>
     </summary>
@@ -15,14 +15,11 @@
     <projectUrl>http://www.sharpcrafters.com/links/nuget-home</projectUrl>
     <iconUrl>http://www.sharpcrafters.com/nuget/icon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <tags>postsharp sharcrafters aop aspect toolkit toolkits threading synchronization lock locks</tags>
+    <tags>postsharp sharcrafters aop aspect monitoring instrumentation log logging tracing nlog log4net elmah toolkit toolkits</tags>
     <dependencies>
-      <dependency id="PostSharp" version="2.1.7.5" />
+      <dependency id="PostSharp.Toolkit.Threading" version="{VERSION}" />
     </dependencies>
   </metadata>
-  <files>
-    <file src="Release\PostSharp.Toolkit.Threading.dll" target="lib"/>
-    <file src="Release\PostSharp.Toolkit.Threading.Weaver.dll" target="tools"/>
-    <file src="_SRC_Tools\*.ps1" target="tools"/>
+    <files>
   </files>
 </package>

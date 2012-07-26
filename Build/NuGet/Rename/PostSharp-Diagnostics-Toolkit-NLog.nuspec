@@ -2,11 +2,11 @@
 <package>
   <metadata>
     <id>PostSharp-Diagnostics-Toolkit-NLog</id>
-    <version>_VERSION_</version>
+    <version>{VERSION}</version>
     <title>PostSharp Diagnostics Toolkit for NLog</title>
     <authors>SharpCrafters s.r.o.</authors>
     <description>
-      Adds NLog support for the PostSharp Diagnostics Toolkit.
+      A renaming package. Use PostSharp.Toolkit.Diagnostics.NLog for new developments.
     </description>
     <summary>
     </summary>
@@ -15,16 +15,11 @@
     <projectUrl>http://www.sharpcrafters.com/links/nuget-home</projectUrl>
     <iconUrl>http://www.sharpcrafters.com/nuget/icon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <tags>postsharp sharcrafters aop aspect monitoring instrumentation log logging tracing nlog log4net elmah toolkit toolkits</tags>
+    <tags>postsharp sharcrafters aop aspect monitoring instrumentation log logging tracing nlog NLog elmah toolkit toolkits</tags>
     <dependencies>
-      <dependency id="PostSharp-Diagnostics-Toolkit" version="_VERSION_" />
-      <dependency id="NLog" version="2.0.0.2000" />
+      <dependency id="PostSharp.Toolkit.Diagnostics.NLog" version="{VERSION}" />
     </dependencies>
   </metadata>
-  <files>
-    <file src="Release\PostSharp.Toolkit.Diagnostics.Weaver.NLog.dll" target="tools"/>
-    <file src="Release\PostSharp.Toolkit.Diagnostics.Weaver.NLog.pdb" target="tools"/>
-    <file src="_SRC_Tools\*.ps1" target="tools"/>
-    <file src="_SRC_Content\PostSharpDummyFile.txt" target="content"/>
+    <files>
   </files>
 </package>

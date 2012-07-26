@@ -18,8 +18,10 @@
   <Target Name="CreateSpecFiles" DependsOnTargets="GetRevisionNumber">
     <MakeDir Directories="$(IntermediateNugetDir)"/>
     <Copy SourceFiles="@(NuGetSourceFiles)" DestinationFolder="$(IntermediateNuGetDir)"/>
-    <FileUpdate Files="$(IntermediateNuGetDir)\%(NuGetSourceFiles.Filename).nuspec" Regex="_SRC_" ReplacementText="%(NuGetSourceFiles.RootDir)%(NuGetSourceFiles.Directory)" />
-    <FileUpdate Files="$(IntermediateNuGetDir)\%(NuGetSourceFiles.Filename).nuspec" Regex="_VERSION_" ReplacementText="$(Version)" />
+    <Copy SourceFiles="functions.ps1" DestinationFolder=" $(ImageDir)"/>
+    <FileUpdate Files="$(IntermediateNuGetDir)\%(NuGetSourceFiles.Filename).nuspec" Regex="{SRC}" ReplacementText="%(NuGetSourceFiles.RootDir)%(NuGetSourceFiles.Directory)" />
+    <FileUpdate Files="$(IntermediateNuGetDir)\%(NuGetSourceFiles.Filename).nuspec" Regex="{VERSION}" ReplacementText="$(Version)" />
+    <FileUpdate Files="$(IntermediateNuGetDir)\%(NuGetSourceFiles.Filename).nuspec" Regex="{POSTSHARP_VERSION}" ReplacementText="2.1.7.5" />
   </Target>
 
   <Target Name="Build" DependsOnTargets="CreateSpecFiles">
