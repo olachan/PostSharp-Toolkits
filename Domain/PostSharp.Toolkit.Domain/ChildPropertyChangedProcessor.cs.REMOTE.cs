@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -23,7 +22,7 @@ namespace PostSharp.Toolkit.Domain
         private readonly ExplicitDependencyMap explicitDependencyMap;
 
         // map connecting property to field if property depends exactly on one field. Moreover return types of property and field match.
-        private readonly PropertyFieldBindingsMap propertyToFieldBindings;
+        private readonly PropertyToFieldBiDirectionalBinding propertyToFieldBindings;
 
         private readonly object instance;
 
@@ -32,12 +31,12 @@ namespace PostSharp.Toolkit.Domain
             this.instance = instance;
             this.fieldValueComparer = prototype.fieldValueComparer;
             this.explicitDependencyMap = prototype.explicitDependencyMap;
-            this.propertyToFieldBindings = PropertyFieldBindingsMap.CreateFromPrototype(prototype.propertyToFieldBindings);
+            this.propertyToFieldBindings = PropertyToFieldBiDirectionalBinding.CreateFromPrototype(prototype.propertyToFieldBindings);
             this.notifyChildPropertyChangedHandlers = new Dictionary<string, NotifyChildPropertyChangedEventHandlerDescriptor>();
         }
 
         private ChildPropertyChangedProcessor(
-            PropertyFieldBindingsMap propertyToFieldBindings, 
+            PropertyToFieldBiDirectionalBinding propertyToFieldBindings, 
             FieldValueComparer fieldValueComparer, 
             ExplicitDependencyMap explicitDependencyMap)
         {
@@ -56,7 +55,7 @@ namespace PostSharp.Toolkit.Domain
 
         public void HandleGetProperty(LocationInterceptionArgs args)
         {
-            PropertyFieldBinding sourceField;
+            FieldValueBinding sourceField;
             // TODO if there is no binding for the property we should scan all fields with return type matching return type of property and add binding if posible
             // try find source field for property
             if (this.propertyToFieldBindings.TryGetSourceFieldBinding(args.LocationName, out sourceField))
@@ -106,7 +105,7 @@ namespace PostSharp.Toolkit.Domain
             this.ReHookNotifyChildPropertyChangedHandler(args);
         }
 
-        private void NotifyChildPropertyChangedEventHandler(string locationName, ChildPropertyChangedEventArgs args)
+        private void NotifyChildPropertyChangedEventHandler(string locationName, NotifyChildPropertyChangedEventArgs args)
         {
             this.ChildPropertyChanged(new List<string> { string.Format("{0}.{1}", locationName, args.Path) });
         }
@@ -179,29 +178,29 @@ namespace PostSharp.Toolkit.Domain
 
         private void UnHookNotifyChildPropertyChangedHandler(NotifyChildPropertyChangedEventHandlerDescriptor handlerDescriptor)
         {
-            object currentValue = handlerDescriptor.Reference.Target;
+            INotifyChildPropertyChanged currentValue = handlerDescriptor.Reference.Target as INotifyChildPropertyChanged;
             if (currentValue != null)
             {
-                NotifyPropertyChangedAccessor.RemoveChildPropertyChangedHandler( currentValue, handlerDescriptor.Handler );
+                currentValue.ChildPropertyChanged -= handlerDescriptor.Handler;
             }
         }
 
         private void HookNotifyChildPropertyChangedHandler(LocationInterceptionArgs args)
         {
-            object currentValue = args.Value as INotifyPropertyChanged;
+            INotifyChildPropertyChanged currentValue = args.Value as INotifyChildPropertyChanged;
             if (currentValue != null)
             {
                 string locationName = args.LocationName;
                 NotifyChildPropertyChangedEventHandlerDescriptor handlerDescriptor =
                     new NotifyChildPropertyChangedEventHandlerDescriptor(currentValue, (_, a) => this.NotifyChildPropertyChangedEventHandler(locationName, a));
                 this.notifyChildPropertyChangedHandlers.AddOrUpdate(locationName, handlerDescriptor);
-                NotifyPropertyChangedAccessor.AddChildPropertyChangedHandler( currentValue, handlerDescriptor.Handler );
+                currentValue.ChildPropertyChanged += handlerDescriptor.Handler;
             }
         }
 
         public static ChildPropertyChangedProcessor CompileTimeCreate(Type type, Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies, FieldValueComparer fieldValueComparer, ExplicitDependencyMap explicitDependencyMap)
         {
-            PropertyFieldBindingsMap propertyToFieldBindings = PropertyToFieldBindingGenerator.GenerateBindings(type, methodFieldDependencies);
+            PropertyToFieldBiDirectionalBinding propertyToFieldBindings = PropertyToFieldBindingGenerator.GenerateBindings( type, methodFieldDependencies );
             return new ChildPropertyChangedProcessor(propertyToFieldBindings, fieldValueComparer, explicitDependencyMap);
         }
 
@@ -213,7 +212,7 @@ namespace PostSharp.Toolkit.Domain
         [Serializable]
         private sealed class NotifyChildPropertyChangedEventHandlerDescriptor
         {
-            public NotifyChildPropertyChangedEventHandlerDescriptor(object reference, EventHandler<ChildPropertyChangedEventArgs> handler)
+            public NotifyChildPropertyChangedEventHandlerDescriptor(object reference, EventHandler<NotifyChildPropertyChangedEventArgs> handler)
             {
                 this.Reference = new WeakReference(reference);
                 this.Handler = handler;
@@ -221,15 +220,15 @@ namespace PostSharp.Toolkit.Domain
 
             public WeakReference Reference { get; private set; }
 
-            public EventHandler<ChildPropertyChangedEventArgs> Handler { get; private set; }
+            public EventHandler<NotifyChildPropertyChangedEventArgs> Handler { get; private set; }
         }
 
         private static class PropertyToFieldBindingGenerator
         {
-            public static PropertyFieldBindingsMap GenerateBindings(Type type, Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies)
+            public static PropertyToFieldBiDirectionalBinding GenerateBindings(Type type, Dictionary<MethodBase, IList<FieldInfo>> methodFieldDependencies)
             {
                 // build propertyToFieldBindings
-                PropertyFieldBindingsMap propertyToFieldBindings = new PropertyFieldBindingsMap();
+                PropertyToFieldBiDirectionalBinding propertyToFieldBindings = new PropertyToFieldBiDirectionalBinding();
 
                 var allProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 

@@ -83,6 +83,7 @@ namespace PostSharp.Toolkit.Domain
 
             public void RuntimeInitialize()
             {
+                //Cannot build it compile-time because fields are being replaced with properties during compilation
                 if (GetValue == null)
                 {
                     ParameterExpression objectParameterExpression = Expression.Parameter(typeof(object));

@@ -83,6 +83,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ExplicitDependencyAnalyzer.cs" />
+    <Compile Include="NotifyPropertyChangedAccessor.cs" />
     <Compile Include="PropertyFieldBinding.cs" />
     <Compile Include="FieldValueComparer.cs" />
     <Compile Include="PropertyFieldBindingsMap.cs" />
@@ -94,14 +95,13 @@
     <Compile Include="DomainMessageSource.cs" />
     <Compile Include="IdempotentMethodAttribute.cs" />
     <Compile Include="INestableContext.cs" />
-    <Compile Include="INotifyChildPropertyChanged.cs" />
     <Compile Include="ChildPropertyChangedProcessor.cs" />
     <Compile Include="NotifyPropertyChangedController.cs" />
     <Compile Include="NotifyPropertyChangedSafeAttribute.cs" />
     <Compile Include="NestableContext.cs" />
     <Compile Include="NestableContextInfo.cs" />
     <Compile Include="NotifyPropertyChangedIgnoreAttribute.cs" />
-    <Compile Include="NotifyChildPropertyChangedEventArgs.cs" />
+    <Compile Include="ChildPropertyChangedEventArgs.cs" />
     <Compile Include="PropertiesDependencieAnalyzer.cs" />
     <Compile Include="NotifyPropertyChangedAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -18,7 +18,10 @@ using System.Runtime.Serialization;
 
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
+using PostSharp.Aspects.Configuration;
 using PostSharp.Aspects.Dependencies;
+using PostSharp.Aspects.Serialization;
+using PostSharp.Constraints;
 using PostSharp.Extensibility;
 using PostSharp.Reflection;
 
@@ -29,9 +32,7 @@ namespace PostSharp.Toolkit.Domain
     /// </summary>
     [Serializable]
     [MulticastAttributeUsage(MulticastTargets.Class, Inheritance = MulticastInheritance.Strict, PersistMetaData = true)]
-    [IntroduceInterface(typeof(INotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore)]
-    [IntroduceInterface(typeof(INotifyChildPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore)]
-    public class NotifyPropertyChangedAttribute : InstanceLevelAspect, INotifyPropertyChanged, INotifyChildPropertyChanged
+    public class NotifyPropertyChangedAttribute : InstanceLevelAspect, IAspectProvider
     {
         // Compile-time use only
         [NonSerialized]
@@ -145,20 +146,17 @@ namespace PostSharp.Toolkit.Domain
 
         public override bool CompileTimeValidate(Type type)
         {
-            if (!(type.BaseType != null && type.BaseType.GetCustomAttributes( true ).Any(a => a is NotifyPropertyChangedAttribute )))
+            if (typeof(INotifyPropertyChanged).IsAssignableFrom(type))
             {
-                if (!typeof(INotifyChildPropertyChanged).IsAssignableFrom(type) && typeof(INotifyPropertyChanged).IsAssignableFrom(type))
+                var onPropertyChangedMethod = type.GetMethod( "OnPropertyChanged", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance,
+                    null , new[] {typeof(string)}, null );
+                if (onPropertyChangedMethod == null || onPropertyChangedMethod.ReturnType != typeof(void))
                 {
-                    DomainMessageSource.Instance.Write(type, SeverityType.Error, "INPC005", type.FullName);
-                    return false;
-                }
-
-                if (typeof(INotifyChildPropertyChanged).IsAssignableFrom(type.BaseType) || typeof(INotifyPropertyChanged).IsAssignableFrom(type.BaseType))
-                {
-                    DomainMessageSource.Instance.Write(type, SeverityType.Error, "INPC006", type.FullName);
-                    return false;
+                    DomainMessageSource.Instance.Write( type, SeverityType.Error, "INPC007", type.FullName);
                 }
             }
+
+            //TODO: Validate to make sure PostsharpToolkitsDomain_ChildPropertyChanged method and event are not there (so that we do not get naming conflicts)
             
             return base.CompileTimeValidate(type);
         }
@@ -187,28 +185,72 @@ namespace PostSharp.Toolkit.Domain
             return clone;
         }
 
-        [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public void RaisePropertyChanged(string propertyName)
+        IEnumerable<AspectInstance> IAspectProvider.ProvideAspects( object targetElement )
         {
-            PropertyChangedEventHandler handler = this.PropertyChanged;
-            if (handler != null)
+            //We may be adding those aspects redundantly but they're not going to have any effect anyway
+            Type type = (Type) targetElement;
+            if (!typeof(INotifyPropertyChanged).IsAssignableFrom(type))
             {
-                handler(this.Instance, new PropertyChangedEventArgs(propertyName));
+                yield return new AspectInstance(type, new ObjectConstruction(typeof(IntroduceNotifyPropertyChangedAttribute)), null);
+            }
+            yield return new AspectInstance(type, new ObjectConstruction(typeof(IntroduceNotifyChildPropertyChangedAttribute)), null);
+            
+            //if (!typeof(INotifyPropertyChanged).IsAssignableFrom( type ) &&
+            //    !type.GetCustomAttributes( typeof(IntroduceNotifyPropertyChangedAttribute), true ).Any())
+            //{
+            //    yield return new AspectInstance( type, new IntroduceNotifyPropertyChangedAttribute() );
+            //}
+            //if (!type.GetCustomAttributes( typeof(IntroduceNotifyChildPropertyChangedAttribute), true ).Any())
+            //{
+            //    yield return new AspectInstance( type, new IntroduceNotifyChildPropertyChangedAttribute() );
+            //}
+        }
+
+
+
+        #region Inner attributes (events introduction)
+
+        //TODO: Make sure they're applied only once; consider building expressions for NotifyPropertyChangedAccessor in compile-time & serializing them
+
+        /// <summary>
+        /// Aspect introducing INPC interface with OnPropertyChanged method
+        /// </summary>
+        [Internal]
+        [AspectConfiguration(SerializerType = typeof(MsilAspectSerializer))]
+        [MulticastAttributeUsage(MulticastTargets.Class, PersistMetaData = false, AllowMultiple = false, Inheritance = MulticastInheritance.None)]
+        [IntroduceInterface(typeof(INotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Fail)]
+        public class IntroduceNotifyPropertyChangedAttribute : InstanceLevelAspect, INotifyPropertyChanged
+        {
+            public event PropertyChangedEventHandler PropertyChanged;
+
+            [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore, Visibility = Visibility.Family)]
+            public void OnPropertyChanged(string propertyName)
+            {
+                PropertyChangedEventHandler handler = this.PropertyChanged;
+                if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
             }
         }
 
-        [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore)]
-        public event EventHandler<NotifyChildPropertyChangedEventArgs> ChildPropertyChanged;
-
-        public void RaiseChildPropertyChanged(NotifyChildPropertyChangedEventArgs args)
+        /// <summary>
+        /// Aspect introducing INPC interface with OnPropertyChanged method
+        /// </summary>
+        [Internal]
+        [AspectConfiguration(SerializerType = typeof(MsilAspectSerializer))]
+        [MulticastAttributeUsage(MulticastTargets.Class, PersistMetaData = false, AllowMultiple = false, Inheritance = MulticastInheritance.None)]
+        public class IntroduceNotifyChildPropertyChangedAttribute : InstanceLevelAspect
         {
-            EventHandler<NotifyChildPropertyChangedEventArgs> handler = this.ChildPropertyChanged;
-            if (handler != null)
+            [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore, Visibility = Visibility.Family)]
+            public event EventHandler<ChildPropertyChangedEventArgs> PostSharpToolkitsDomain_ChildPropertyChanged;
+
+
+            [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore, Visibility = Visibility.Family)]
+            public void PostSharpToolkitsDomain_OnChildPropertyChanged(string propertyPath)
             {
-                handler(this.Instance, args);
+                EventHandler<ChildPropertyChangedEventArgs> handler = this.PostSharpToolkitsDomain_ChildPropertyChanged;
+                if (handler != null) handler(this, new ChildPropertyChangedEventArgs(propertyPath));
             }
         }
+
+        #endregion
     }
 }

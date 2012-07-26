@@ -129,17 +129,17 @@ namespace PostSharp.Toolkit.Domain
 
                     w.Processed = true;
                     accumulator.Remove(w);
-                    INotifyChildPropertyChanged cpc = w.Instance.Target as INotifyChildPropertyChanged;
+                    object cpc = w.Instance.Target;
 
                     if (cpc != null) //Target may not be alive any more
                     {
                         if (raiseChildPropertyChanges)
                         {
-                            cpc.RaiseChildPropertyChanged(new NotifyChildPropertyChangedEventArgs(w.PropertyPath));
+                            NotifyPropertyChangedAccessor.RaiseChildPropertyChanged( cpc, w.PropertyPath );
                         }
                         else
                         {
-                            cpc.RaisePropertyChanged(w.PropertyPath);
+                            NotifyPropertyChangedAccessor.RaisePropertyChanged( cpc, w.PropertyPath );
                         }
                     }
                 }
