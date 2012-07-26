@@ -300,7 +300,7 @@ namespace PostSharp.Toolkit.Domain.Tests
     }
 
     [NotifyPropertyChanged]
-    public class InpcBaseClass: INotifyChildPropertyChanged
+    public class InpcBaseClass//: INotifyChildPropertyChanged, INotifyPropertyChanged
     {
         public int BaseField1;
 
@@ -309,27 +309,32 @@ namespace PostSharp.Toolkit.Domain.Tests
             return BaseField1;
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        //public event PropertyChangedEventHandler PropertyChanged;
 
-        public virtual void RaisePropertyChanged(string propertyName)
-        {
-            PropertyChangedEventHandler handler = this.PropertyChanged;
-            if (handler != null)
-            {
-                handler(this, new PropertyChangedEventArgs(propertyName));
-            }
-        }
+        //protected void OnPropertyChanged(string propertyName)
+        //{
+        //    this.RaisePropertyChanged( propertyName );
+        //}
 
-        public void RaiseChildPropertyChanged(NotifyChildPropertyChangedEventArgs args)
-        {
-            EventHandler<NotifyChildPropertyChangedEventArgs> handler = this.ChildPropertyChanged;
-            if (handler != null)
-            {
-                handler(this, args);
-            }
-        }
+        //public virtual void RaisePropertyChanged(string propertyName)
+        //{
+        //    PropertyChangedEventHandler handler = this.PropertyChanged;
+        //    if (handler != null)
+        //    {
+        //        handler(this, new PropertyChangedEventArgs(propertyName));
+        //    }
+        //}
 
-        public event EventHandler<NotifyChildPropertyChangedEventArgs> ChildPropertyChanged;
+        //public void RaiseChildPropertyChanged(ChildPropertyChangedEventArgs args)
+        //{
+        //    EventHandler<ChildPropertyChangedEventArgs> handler = this.ChildPropertyChanged;
+        //    if (handler != null)
+        //    {
+        //        handler(this, args);
+        //    }
+        //}
+
+        //public event EventHandler<ChildPropertyChangedEventArgs> ChildPropertyChanged;
     }
 
     public class InpcDerrivedClass : InpcBaseClass
@@ -545,16 +550,16 @@ namespace PostSharp.Toolkit.Domain.Tests
     //        }
     //    }
 
-    //    public void RaiseChildPropertyChanged(NotifyChildPropertyChangedEventArgs args)
+    //    public void RaiseChildPropertyChanged(ChildPropertyChangedEventArgs args)
     //    {
-    //        EventHandler<NotifyChildPropertyChangedEventArgs> handler = this.ChildPropertyChanged;
+    //        EventHandler<ChildPropertyChangedEventArgs> handler = this.ChildPropertyChanged;
     //        if (handler != null)
     //        {
     //            handler(this, args);
     //        }
     //    }
 
-    //    public event EventHandler<NotifyChildPropertyChangedEventArgs> ChildPropertyChanged;
+    //    public event EventHandler<ChildPropertyChangedEventArgs> ChildPropertyChanged;
     //}
 
     //[NotifyPropertyChanged]

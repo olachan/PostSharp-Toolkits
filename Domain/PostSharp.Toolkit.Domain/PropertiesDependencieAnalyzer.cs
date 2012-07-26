@@ -215,6 +215,8 @@ namespace PostSharp.Toolkit.Domain
                 }
 
                 // Ignore static framework idempotent methods
+                // TODO: For VoidNoRefOut method we should also check that arguments are intrinsic
+                // TODO: The fact the we always accept ToString is risky
                 if ((expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This) &&
                     (methodInfo.IsFrameworkStaticMethod() && expression.Arguments.All(e => e.ReturnType.IsIntrinsic() || e.ReturnType.IsIntrinsicOrObjectArray())))
                 {

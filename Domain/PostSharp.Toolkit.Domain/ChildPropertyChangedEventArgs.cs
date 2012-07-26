@@ -2,11 +2,11 @@ using System;
 
 namespace PostSharp.Toolkit.Domain
 {
-    public sealed class NotifyChildPropertyChangedEventArgs : EventArgs
+    public sealed class ChildPropertyChangedEventArgs : EventArgs
     {
         public string Path { get; private set; }
 
-        internal NotifyChildPropertyChangedEventArgs( string propertyName, NotifyChildPropertyChangedEventArgs parent = null )
+        internal ChildPropertyChangedEventArgs( string propertyName, ChildPropertyChangedEventArgs parent = null )
         {
             if ( parent != null )
             {

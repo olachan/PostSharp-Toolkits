@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -97,7 +98,7 @@ namespace PostSharp.Toolkit.Domain
             this.ReHookNotifyChildPropertyChangedHandler(args);
         }
 
-        private void NotifyChildPropertyChangedEventHandler(string locationName, NotifyChildPropertyChangedEventArgs args)
+        private void NotifyChildPropertyChangedEventHandler(string locationName, ChildPropertyChangedEventArgs args)
         {
             this.ChildPropertyChanged(new List<string> { string.Format("{0}.{1}", locationName, args.Path) });
         }
@@ -170,23 +171,23 @@ namespace PostSharp.Toolkit.Domain
 
         private void UnHookNotifyChildPropertyChangedHandler(NotifyChildPropertyChangedEventHandlerDescriptor handlerDescriptor)
         {
-            INotifyChildPropertyChanged currentValue = handlerDescriptor.Reference.Target as INotifyChildPropertyChanged;
+            object currentValue = handlerDescriptor.Reference.Target;
             if (currentValue != null)
             {
-                currentValue.ChildPropertyChanged -= handlerDescriptor.Handler;
+                NotifyPropertyChangedAccessor.RemoveChildPropertyChangedHandler( currentValue, handlerDescriptor.Handler );
             }
         }
 
         private void HookNotifyChildPropertyChangedHandler( object instance, string locationName )
         {
-            INotifyChildPropertyChanged currentValue = instance as INotifyChildPropertyChanged;
+            object currentValue = instance as INotifyPropertyChanged;
             if (currentValue != null)
             {
                 string locationNameClosure = locationName;
                 NotifyChildPropertyChangedEventHandlerDescriptor handlerDescriptor =
                     new NotifyChildPropertyChangedEventHandlerDescriptor(currentValue, (_, a) => this.NotifyChildPropertyChangedEventHandler(locationNameClosure, a));
                 this.notifyChildPropertyChangedHandlers.AddOrUpdate(locationNameClosure, handlerDescriptor);
-                currentValue.ChildPropertyChanged += handlerDescriptor.Handler;
+                NotifyPropertyChangedAccessor.AddChildPropertyChangedHandler( currentValue, handlerDescriptor.Handler );
             }
         }
 
@@ -204,7 +205,7 @@ namespace PostSharp.Toolkit.Domain
         [Serializable]
         private sealed class NotifyChildPropertyChangedEventHandlerDescriptor
         {
-            public NotifyChildPropertyChangedEventHandlerDescriptor(object reference, EventHandler<NotifyChildPropertyChangedEventArgs> handler)
+            public NotifyChildPropertyChangedEventHandlerDescriptor(object reference, EventHandler<ChildPropertyChangedEventArgs> handler)
             {
                 this.Reference = new WeakReference(reference);
                 this.Handler = handler;
@@ -212,7 +213,7 @@ namespace PostSharp.Toolkit.Domain
 
             public WeakReference Reference { get; private set; }
 
-            public EventHandler<NotifyChildPropertyChangedEventArgs> Handler { get; private set; }
+            public EventHandler<ChildPropertyChangedEventArgs> Handler { get; private set; }
         }
 
         private static class PropertyToFieldBindingGenerator
