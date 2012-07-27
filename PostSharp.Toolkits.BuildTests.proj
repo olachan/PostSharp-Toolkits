@@ -1,0 +1,18 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<PropertyGroup>
+		<PostSharpToolkitsDirectory>.</PostSharpToolkitsDirectory>
+	</PropertyGroup>
+
+  <Target Name="QuickBuild">
+     <MSBuild Projects="PostSharp.Toolkits.sln" Properties="Configuration=Debug;Platform=Any CPU" />
+   </Target>
+
+	<Target Name="BuildTests">
+    <MSBuild Projects="Tests\PostSharp.Toolkit.Domain.BuilTests\PostSharp.Toolkit.Domain.BuilTests.csproj" Targets="Test" Properties="Configuration=Debug;Platform=AnyCPU"/>
+    <MSBuild Projects="Tests\PostSharp.Toolkit.Threading.BuildTests\PostSharp.Toolkit.Threading.BuildTests.csproj" Targets="Test" Properties="Configuration=Debug;Platform=AnyCPU"/>
+  </Target>
+
+  <Target Name="Build" DependsOnTargets="QuickBuild;BuildTests" />
+   	
+</Project>

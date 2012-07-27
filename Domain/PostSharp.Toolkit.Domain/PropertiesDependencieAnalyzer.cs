@@ -187,15 +187,20 @@ namespace PostSharp.Toolkit.Domain
             public override object VisitFieldExpression(IFieldExpression expression)
             {
                 //Check for access to static fields or fields of other objects
-                if ((expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This) && !this.context.Current.IsNotifyPropertyChangedSafeProperty)
+                if (expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This)
                 {
                     // Method contains direct access to a field of another class.
-                    DomainMessageSource.Instance.Write(
-                        this.context.Current.CurrentProperty,
-                        SeverityType.Error,
-                        "INPC001",
-                        this.context.Current.CurrentProperty,
-                        this.context.Current.CurrentMethod);
+                    if (!this.context.Current.IsNotifyPropertyChangedSafeProperty)
+                    {
+                        DomainMessageSource.Instance.Write(
+                            this.context.Current.CurrentProperty,
+                            SeverityType.Error,
+                            "INPC001",
+                            this.context.Current.CurrentProperty,
+                            this.context.Current.CurrentMethod);
+                    }
+
+                    return base.VisitFieldExpression(expression);
                 }
 
                 this.methodFieldDependencies.GetOrCreate(this.context.Current.CurrentMethod, () => new List<FieldInfo>()).AddIfNew(expression.Field);

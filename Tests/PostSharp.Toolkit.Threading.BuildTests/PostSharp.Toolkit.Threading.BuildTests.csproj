@@ -6,7 +6,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>DEBUG;TRACE;DEBUG_THREADING</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <CodeAnalysisLogFile>bin\Debug\PostSharp.Toolkit.Threading.BuildTests.exe.CodeAnalysisLog.xml</CodeAnalysisLogFile>
@@ -39,7 +39,8 @@
   <Import Project="..\..\Dependencies\PostSharp\PostSharpDir.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <OutputPath Condition=" '$(OutputPath)' == '' ">bin\Debug\</OutputPath>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{306C7F83-5070-4558-BD8F-D98176B02737}</ProjectGuid>
@@ -87,11 +88,11 @@
     <Compile Include="ReaderWriterSynchronized\RWSOnClassWithStaticThreadSafeAccessToField.cs" />
     <Compile Include="ReaderWriterSynchronized\ReaderWriterSynchronizedOnClassWithStaticAccessToField.cs" />
     <Compile Include="ReaderWriterSynchronized\ReaderWriterSynchronizedOnClassWithPublicFields.cs" />
+    <Compile Include="ThreadUnsafe\ThreadUnsafeMethodOnStaticPolicy.cs" />
+    <Compile Include="ThreadUnsafe\ThreadUnsafeOnClassWithPublicField.cs" />
     <Compile Include="ThreadUnsafe\ThreadUnsafeTSStaticMethodAccess.cs" />
     <Compile Include="ThreadUnsafe\ThreadUnsafeStaticMethodFieldAccess.cs" />
     <Compile Include="ThreadUnsafe\ThreadUnsafeStaticMethodAccess.cs" />
-    <Compile Include="ThreadUnsafe\ThreadUnsafeOnClassWithPublicField.cs" />
-    <Compile Include="ThreadUnsafe\ThreadUnsafeMethodOnStaticPolicy.cs" />
     <Compile Include="ThreadUnsafe\ThreadUnsafeOnStaticMethod.cs" />
   </ItemGroup>
   <ItemGroup>
