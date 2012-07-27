@@ -82,7 +82,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ExplicitDependencyAnalyzer.cs" />
     <Compile Include="NotifyPropertyChangedAccessor.cs" />
     <Compile Include="FieldInfoWithCompiledGetter.cs" />
     <Compile Include="PropertyFieldBinding.cs" />

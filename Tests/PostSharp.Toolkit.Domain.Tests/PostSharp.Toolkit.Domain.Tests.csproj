@@ -74,6 +74,7 @@
     <Compile Include="AutomaticNotifyPropertyChangedAspectTests.cs" />
     <Compile Include="NotifyPropertyChangedLoadTests.cs" />
     <Compile Include="NotifyPropertyChangedTests.cs" />
+    <Compile Include="PropertyChainInvocationTests.cs" />
     <Compile Include="TestHelpers.cs" />
   </ItemGroup>
   <ItemGroup>

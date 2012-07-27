@@ -8,11 +8,9 @@
 #endregion
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -24,7 +22,6 @@ using PostSharp.Aspects.Serialization;
 using PostSharp.Constraints;
 using PostSharp.Extensibility;
 using PostSharp.Reflection;
-using PostSharp.Constraints;
 
 namespace PostSharp.Toolkit.Domain
 {
@@ -190,9 +187,7 @@ namespace PostSharp.Toolkit.Domain
 
         public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
         {
-            analyzer.Value.AnalyzeType(type);
-
-            this.explicitDependencyMap = ExplicitDependencyAnalyzer.Analyze(type);
+            this.explicitDependencyMap = analyzer.Value.AnalyzeType(type);
             this.fieldValueComparer = new FieldValueComparer( type );
             this.childPropertyChangedProcessor = ChildPropertyChangedProcessor.CompileTimeCreate(type, analyzer.Value.MethodFieldDependencies, this.fieldValueComparer, this.explicitDependencyMap);
         }

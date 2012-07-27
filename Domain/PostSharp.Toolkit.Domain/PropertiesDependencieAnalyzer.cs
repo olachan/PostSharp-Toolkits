@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 
 using PostSharp.Extensibility;
 using PostSharp.Reflection.Syntax;
@@ -18,8 +19,13 @@ using PostSharp.Reflection.Syntax;
 
 namespace PostSharp.Toolkit.Domain
 {
-    //TODO: Serious refactoring
-
+    /// <summary>
+    /// Performs static code analysis to determine property dependencies. 
+    /// Stores two global maps: 
+    /// 1. mapping a method to fields that the method depends on, 
+    /// 2. mapping a field to properties that depend upon the field. 
+    /// For each analyzed type analyzer returns <see cref="ExplicitDependencyMap"/> build based on <see cref="DependsOnAttribute"/> declarations.
+    /// </summary>
     internal class PropertiesDependencieAnalyzer
     {
         private readonly Dictionary<string, List<string>> fieldDependentProperties = new Dictionary<string, List<string>>();
@@ -47,23 +53,33 @@ namespace PostSharp.Toolkit.Domain
             }
         }
 
-        public void AnalyzeType(Type type)
+        public ExplicitDependencyMap AnalyzeType(Type type)
         {
             //We need to grab all the properties and build a map of their dependencies
 
-            IEnumerable<PropertyInfo> properties =
-                type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(
-                    p => !p.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any()).Where(
-                        p => !p.GetCustomAttributes(typeof(DependsOnAttribute), false).Any());
+            IEnumerable<PropertyInfo> allProperties =
+                type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where( p => !p.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any())
+                .ToList();
 
-            foreach (PropertyInfo propertyInfo in properties)
+            IEnumerable<PropertyInfo> propertiesForImplicitAnalasis = allProperties.Where(p => !p.GetCustomAttributes(typeof(DependsOnAttribute), false).Any());
+
+            var propertiesForExplicitAnalasis = allProperties
+                .Select(p => new { Property = p, DependsOnAttribute = p.GetCustomAttributes(typeof(DependsOnAttribute), false) })
+                .Where(p => p.DependsOnAttribute.Any());
+
+            // build ExplicitDependencyMap. We nedd it here to add invocation chains.
+            var currentTypeExplicitDependencyMap = new ExplicitDependencyMap(
+                propertiesForExplicitAnalasis.Select(p => new ExplicitDependency(p.Property.Name, p.DependsOnAttribute.SelectMany(d => ((DependsOnAttribute)d).Dependencies))));
+
+            foreach (PropertyInfo propertyInfo in propertiesForImplicitAnalasis)
             {
                 if (!propertyInfo.CanRead)
                 {
                     continue;
                 }
 
-                this.methodAnalyzer.AnalyzeProperty(type, propertyInfo);
+                this.methodAnalyzer.AnalyzeProperty(type, propertyInfo, currentTypeExplicitDependencyMap);
 
                 IList<FieldInfo> fieldList;
 
@@ -81,17 +97,22 @@ namespace PostSharp.Toolkit.Domain
                     }
                 }
             }
+
+            return currentTypeExplicitDependencyMap;
         }
 
         private class MethodAnalyzer : SyntaxTreeVisitor
         {
             private class AnalysisContext : NestableContextInfo
             {
-                public Type CurrentType { get; set; }
+                public Type CurrentType { get; private set; }
 
-                public MethodBase CurrentMethod { get; set; }
+                public MethodBase CurrentMethod { get; private set; }
 
-                public PropertyInfo CurrentProperty { get; set; }
+                public PropertyInfo CurrentProperty { get; private set; }
+
+                public ExplicitDependencyMap ExplicitDependencyMap { get; private set; }
+
 
                 private bool? isNotifyPropertyChangedSafeProperty;
 
@@ -104,20 +125,21 @@ namespace PostSharp.Toolkit.Domain
                     }
                 }
 
-                public AnalysisContext()
+                public  AnalysisContext()
                 {
                 }
 
-                public AnalysisContext(Type currentType, MethodBase currentMethod, PropertyInfo currentProperty)
+                public AnalysisContext(Type currentType, MethodBase currentMethod, PropertyInfo currentProperty, ExplicitDependencyMap explicitDependencyMap)
                 {
                     this.CurrentType = currentType;
                     this.CurrentMethod = currentMethod;
                     this.CurrentProperty = currentProperty;
+                    this.ExplicitDependencyMap = explicitDependencyMap;
                 }
 
                 public AnalysisContext CloneWithDifferentMethod(MethodBase method)
                 {
-                    return new AnalysisContext { CurrentMethod = method, CurrentProperty = this.CurrentProperty, CurrentType = this.CurrentType };
+                    return new AnalysisContext { CurrentMethod = method, CurrentProperty = this.CurrentProperty, CurrentType = this.CurrentType, ExplicitDependencyMap = this.ExplicitDependencyMap};
                 }
             }
 
@@ -144,7 +166,7 @@ namespace PostSharp.Toolkit.Domain
                 this.syntaxService = PostSharpEnvironment.CurrentProject.GetService<ISyntaxReflectionService>();
             }
 
-            public void AnalyzeProperty(Type type, PropertyInfo propertyInfo)
+            public void AnalyzeProperty(Type type, PropertyInfo propertyInfo, ExplicitDependencyMap currentTypeExplicitDependencyMap)
             {
                 if (this.context.Current != null)
                 {
@@ -158,7 +180,7 @@ namespace PostSharp.Toolkit.Domain
                     return;
                 }
 
-                using (this.context.InContext(() => new AnalysisContext(type, propertyGetter, propertyInfo)))
+                using (this.context.InContext(() => new AnalysisContext(type, propertyGetter, propertyInfo, currentTypeExplicitDependencyMap)))
                 {
                     this.AnalyzeMethodRecursive(propertyGetter);
                 }
@@ -203,6 +225,7 @@ namespace PostSharp.Toolkit.Domain
                     return base.VisitFieldExpression(expression);
                 }
 
+
                 this.methodFieldDependencies.GetOrCreate(this.context.Current.CurrentMethod, () => new List<FieldInfo>()).AddIfNew(expression.Field);
 
                 return base.VisitFieldExpression(expression);
@@ -211,6 +234,15 @@ namespace PostSharp.Toolkit.Domain
             public override object VisitMethodCallExpression(IMethodCallExpression expression)
             {
                 MethodInfo methodInfo = (MethodInfo)expression.Method;
+
+                string invocationPath;
+
+                // if expression is property invocation chain add explicite dependency and don't analyze this branch.
+                if (this.context.Current.CurrentProperty.GetGetMethod() == this.context.Current.CurrentMethod && GetPropertyInvocationChain(expression, out invocationPath))
+                {
+                    this.context.Current.ExplicitDependencyMap.AddDependecy( this.context.Current.CurrentProperty.Name, invocationPath );
+                    return base.VisitMethodCallExpression(expression);
+                }
 
                 // Ignore void no ref/out, Idempotent, InpcIgnored methods
                 if (methodInfo.IsObjectToString() || methodInfo.IsVoidNoRefOut() || methodInfo.IsInpcIgnoredMethod() ||
@@ -260,6 +292,42 @@ namespace PostSharp.Toolkit.Domain
                 }
 
                 return base.VisitMethodCallExpression(expression);
+            }
+
+            private bool GetPropertyInvocationChain(IMethodCallExpression expression, out string invocationPath)
+            {
+                invocationPath = null;
+                Stack<string> invocationStack = new Stack<string>();
+                IExpression currentExpression = expression;
+
+                while ( currentExpression is IMethodCallExpression && currentExpression.SyntaxElementKind != SyntaxElementKind.This)
+                {
+                    IMethodCallExpression methodCallExpression = (IMethodCallExpression)currentExpression;
+                    if (!(methodCallExpression.Method.IsSpecialName && methodCallExpression.Method.Name.StartsWith( "get_" )))
+                    {
+                        return false;
+                    }
+
+                    invocationStack.Push( ((IMethodCallExpression)currentExpression).Method.Name.Substring( 4 ) );
+
+                    currentExpression = methodCallExpression.Instance;
+                }
+
+                if (currentExpression.SyntaxElementKind != SyntaxElementKind.This && currentExpression.SyntaxElementKind != SyntaxElementKind.Field)
+                {
+                    return false;
+                }
+
+                IFieldExpression fieldExpression = currentExpression as IFieldExpression;
+
+                if (fieldExpression != null)
+                {
+                    invocationStack.Push( fieldExpression.Field.Name );
+                }
+
+                invocationPath = invocationStack.Aggregate(new StringBuilder(), (builder, s) => builder.Append('.').Append(s)).Remove(0, 1).ToString();
+
+                return true;
             }
 
             public override object VisitMethodPointerExpression(IMethodPointerExpression expression)

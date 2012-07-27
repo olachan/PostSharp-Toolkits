@@ -17,11 +17,28 @@ namespace PostSharp.Toolkit.Domain
     [Serializable]
     internal sealed class ExplicitDependencyMap
     {
-        private readonly List<ExplicitDependency> dependencies;
+        private List<ExplicitDependency> dependencies;
 
         public ExplicitDependencyMap(IEnumerable<ExplicitDependency> dependencies)
         {
             this.dependencies = dependencies.ToList();
+        }
+
+        public ExplicitDependencyMap AddDependecy(string propertyName, string invocationPath)
+        {
+            ExplicitDependency dependency = this.dependencies.FirstOrDefault( d => d.PropertyName == propertyName );
+
+            if (dependency == null)
+            {
+                dependency = new ExplicitDependency( propertyName, new[]{invocationPath} );
+                this.dependencies.Add( dependency );
+            }
+            else if (!dependency.Dependencies.Any(p => p.StartsWith( invocationPath )))
+            {
+                dependency.Dependencies.Add(invocationPath);
+            }
+
+            return this;
         }
 
         public IEnumerable<string> GetDependentProperties(string changedPath)

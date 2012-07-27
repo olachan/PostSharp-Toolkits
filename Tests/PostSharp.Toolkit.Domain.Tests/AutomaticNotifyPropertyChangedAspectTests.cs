@@ -397,7 +397,7 @@ namespace PostSharp.Toolkit.Domain.Tests
         }
     }
 
-    public class InnerClass
+    public class InpcAutoInnerClass
     {
         public int Sum(int left, int right)
         {
@@ -420,7 +420,7 @@ namespace PostSharp.Toolkit.Domain.Tests
 
         public string Str2;
 
-        public InnerClass Inner = new InnerClass();
+        public InpcAutoInnerClass Inner = new InpcAutoInnerClass();
 
         public string StaticFrameworkMethodBasedProperty
         {
