@@ -59,7 +59,7 @@ namespace PostSharp.Toolkit.Domain
 
             IEnumerable<PropertyInfo> allProperties =
                 type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where( p => !p.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any())
+                .Where(p => !p.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any())
                 .ToList();
 
             IEnumerable<PropertyInfo> propertiesForImplicitAnalasis = allProperties.Where(p => !p.GetCustomAttributes(typeof(DependsOnAttribute), false).Any());
@@ -113,6 +113,7 @@ namespace PostSharp.Toolkit.Domain
 
                 public ExplicitDependencyMap ExplicitDependencyMap { get; private set; }
 
+                public static ExpressionValidatorRepository ValidatorRepository { get; set; }
 
                 private bool? isNotifyPropertyChangedSafeProperty;
 
@@ -125,7 +126,17 @@ namespace PostSharp.Toolkit.Domain
                     }
                 }
 
-                public  AnalysisContext()
+                public ExpressionValidationResult Validate(IExpression expression)
+                {
+                    return ValidatorRepository.Validate(expression, this);
+                }
+
+                static AnalysisContext()
+                {
+                    ValidatorRepository = new ExpressionValidatorRepository();
+                }
+
+                public AnalysisContext()
                 {
                 }
 
@@ -139,7 +150,7 @@ namespace PostSharp.Toolkit.Domain
 
                 public AnalysisContext CloneWithDifferentMethod(MethodBase method)
                 {
-                    return new AnalysisContext { CurrentMethod = method, CurrentProperty = this.CurrentProperty, CurrentType = this.CurrentType, ExplicitDependencyMap = this.ExplicitDependencyMap};
+                    return new AnalysisContext { CurrentMethod = method, CurrentProperty = this.CurrentProperty, CurrentType = this.CurrentType, ExplicitDependencyMap = this.ExplicitDependencyMap };
                 }
             }
 
@@ -208,23 +219,12 @@ namespace PostSharp.Toolkit.Domain
 
             public override object VisitFieldExpression(IFieldExpression expression)
             {
-                //Check for access to static fields or fields of other objects
-                if (expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This)
-                {
-                    // Method contains direct access to a field of another class.
-                    if (!this.context.Current.IsNotifyPropertyChangedSafeProperty)
-                    {
-                        DomainMessageSource.Instance.Write(
-                            this.context.Current.CurrentProperty,
-                            SeverityType.Error,
-                            "INPC001",
-                            this.context.Current.CurrentProperty,
-                            this.context.Current.CurrentMethod);
-                    }
+                ExpressionValidationResult validationResult = this.context.Current.Validate(expression);
 
+                if (validationResult.HasFlag(ExpressionValidationResult.ImmediateReturn))
+                {
                     return base.VisitFieldExpression(expression);
                 }
-
 
                 this.methodFieldDependencies.GetOrCreate(this.context.Current.CurrentMethod, () => new List<FieldInfo>()).AddIfNew(expression.Field);
 
@@ -233,49 +233,21 @@ namespace PostSharp.Toolkit.Domain
 
             public override object VisitMethodCallExpression(IMethodCallExpression expression)
             {
-                MethodInfo methodInfo = (MethodInfo)expression.Method;
-
                 string invocationPath;
 
                 // if expression is property invocation chain add explicite dependency and don't analyze this branch.
-                if (this.context.Current.CurrentProperty.GetGetMethod() == this.context.Current.CurrentMethod && GetPropertyInvocationChain(expression, out invocationPath))
+                if (this.context.Current.CurrentProperty.GetGetMethod() == this.context.Current.CurrentMethod && 
+                    GetPropertyInvocationChain(expression, out invocationPath))
                 {
-                    this.context.Current.ExplicitDependencyMap.AddDependecy( this.context.Current.CurrentProperty.Name, invocationPath );
+                    this.context.Current.ExplicitDependencyMap.AddDependecy(this.context.Current.CurrentProperty.Name, invocationPath);
                     return base.VisitMethodCallExpression(expression);
                 }
 
-                // Ignore void no ref/out, Idempotent, InpcIgnored methods
-                if (methodInfo.IsObjectToString() || methodInfo.IsVoidNoRefOut() || methodInfo.IsInpcIgnoredMethod() ||
-                    (methodInfo.IsIdempotentMethod() && expression.Arguments.All(e => e.ReturnType.IsIntrinsic() || e.ReturnType.IsIntrinsicOrObjectArray())))
+                ExpressionValidationResult validationResult = this.context.Current.Validate(expression);
+
+                if (validationResult.HasFlag( ExpressionValidationResult.ImmediateReturn ))
                 {
                     return base.VisitMethodCallExpression(expression);
-                }
-
-                // Ignore static framework idempotent methods
-                // TODO: For VoidNoRefOut method we should also check that arguments are intrinsic
-                // TODO: The fact the we always accept ToString is risky
-                if ((expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This) &&
-                    (methodInfo.IsFrameworkStaticMethod() && expression.Arguments.All(e => e.ReturnType.IsIntrinsic() || e.ReturnType.IsIntrinsicOrObjectArray())))
-                {
-                    return base.VisitMethodCallExpression(expression);
-                }
-
-                //Check for method calls on external objects
-                if (expression.Instance == null || expression.Instance.SyntaxElementKind != SyntaxElementKind.This)
-                {
-                    // emit error only fi we are not in NotifyPropertyChangedSafeProperty
-                    if (!this.context.Current.IsNotifyPropertyChangedSafeProperty)
-                    {
-                        // Method contains call to non void (ref/out param) method of another class.
-                        DomainMessageSource.Instance.Write(
-                           this.context.Current.CurrentProperty,
-                           SeverityType.Error,
-                           "INPC002",
-                           this.context.Current.CurrentProperty,
-                           this.context.Current.CurrentMethod);
-                    }
-
-                    return base.VisitMethodCallExpression(expression); // End analysis of this branch
                 }
 
                 this.AnalyzeMethodRecursive(expression.Method);
@@ -300,15 +272,15 @@ namespace PostSharp.Toolkit.Domain
                 Stack<string> invocationStack = new Stack<string>();
                 IExpression currentExpression = expression;
 
-                while ( currentExpression is IMethodCallExpression && currentExpression.SyntaxElementKind != SyntaxElementKind.This)
+                while (currentExpression is IMethodCallExpression && currentExpression.SyntaxElementKind != SyntaxElementKind.This)
                 {
                     IMethodCallExpression methodCallExpression = (IMethodCallExpression)currentExpression;
-                    if (!(methodCallExpression.Method.IsSpecialName && methodCallExpression.Method.Name.StartsWith( "get_" )))
+                    if (!(methodCallExpression.Method.IsSpecialName && methodCallExpression.Method.Name.StartsWith("get_")))
                     {
                         return false;
                     }
 
-                    invocationStack.Push( ((IMethodCallExpression)currentExpression).Method.Name.Substring( 4 ) );
+                    invocationStack.Push(((IMethodCallExpression)currentExpression).Method.Name.Substring(4));
 
                     currentExpression = methodCallExpression.Instance;
                 }
@@ -322,7 +294,7 @@ namespace PostSharp.Toolkit.Domain
 
                 if (fieldExpression != null)
                 {
-                    invocationStack.Push( fieldExpression.Field.Name );
+                    invocationStack.Push(fieldExpression.Field.Name);
                 }
 
                 invocationPath = invocationStack.Aggregate(new StringBuilder(), (builder, s) => builder.Append('.').Append(s)).Remove(0, 1).ToString();
@@ -346,6 +318,254 @@ namespace PostSharp.Toolkit.Domain
                     this.context.Current.CurrentMethod);
                 return base.VisitMethodPointerExpression(expression);
             }
+
+            private interface IMethodCallValidator
+            {
+                ExpressionValidationResultWithErrors ValidateMethod(IMethodCallExpression methodCallExpression, AnalysisContext currentContext);
+            }
+
+            private interface IFieldValidator
+            {
+                ExpressionValidationResultWithErrors ValidateField(IFieldExpression fieldExpression, AnalysisContext currentContext);
+            }
+
+            private sealed class ExpressionValidatorRepository
+            {
+                private readonly List<IMethodCallValidator> methodCallValidators;
+                private readonly List<IFieldValidator> fieldValidators;
+
+
+                public ExpressionValidatorRepository()
+                {
+                    this.methodCallValidators = new List<IMethodCallValidator>()
+                        {
+                            // order has impact on performance - when we encounter first validator that returns AcceptImmediateReturn we stop the validation process
+                            new GenericMethodInfoPropertyValidator(  
+                                methodInfo => methodInfo.IsVoidNoRefOut(),
+                                methodInfo => methodInfo.IsObjectToString(),
+                                methodInfo => methodInfo.IsObjectGetHashCode(),
+                                methodInfo => methodInfo.IsInpcIgnoredMethod(),
+                                methodInfo => methodInfo.DeclaringType == typeof(StringBuilder)),
+                            new IdempotentMethodValidator(),
+                            new OuterScopeObjectMethodCallValidator()
+                        };
+
+                    this.fieldValidators = new List<IFieldValidator>()
+                        {
+                            new OuterScopeObjectFieldValidator()
+                        };
+                }
+
+                public ExpressionValidationResult Validate(IExpression expression, AnalysisContext currentContext)
+                {
+                    IMethodCallExpression methodCallExpression = expression as IMethodCallExpression;
+                    if ( methodCallExpression != null )
+                    {
+                        return this.ProcessResults(
+                            this.methodCallValidators.Select( v => v.ValidateMethod( methodCallExpression, currentContext ) ), currentContext );
+                    }
+
+                    IFieldExpression fieldExpression = expression as IFieldExpression;
+                    if (fieldExpression != null)
+                    {
+                        return this.ProcessResults(
+                            this.fieldValidators.Select(v => v.ValidateField(fieldExpression, currentContext)), currentContext);
+                    }
+
+                    return ExpressionValidationResult.Abstain;
+                }
+
+                private ExpressionValidationResult ProcessResults(IEnumerable<ExpressionValidationResultWithErrors> validationResults, AnalysisContext currentContext)
+                {
+                    Lazy<List<ExpressionValidationResultWithErrors>> rejectedResults = new Lazy<List<ExpressionValidationResultWithErrors>>();
+                    foreach (ExpressionValidationResultWithErrors result in validationResults)
+                    {
+                        if (result.Result == ExpressionValidationResult.AcceptImmediateReturn)
+                        {
+                            return ExpressionValidationResult.AcceptImmediateReturn;
+                        }
+
+                        if (result.Result.HasFlag( ExpressionValidationResult.Reject ))
+                        {
+                            rejectedResults.Value.Add( result );
+                        }
+                    }
+
+                    if (!rejectedResults.IsValueCreated)
+                    {
+                        return ExpressionValidationResult.Accept;
+                    }
+
+                    bool imidietReturn = false;
+
+                    foreach ( ExpressionValidationResultWithErrors resultWithErrors in rejectedResults.Value )
+                    {
+                        imidietReturn |= resultWithErrors.Result.HasFlag( ExpressionValidationResult.ImmediateReturn );
+
+                        DomainMessageSource.Instance.Write(
+                              currentContext.CurrentProperty,
+                              resultWithErrors.SeverityType,
+                              resultWithErrors.MessageId,
+                              resultWithErrors.MessageArguments);
+                    }
+
+                    if (imidietReturn)
+                    {
+                        return ExpressionValidationResult.RejectImmediateReturn;
+                    }
+
+                    return ExpressionValidationResult.Reject;
+                }
+            }
+
+             private sealed class OuterScopeObjectFieldValidator : IFieldValidator
+             {
+                 public ExpressionValidationResultWithErrors ValidateField( IFieldExpression fieldExpression, AnalysisContext currentContext )
+                 {
+                     //Check for access to static fields or fields of other objects
+                     if (fieldExpression.Instance == null || fieldExpression.Instance.SyntaxElementKind != SyntaxElementKind.This)
+                     {
+                         // Method contains direct access to a field of another class.
+                         if (!currentContext.IsNotifyPropertyChangedSafeProperty)
+                         {
+                             return new ExpressionValidationResultWithErrors(ExpressionValidationResult.RejectImmediateReturn)
+                             {
+                                 MessageId = "INPC001",
+                                 SeverityType = SeverityType.Error,
+                                 MessageArguments = new object[]
+                                                     {
+                                                        currentContext.CurrentProperty,
+                                                        currentContext.CurrentMethod
+                                                     }
+                             };
+                         }
+
+                         return ExpressionValidationResultWithErrors.AcceptImidietReturn;
+                     }
+
+                     return ExpressionValidationResultWithErrors.Abstain;
+                 }
+             }
+
+            private sealed class OuterScopeObjectMethodCallValidator : IMethodCallValidator
+            {
+                public ExpressionValidationResultWithErrors ValidateMethod(IMethodCallExpression methodCallExpression, AnalysisContext currentContext)
+                {
+                    if (methodCallExpression.Instance == null || methodCallExpression.Instance.SyntaxElementKind != SyntaxElementKind.This)
+                    {
+                        // emit error only fi we are not in NotifyPropertyChangedSafeProperty
+                        if (!currentContext.IsNotifyPropertyChangedSafeProperty)
+                        {
+                            // Method contains call to non void (ref/out param) method of another class.
+
+                            return new ExpressionValidationResultWithErrors(ExpressionValidationResult.RejectImmediateReturn)
+                            {
+                                MessageId = "INPC002",
+                                SeverityType = SeverityType.Error,
+                                MessageArguments = new object[]
+                                                     {
+                                                        currentContext.CurrentProperty,
+                                                        currentContext.CurrentMethod
+                                                     }
+                            };
+                        }
+
+                        return ExpressionValidationResultWithErrors.AcceptImidietReturn;
+                    }
+
+                    return ExpressionValidationResultWithErrors.Abstain;
+                }
+            }
+
+            private sealed class IdempotentMethodValidator : IMethodCallValidator
+            {
+                public ExpressionValidationResultWithErrors ValidateMethod(IMethodCallExpression methodCallExpression, AnalysisContext currentContext)
+                {
+                    MethodInfo methodInfo = methodCallExpression.Method as MethodInfo;
+                    if (methodInfo == null)
+                    {
+                        return ExpressionValidationResultWithErrors.Abstain;
+                    }
+
+                    bool allargumentsAreIntrinsic = methodCallExpression.Arguments.All(e => e.ReturnType.IsIntrinsic() || e.ReturnType.IsIntrinsicOrObjectArray());
+
+                    if (methodInfo.IsIdempotentMethod() && allargumentsAreIntrinsic)
+                    {
+                        return ExpressionValidationResultWithErrors.AcceptImidietReturn;
+                    }
+
+
+                    if ((methodCallExpression.Instance == null || methodCallExpression.Instance.SyntaxElementKind != SyntaxElementKind.This) &&
+                        (methodInfo.IsFrameworkStaticMethod() && allargumentsAreIntrinsic))
+                    {
+                        return ExpressionValidationResultWithErrors.AcceptImidietReturn;
+                    }
+
+                    return ExpressionValidationResultWithErrors.Abstain;
+                }
+            }
+
+
+            private sealed class GenericMethodInfoPropertyValidator : IMethodCallValidator
+            {
+                private readonly Func<MethodInfo, bool>[] predicates;
+
+                public GenericMethodInfoPropertyValidator(params Func<MethodInfo, bool>[] predicates)
+                {
+                    this.predicates = predicates;
+                }
+
+                public ExpressionValidationResultWithErrors ValidateMethod(IMethodCallExpression methodCallExpression, AnalysisContext currentContext)
+                {
+                    MethodInfo methodInfo = methodCallExpression.Method as MethodInfo;
+                    if (methodInfo == null)
+                    {
+                        return ExpressionValidationResultWithErrors.Abstain;
+                    }
+
+                    foreach (Func<MethodInfo, bool> predicate in predicates)
+                    {
+                        if (predicate(methodInfo))
+                        {
+                            return ExpressionValidationResultWithErrors.AcceptImidietReturn;
+                        }
+                    }
+
+                    return ExpressionValidationResultWithErrors.Abstain;
+                }
+            }
+
+            [Flags]
+            private enum ExpressionValidationResult
+            {
+                Accept = 0x01,
+                ImmediateReturn = 0x02,
+                Reject = 0x04,
+                Abstain = 0x08,
+                AcceptImmediateReturn = Accept | ImmediateReturn,
+                RejectImmediateReturn = Reject | ImmediateReturn
+            }
+
+            private sealed class ExpressionValidationResultWithErrors
+            {
+                public static readonly ExpressionValidationResultWithErrors AcceptImidietReturn = new ExpressionValidationResultWithErrors(ExpressionValidationResult.AcceptImmediateReturn);
+                public static readonly ExpressionValidationResultWithErrors Abstain = new ExpressionValidationResultWithErrors(ExpressionValidationResult.Abstain);
+
+                public ExpressionValidationResultWithErrors(ExpressionValidationResult result)
+                {
+                    this.Result = result;
+                }
+
+                public ExpressionValidationResult Result { get; set; }
+
+                public string MessageId { get; set; }
+
+                public object[] MessageArguments { get; set; }
+
+                public SeverityType SeverityType { get; set; }
+            }
         }
     }
+
+
 }

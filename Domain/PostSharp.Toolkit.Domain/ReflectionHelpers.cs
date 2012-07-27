@@ -59,6 +59,11 @@ namespace PostSharp.Toolkit.Domain
             return (methodInfo.Name == "ToString" && methodInfo.DeclaringType == typeof(object));
         }
 
+        public static bool IsObjectGetHashCode(this MethodBase methodInfo)
+        {
+            return (methodInfo.Name == "GetHashCode" && methodInfo.DeclaringType == typeof(object));
+        }
+
         public static bool IsIntrinsicOrObjectArray(this Type type)
         {
             //TODO : feature decision about intrinsic colection
