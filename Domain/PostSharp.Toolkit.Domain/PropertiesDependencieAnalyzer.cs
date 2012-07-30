@@ -396,11 +396,11 @@ namespace PostSharp.Toolkit.Domain
                         return ExpressionValidationResult.Accept;
                     }
 
-                    bool imidietReturn = false;
+                    bool immediateReturn = false;
 
                     foreach ( ExpressionValidationResultWithErrors resultWithErrors in rejectedResults.Value )
                     {
-                        imidietReturn |= resultWithErrors.Result.HasFlag( ExpressionValidationResult.ImmediateReturn );
+                        immediateReturn |= resultWithErrors.Result.HasFlag( ExpressionValidationResult.ImmediateReturn );
 
                         DomainMessageSource.Instance.Write(
                               currentContext.CurrentProperty,
@@ -409,7 +409,7 @@ namespace PostSharp.Toolkit.Domain
                               resultWithErrors.MessageArguments);
                     }
 
-                    if (imidietReturn)
+                    if (immediateReturn)
                     {
                         return ExpressionValidationResult.RejectImmediateReturn;
                     }

@@ -45,7 +45,7 @@ namespace PostSharp.Toolkit.Domain
 
             //There's a risk instances are both dead by now and we have no good way to know whether we stored the same instance.
             //For now we're relying on hash code only.
-            //TODO: If the final INPC algorithm turns out to depend on this equality, we will need to implement ObjectIDGenerator generator based on ConditionalWeakTable and store the IDs instead of hashes
+            //If the final INPC algorithm turns out to depend on this equality, we will need to implement ObjectIDGenerator generator based on ConditionalWeakTable and store the IDs instead of hashes
             //(except this may be slow: ConditionalWeakTable does a lot of locking)
             //For now there is no problem since we use WeakPropertyDescriptor only in List<T> and dead instances are not in scope of interest. Problem will occure when we would want to use Dictionary or HashSet
 

@@ -7,14 +7,17 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq.Expressions;
+
+using System.Linq;
 
 namespace PostSharp.Toolkit.Domain
 {
     internal static class NotifyPropertyChangedAccessor
     {
-        private class NotifyPropertyChangedTypeAccessors
+        internal class NotifyPropertyChangedTypeAccessors
         {
             private readonly Action<object, string> raisePropertyChangedAction;
             private readonly Action<object, string> raiseChildPropertyChangedAction;
@@ -76,8 +79,18 @@ namespace PostSharp.Toolkit.Domain
             }
         }
 
-        private static readonly ConcurrentDictionary<Type,NotifyPropertyChangedTypeAccessors> accessors =
+        private static ConcurrentDictionary<Type,NotifyPropertyChangedTypeAccessors> accessors =
             new ConcurrentDictionary<Type,NotifyPropertyChangedTypeAccessors>();
+
+        //internal static Dictionary<Type,NotifyPropertyChangedTypeAccessors> GetForSerialization()
+        //{
+        //    return accessors.ToDictionary( kv => kv.Key, kv => kv.Value );
+        //}
+
+        //internal static void SetAfterDeserialization(Dictionary<Type,NotifyPropertyChangedTypeAccessors> deserializedDictionary)
+        //{
+        //    accessors = new ConcurrentDictionary<Type, NotifyPropertyChangedTypeAccessors>(deserializedDictionary);
+        //}
 
         public static void RaisePropertyChanged(object obj, string propertyName)
         {

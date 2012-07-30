@@ -49,6 +49,12 @@ namespace PostSharp.Toolkit.Domain
                     case 8:
                         return
                             "Class {0} implements INotifyPropertyChanged but does not define an OnPropertyChanged method with the following signature: void OnPropertyChanged(string propertyName).";
+                    case 9:
+                        return
+                            "Class {0} defines event PostSharpToolkitsDomain_ChildPropertyChanged or method PostSharpToolkitsDomain_OnChildPropertyChanged with the following signature: void PostSharpToolkitsDomain_OnChildPropertyChanged(string propertyPath).";
+                    case 10:
+                        return
+                            "Class {0} defines IntroduceNotifyPropertyChangedAttribute or IntroduceNotifyChildPropertyChangedAttribute which can be applied only once in object hierarchy";
                     default:
                         return null;
                 }

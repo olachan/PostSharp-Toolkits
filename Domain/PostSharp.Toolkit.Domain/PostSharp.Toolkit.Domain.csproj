@@ -82,6 +82,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BindingFlagsSet.cs" />
     <Compile Include="NotifyPropertyChangedAccessor.cs" />
     <Compile Include="FieldInfoWithCompiledGetter.cs" />
     <Compile Include="PropertyFieldBinding.cs" />

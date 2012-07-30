@@ -17,8 +17,7 @@ namespace PostSharp.Toolkit.Domain
     {
         public static bool IsFrameworkStaticMethod( this MethodBase method )
         {
-            // TODO Intrinsic type validation. Problem : string.Format gets objects which are not intrinsic
-            if (!method.IsStatic || method.DeclaringType == null) // || !method.HasOnlyIntrinsicParameters())
+            if (!method.IsStatic || method.DeclaringType == null)
             {
                 return false;
             }
@@ -66,7 +65,6 @@ namespace PostSharp.Toolkit.Domain
 
         public static bool IsIntrinsicOrObjectArray(this Type type)
         {
-            //TODO : feature decision about intrinsic colection
             return type.IsArray && (type.GetElementType().IsIntrinsic() || type.GetElementType() == typeof(object));
         }
 

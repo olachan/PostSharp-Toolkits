@@ -70,6 +70,7 @@ namespace PostSharp.Toolkit.Domain
             if (this.propertyDependencySerializationStore != null)
             {
                 this.propertyDependencySerializationStore.CopyToMap();
+
                 this.propertyDependencySerializationStore = null;
             }
         }
@@ -86,7 +87,7 @@ namespace PostSharp.Toolkit.Domain
 
             args.ProceedSetValue();
 
-            this.childPropertyChangedProcessor.HandleFieldChange( args );
+            this.childPropertyChangedProcessor.HandleFieldChange(args);
 
             PropertyChangesTracker.RaisePropertyChangedIfNeeded(args);
         }
@@ -156,7 +157,7 @@ namespace PostSharp.Toolkit.Domain
             {
                 return;
             }
-          
+
             this.childPropertyChangedProcessor.HookHandlersToAllFields();
 
             initialized = true;
@@ -170,25 +171,36 @@ namespace PostSharp.Toolkit.Domain
 
         public override bool CompileTimeValidate(Type type)
         {
+            // TODO: build tests
             if (typeof(INotifyPropertyChanged).IsAssignableFrom(type))
             {
-                var onPropertyChangedMethod = type.GetMethod( "OnPropertyChanged", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance,
-                    null , new[] {typeof(string)}, null );
+                var onPropertyChangedMethod = type.GetMethod("OnPropertyChanged", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance,
+                    null, new[] { typeof(string) }, null);
                 if (onPropertyChangedMethod == null || onPropertyChangedMethod.ReturnType != typeof(void))
                 {
-                    DomainMessageSource.Instance.Write( type, SeverityType.Error, "INPC008", type.FullName);
+                    DomainMessageSource.Instance.Write(type, SeverityType.Error, "INPC008", type.FullName);
                 }
             }
 
-            //TODO: Validate to make sure PostsharpToolkitsDomain_ChildPropertyChanged method and event are not there (so that we do not get naming conflicts)
-            
+            if (!type.IsDefined(typeof(NotifyPropertyChangedAttribute), true))
+            {
+                MethodBase forbidenMethod = type.GetMethod("PostSharpToolkitsDomain_OnChildPropertyChanged", BindingFlagsSet.AllMembers);
+                ParameterInfo[] parameters = forbidenMethod != null ? forbidenMethod.GetParameters() : null;
+
+                if ((forbidenMethod != null && parameters.Length == 1 && parameters[0].ParameterType == typeof(string)) ||
+                    type.GetEvent("PostSharpToolkitsDomain_ChildPropertyChanged", BindingFlagsSet.AllMembers) != null)
+                {
+                    DomainMessageSource.Instance.Write(type, SeverityType.Error, "INPC009", type.FullName);
+                }
+            }
+
             return base.CompileTimeValidate(type);
         }
 
         public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
         {
             this.explicitDependencyMap = analyzer.Value.AnalyzeType(type);
-            this.fieldValueComparer = new FieldValueComparer( type );
+            this.fieldValueComparer = new FieldValueComparer(type);
             this.childPropertyChangedProcessor = ChildPropertyChangedProcessor.CompileTimeCreate(type, analyzer.Value.MethodFieldDependencies, this.fieldValueComparer, this.explicitDependencyMap);
         }
 
@@ -207,16 +219,16 @@ namespace PostSharp.Toolkit.Domain
             return clone;
         }
 
-        IEnumerable<AspectInstance> IAspectProvider.ProvideAspects( object targetElement )
+        IEnumerable<AspectInstance> IAspectProvider.ProvideAspects(object targetElement)
         {
             //We may be adding those aspects redundantly but they're not going to have any effect anyway
-            Type type = (Type) targetElement;
+            Type type = (Type)targetElement;
             if (!typeof(INotifyPropertyChanged).IsAssignableFrom(type))
             {
                 yield return new AspectInstance(type, new ObjectConstruction(typeof(IntroduceNotifyPropertyChangedAttribute)), null);
             }
             yield return new AspectInstance(type, new ObjectConstruction(typeof(IntroduceNotifyChildPropertyChangedAttribute)), null);
-            
+
             //if (!typeof(INotifyPropertyChanged).IsAssignableFrom( type ) &&
             //    !type.GetCustomAttributes( typeof(IntroduceNotifyPropertyChangedAttribute), true ).Any())
             //{
@@ -232,7 +244,7 @@ namespace PostSharp.Toolkit.Domain
 
         #region Inner attributes (events introduction)
 
-        //TODO: Make sure they're applied only once; consider building expressions for NotifyPropertyChangedAccessor in compile-time & serializing them
+        //TODO: consider building expressions for NotifyPropertyChangedAccessor in compile-time & serializing them
 
         /// <summary>
         /// Aspect introducing INPC interface with OnPropertyChanged method
@@ -243,6 +255,17 @@ namespace PostSharp.Toolkit.Domain
         [IntroduceInterface(typeof(INotifyPropertyChanged), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Fail)]
         public class IntroduceNotifyPropertyChangedAttribute : InstanceLevelAspect, INotifyPropertyChanged
         {
+            ////TODO build tests 
+            //public override bool CompileTimeValidate(Type type)
+            //{
+            //    if (type.IsDefined(typeof(IntroduceNotifyPropertyChangedAttribute), true))
+            //    {
+            //        DomainMessageSource.Instance.Write(type, SeverityType.Error, "INPC010", type.FullName);
+            //    }
+
+            //    return base.CompileTimeValidate(type);
+            //}
+
             public event PropertyChangedEventHandler PropertyChanged;
 
             [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore, Visibility = Visibility.Family)]
@@ -261,6 +284,17 @@ namespace PostSharp.Toolkit.Domain
         [MulticastAttributeUsage(MulticastTargets.Class, PersistMetaData = false, AllowMultiple = false, Inheritance = MulticastInheritance.None)]
         public class IntroduceNotifyChildPropertyChangedAttribute : InstanceLevelAspect
         {
+            ////TODO build tests 
+            //public override bool CompileTimeValidate(Type type)
+            //{
+            //    if (type.IsDefined(typeof(IntroduceNotifyChildPropertyChangedAttribute), true))
+            //    {
+            //        DomainMessageSource.Instance.Write(type, SeverityType.Error, "INPC010", type.FullName);
+            //    }
+
+            //    return base.CompileTimeValidate(type);
+            //}
+
             [IntroduceMember(OverrideAction = MemberOverrideAction.Ignore, Visibility = Visibility.Family)]
             public event EventHandler<ChildPropertyChangedEventArgs> PostSharpToolkitsDomain_ChildPropertyChanged;
 
