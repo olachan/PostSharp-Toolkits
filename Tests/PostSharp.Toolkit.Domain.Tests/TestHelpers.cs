@@ -15,17 +15,23 @@ namespace PostSharp.Toolkit.Domain.Tests
         {
             TInpc bc = new TInpc();
 
+            DoInpcTest( bc, propertyChangeAction, expectedEventFireCount, propertyNames );
+        }
+
+        public static void DoInpcTest<TInpc>(TInpc source, Action<TInpc> propertyChangeAction, int expectedEventFireCount, params string[] propertyNames)
+        {
             int eventFireCounter = 0;
 
-            ((INotifyPropertyChanged)bc).PropertyChanged += (s, e) =>
+            ((INotifyPropertyChanged)source).PropertyChanged += (s, e) =>
             {
                 if (propertyNames.Contains(e.PropertyName))
                 {
                     eventFireCounter++;
                 }
+                Assert.AreSame( source, s );
             };
 
-            propertyChangeAction(bc);
+            propertyChangeAction(source);
 
             Assert.AreEqual(expectedEventFireCount, eventFireCounter);
         }

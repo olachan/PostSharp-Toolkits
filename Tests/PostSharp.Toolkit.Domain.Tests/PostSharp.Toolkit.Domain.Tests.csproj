@@ -70,6 +70,7 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="InpcIntegrationTests.cs" />
     <Compile Include="ManulaNotifyPropertyChangedAspectTests.cs" />
     <Compile Include="AutomaticNotifyPropertyChangedAspectTests.cs" />
     <Compile Include="NotifyPropertyChangedLoadTests.cs" />

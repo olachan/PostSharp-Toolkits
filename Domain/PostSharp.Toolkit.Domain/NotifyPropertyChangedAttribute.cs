@@ -258,7 +258,7 @@ namespace PostSharp.Toolkit.Domain
             public void OnPropertyChanged(string propertyName)
             {
                 PropertyChangedEventHandler handler = this.PropertyChanged;
-                if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+                if (handler != null) handler(this.Instance, new PropertyChangedEventArgs(propertyName));
             }
         }
 
@@ -280,7 +280,7 @@ namespace PostSharp.Toolkit.Domain
             public void ____PostSharpToolkitsDomain_OnChildPropertyChanged____(string propertyPath)
             {
                 EventHandler<ChildPropertyChangedEventArgs> handler = this.____PostSharpToolkitsDomain_ChildPropertyChanged____;
-                if (handler != null) handler(this, new ChildPropertyChangedEventArgs(propertyPath));
+                if (handler != null) handler(this.Instance, new ChildPropertyChangedEventArgs(propertyPath));
             }
         }
 
