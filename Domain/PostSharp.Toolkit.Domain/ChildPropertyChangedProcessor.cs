@@ -107,8 +107,19 @@ namespace PostSharp.Toolkit.Domain
         {
             PropertyChangesTracker.StoreChangedChildProperties(this.instance, paths);
 
+            HashSet<string> allChangedProperties = new HashSet<string>();
+
             do
             {
+                paths = paths.Except( allChangedProperties ).ToList();
+                foreach ( string path in paths )
+                {
+                    if (!allChangedProperties.Contains( path ))
+                    {
+                        allChangedProperties.Add( path );
+                    }
+                }
+
                 List<string> changedProperties = paths.SelectMany(this.explicitDependencyMap.GetDependentProperties).ToList();
 
                 PropertyChangesTracker.StoreChangedProperties(this.instance, changedProperties);

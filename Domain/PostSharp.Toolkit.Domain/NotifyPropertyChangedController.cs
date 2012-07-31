@@ -14,7 +14,7 @@ namespace PostSharp.Toolkit.Domain
 
         public static void RaiseEvents(object instance)
         {
-            PropertyChangesTracker.RaisePropertyChanged(instance);
+            PropertyChangesTracker.RaisePropertyChangedOnlyOnSpecifiedInstance(instance);
         }
     }
 }

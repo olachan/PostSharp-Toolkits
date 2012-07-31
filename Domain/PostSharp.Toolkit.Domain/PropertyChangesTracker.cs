@@ -67,7 +67,7 @@ namespace PostSharp.Toolkit.Domain
         {
             if (StackPeek() != args.Instance)
             {
-                RaisePropertyChanged();
+                RaisePropertyChanged(args.Instance);
             }
         }
 
@@ -87,18 +87,18 @@ namespace PostSharp.Toolkit.Domain
             ChildPropertyChangesAccumulator.AddProperties(instance, propertyPaths);
         }
 
-        public static void RaisePropertyChanged()
+        public static void RaisePropertyChanged(object source)
         {
-            RaiseChildPropertyChanged();
+            RaiseChildPropertyChanged(source);
             RaisePropertyChangesInternal(
                 propertyChangesAcumulator.Value, 
-                false, 
-                w => w.Instance.IsAlive && !stackTrace.Value.Contains(w.Instance.Target));
+                false,
+                w => w.Instance.IsAlive && (!stackTrace.Value.Contains(w.Instance.Target) || ReferenceEquals(w.Instance.Target, source)));
         }
 
-        public static void RaisePropertyChanged(object instance)
+        public static void RaisePropertyChangedOnlyOnSpecifiedInstance(object instance)
         {
-            RaiseChildPropertyChanged();
+            RaiseChildPropertyChanged(instance);
             RaisePropertyChangesInternal(
                 propertyChangesAcumulator.Value, 
                 false, 
@@ -107,20 +107,21 @@ namespace PostSharp.Toolkit.Domain
 
         public static void RaisePropertyChangedIncludingCurrentObject()
         {
-            object currentObject = StackPeek();
-            RaiseChildPropertyChanged();
-            RaisePropertyChangesInternal(
-                propertyChangesAcumulator.Value, 
-                false, 
-                w => w.Instance.IsAlive && (!stackTrace.Value.Contains(w.Instance.Target) || ReferenceEquals(w.Instance.Target, currentObject)));
+            RaisePropertyChanged( StackPeek() );
         }
 
-        public static void RaiseChildPropertyChanged()
+        public static void RaiseChildPropertyChanged(object source)
         {
-            RaisePropertyChangesInternal(childPropertyChangesAcumulator.Value, true, w => w.Instance.IsAlive && !stackTrace.Value.Contains(w.Instance.Target));
+            RaisePropertyChangesInternal(
+                childPropertyChangesAcumulator.Value, 
+                true, 
+                w => w.Instance.IsAlive && (!stackTrace.Value.Contains(w.Instance.Target) || ReferenceEquals(w.Instance.Target, source)));
         }
         
-        private static void RaisePropertyChangesInternal(ChangedPropertiesAccumulator accumulator, bool raiseChildPropertyChanges, Func<WeakPropertyDescriptor, bool> propertySelectorPredicate )
+        private static void RaisePropertyChangesInternal(
+            ChangedPropertiesAccumulator accumulator, 
+            bool raiseChildPropertyChanges, 
+            Func<WeakPropertyDescriptor, bool> propertySelectorPredicate )
         {
             accumulator.Compact();
 
@@ -128,16 +129,22 @@ namespace PostSharp.Toolkit.Domain
 
             int loopCount = 0;
 
+            Dictionary<WeakPropertyDescriptor, int> raiseCounts = accumulator.ToDictionary( w => w, w => 0 );
+
             do
             {
                 objectsToRaisePropertyChanged = accumulator.Where(propertySelectorPredicate).ToList();
 
                 foreach (WeakPropertyDescriptor w in objectsToRaisePropertyChanged)
                 {
+                    int raiseCount = raiseCounts.GetOrCreate(w, () => 0);
+                    
                     //INPC handler may raise INPC again and process some of our events;
                     //we're working on accumulator copy, so only way to know it is to have a flag on the descriptor
-                    if (w.Processed)
+
+                    if (w.Processed || raiseChildPropertyChanges ? raiseCount > 0 : raiseCount > 1)
                     {
+                        w.Processed = true;
                         continue;
                     }
 
@@ -147,6 +154,8 @@ namespace PostSharp.Toolkit.Domain
 
                     if (cpc != null) //Target may not be alive any more
                     {
+                        raiseCounts[w]++;
+
                         if (raiseChildPropertyChanges)
                         {
                             NotifyPropertyChangedAccessor.RaiseChildPropertyChanged( cpc, w.PropertyPath );
@@ -159,13 +168,34 @@ namespace PostSharp.Toolkit.Domain
                 }
                 //Notifications may cause generation of new notifications, continue until there is nothing left to raise
             }
-            while (objectsToRaisePropertyChanged.Count > 0 && loopCount++ <= 12);
+            while (objectsToRaisePropertyChanged.Count > 0 && ++loopCount <= 32);
 
             //TODO: Verify the loop above will always stop.
             //If there's a risk it won't, call RaiseChildPropertyChanged from NPCAttribute.ChildPropertyChangedEventHandler to bubble up CNPC notifications
             //(this may lead to a lot of unneccessary recursion, however, and a lot of continuations on w.Processed check above)
+
+            // if we encounter infinite loop generate meaningful exception for bug report.
+            if (loopCount == 32)
+            {
+                throw new NotifyPropertyChangedAlgorithmInfiniteLoop( "Encountered infinite loop while raising PropertyChanged events" );
+            }
+        }
+    }
+
+    public class NotifyPropertyChangedAlgorithmInfiniteLoop : Exception
+    {
+        public NotifyPropertyChangedAlgorithmInfiniteLoop()
+        {
         }
 
-        
+        public NotifyPropertyChangedAlgorithmInfiniteLoop( string message )
+            : base( message )
+        {
+        }
+
+        public NotifyPropertyChangedAlgorithmInfiniteLoop( string message, Exception innerException )
+            : base( message, innerException )
+        {
+        }
     }
 }

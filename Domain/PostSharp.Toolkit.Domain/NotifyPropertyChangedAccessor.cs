@@ -37,7 +37,7 @@ namespace PostSharp.Toolkit.Domain
                 //(object, propertyPath) => object.PostsharpToolkitsDomain_OnChildPropertyChanged(propertyName)
                 raiseChildPropertyChangedAction =
                     Expression.Lambda<Action<object, string>>(Expression.Call(Expression.Convert(objectParameter, type),
-                                                                                "PostSharpToolkitsDomain_OnChildPropertyChanged", null,
+                                                                                "____PostSharpToolkitsDomain_OnChildPropertyChanged____", null,
                                                                                 propertyParameter), objectParameter, propertyParameter).Compile();
 
                 
@@ -47,14 +47,14 @@ namespace PostSharp.Toolkit.Domain
                 this.addChildPropertyChangedHandlerAction =
                     Expression.Lambda<Action<object, EventHandler<ChildPropertyChangedEventArgs>>>(
                             Expression.Call(
-                                Expression.Convert(objectParameter, type), "add_PostSharpToolkitsDomain_ChildPropertyChanged", null, handlerParameter),
+                                Expression.Convert(objectParameter, type), "add_____PostSharpToolkitsDomain_ChildPropertyChanged____", null, handlerParameter),
                              objectParameter, handlerParameter).Compile();
 
                 //(object, handler) => object.PostsharpToolkitsDomain_ChildPropertyChanged -= handler 
                 this.removeChildPropertyChangedHandlerAction =
                     Expression.Lambda<Action<object, EventHandler<ChildPropertyChangedEventArgs>>>(
                         Expression.Call(
-                                Expression.Convert(objectParameter, type), "remove_PostSharpToolkitsDomain_ChildPropertyChanged", null, handlerParameter),
+                                Expression.Convert(objectParameter, type), "remove_____PostSharpToolkitsDomain_ChildPropertyChanged____", null, handlerParameter),
                         objectParameter, handlerParameter).Compile();
             }
 

@@ -140,7 +140,6 @@ namespace PostSharp.Toolkit.Domain.Tests
         }
 
         [Test]
-        [Ignore]
         public void CyclicDependsOn()
         {
             TestHelpers.DoInpcTest<InpcCyclicDependency>(
@@ -149,7 +148,7 @@ namespace PostSharp.Toolkit.Domain.Tests
                         c.Str1 = "sdaf";
                         c.Str2 = "sdgfdsf";
                     },
-                4,
+                2,
                 "A");
         }
     }
