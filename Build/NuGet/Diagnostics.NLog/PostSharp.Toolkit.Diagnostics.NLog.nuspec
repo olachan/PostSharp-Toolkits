@@ -26,5 +26,6 @@
     <file src="Release\PostSharp.Toolkit.Diagnostics.Weaver.NLog.pdb" target="tools"/>
     <file src="{SRC}Tools\*.ps1" target="tools"/>
     <file src="functions.ps1" target="tools"/>
+    <file src="{SRC}Content\690CAA32-A6FE-41DB-A645-FED34CD38682.txt" target="content"/>
   </files>
 </package>

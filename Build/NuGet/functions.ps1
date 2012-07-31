@@ -127,16 +127,6 @@ function Save($psproj)
     $xml.Save($psproj.FileName)
 }
 
-function DeleteDummyFile($project)
-{
-	# remove the PostSharpDummy.txt file, required to workaround the issue http://nuget.codeplex.com/workitem/595
-	$item = $project.ProjectItems.Item("PostSharpDummyFile.txt")
-	if ($item)
-	{
-	  $item.Delete()
-	}
-}
-
 function CommentOut([System.Xml.XmlNode] $xml)
 {
 	Write-Host "Commenting out $xml"

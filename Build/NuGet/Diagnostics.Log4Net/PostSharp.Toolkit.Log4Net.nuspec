@@ -26,5 +26,6 @@
     <file src="Release\PostSharp.Toolkit.Diagnostics.Weaver.Log4Net.pdb" target="tools"/>
     <file src="{SRC}Tools\*.ps1" target="tools"/>
     <file src="functions.ps1" target="tools"/>
+    <file src="{SRC}Content\B1927FEF-184F-45BA-A572-9A7C9AFBDCE3.txt" target="content"/>
   </files>
 </package>
