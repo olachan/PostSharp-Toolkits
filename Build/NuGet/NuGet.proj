@@ -25,6 +25,7 @@
   </Target>
 
   <Target Name="Build" DependsOnTargets="CreateSpecFiles">
+    <MakeDir Directories="$(OutputNuGetDir)"/>
     <Exec Command="$(NuGet) pack $(IntermediateNuGetDir)\%(NuGetSourceFiles.Filename).nuspec /BasePath $(ImageDir) /Verbose /OutputDirectory $(OutputNuGetDir)" /> 
   </Target>
 </Project>
