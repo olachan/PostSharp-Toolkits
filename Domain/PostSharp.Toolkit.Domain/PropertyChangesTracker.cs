@@ -113,9 +113,9 @@ namespace PostSharp.Toolkit.Domain
         public static void RaiseChildPropertyChanged(object source)
         {
             RaisePropertyChangesInternal(
-                childPropertyChangesAcumulator.Value, 
-                true, 
-                w => w.Instance.IsAlive && (!stackTrace.Value.Contains(w.Instance.Target) || ReferenceEquals(w.Instance.Target, source)));
+                childPropertyChangesAcumulator.Value,
+                true,
+                w => w.Instance.IsAlive);//&& (!stackTrace.Value.Contains(w.Instance.Target) || ReferenceEquals(w.Instance.Target, source)));
         }
         
         private static void RaisePropertyChangesInternal(

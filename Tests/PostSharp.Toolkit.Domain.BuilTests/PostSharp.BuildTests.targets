@@ -207,7 +207,7 @@
     <CreateItem Include="$(SourceDir)\**\*.cs" Exclude="$(SourceDir)\**\*.Dependency.cs" Condition="'$(SourceDir)'!=''">
       <Output TaskParameter="Include" ItemName="AllSourceFiles"/>
     </CreateItem>
-    <Exec Command="$(MSBuild40) &quot;$(MSBuildProjectFile)&quot; /p:Source=%(AllSourceFiles.Identity) /p:Dependency=%(AllSourceFiles.RootDir)%(AllSourceFiles.Directory)%(AllSourceFiles.Filename).Dependency.cs /p:SourceRelativeDir=%(AllSourceFiles.RelativeDir) /p:TestAssemblyName=%(AllSourceFiles.Filename) /p:TargetFramework=$(TargetFramework) /t:_TestOne /p:BuildProjectReferences=$(BuildProjectReferences) /p:IsTest=True"/>
+    <Exec Command="$(MSBuild40) &quot;$(MSBuildProjectFile)&quot; /p:Source=%(AllSourceFiles.Identity) /p:Dependency=%(AllSourceFiles.RootDir)%(AllSourceFiles.Directory)%(AllSourceFiles.Filename).Dependency.cs /p:SourceRelativeDir=%(AllSourceFiles.RelativeDir) /p:TestAssemblyName=%(AllSourceFiles.Filename) /p:TargetFramework=$(TargetFramework) /t:_TestOne /p:BuildProjectReferences=$(BuildProjectReferences) /p:Configuration=$(Configuration) /p:Platform=$(Platform) /p:IsTest=True"/>
 
   </Target>
 
