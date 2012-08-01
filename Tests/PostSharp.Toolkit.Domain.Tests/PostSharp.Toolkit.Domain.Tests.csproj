@@ -71,6 +71,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="InpcIntegrationTests.cs" />
+    <Compile Include="InpcSerializationTests.cs" />
     <Compile Include="ManulaNotifyPropertyChangedAspectTests.cs" />
     <Compile Include="AutomaticNotifyPropertyChangedAspectTests.cs" />
     <Compile Include="NotifyPropertyChangedLoadTests.cs" />
@@ -86,6 +87,8 @@
       <HintPath>$(PostSharpDir)/$(PostSharpBuild)/PostSharp.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Domain\PostSharp.Toolkit.Domain\PostSharp.Toolkit.Domain.csproj">
