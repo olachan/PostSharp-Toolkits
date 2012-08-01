@@ -1,16 +1,9 @@
-﻿// @ExpectedMessage(INPC003)
-// @ExpectedMessage(INPC001)
-// @ExpectedMessage(INPC002)
-// @ExpectedMessage(INPC011)
+﻿// @ExpectedMessage(INPC011)
 // @ExpectedMessage(PS0060)
-
-// TODO : cope with extra errors when delegate call encountered
-
-using System;
 
 namespace PostSharp.Toolkit.Domain.BuilTests.NPC
 {
-    namespace NotifyPropertyChangedWithDelegateCall
+    namespace NPCWithVirtualMethod
     {
         class Program
         {
@@ -21,14 +14,20 @@ namespace PostSharp.Toolkit.Domain.BuilTests.NPC
         }
 
         [NotifyPropertyChanged]
-        class NotifyPropertyChangedWithDelegateCall
+        class NPCWithVirtualMethod
         {
             public int Zero
             {
                 get
                 {
-                    return ((Func<int>)(() => 0))();
+                    return this.Get0();
                 }
+            }
+
+
+            public virtual int Get0()
+            {
+                return 0;
             }
         }
     }

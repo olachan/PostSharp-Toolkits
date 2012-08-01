@@ -29,15 +29,15 @@ namespace PostSharp.Toolkit.Domain
                     case 1:
                         return "NotifyPropertyChangedAttribute: automatic analysis of property {0} failed. " +
                                "Method {1} contains direct access to a field of another class." + 
-                               "Use InstanceScopedProperty attribute to specify that property value depends only on state of current instance or DependsOn attribute to explicitly specify dependencies.";
+                               "Use NotifyPropertyChangeSafe attribute to specify that property value depends only on state of current instance or DependsOn attribute to explicitly specify dependencies.";
                     case 2:
                         return "NotifyPropertyChangedAttribute: automatic analysis of property {0} failed. " +
                                "Method {1} contains call to non void (ref/out param) method of another class." +
-                               "Use InstanceScopedProperty attribute to specify that property value depends only on state of current instance, DependsOn attribute to explicitly specify dependencies or mark called method with IdempotentMethodAttribute attribute to specify that the method is idempotent.";
+                               "Use NotifyPropertyChangeSafe attribute to specify that property value depends only on state of current instance, DependsOn attribute to explicitly specify dependencies or mark called method with IdempotentMethodAttribute attribute to specify that the method is idempotent.";
                     case 3:
                         return "NotifyPropertyChangedAttribute: automatic analysis of property {0} failed. " + 
                                "Method {1} contains delegate call." +
-                               "Use InstanceScopedProperty attribute to specify that property value depends only on state of current instance or DependsOn attribute to explicitly specify dependencies.";
+                               "Use NotifyPropertyChangeSafe attribute to specify that property value depends only on state of current instance or DependsOn attribute to explicitly specify dependencies.";
                     case 4:
                         return "Method {0} contains parameters of not intrinsic type. IdempotentMethodAttribute can be applied only to methods with intrinsic(primitive) parameters";
                     case 5:
@@ -55,6 +55,10 @@ namespace PostSharp.Toolkit.Domain
                     case 10:
                         return
                             "Class {0} defines IntroduceNotifyPropertyChangedAttribute or IntroduceNotifyChildPropertyChangedAttribute which can be applied only once in object hierarchy";
+                    case 11:
+                        return "NotifyPropertyChangedAttribute: automatic analysis of property {0} failed. " +
+                               "Method {1} contains virtual method call." +
+                               "Use InstanceScopedProperty attribute to specify that property value depends only on state of current instance or DependsOn attribute to explicitly specify dependencies.";
                     default:
                         return null;
                 }

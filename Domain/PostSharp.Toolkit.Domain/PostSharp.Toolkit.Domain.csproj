@@ -103,7 +103,7 @@
     <Compile Include="NestableContextInfo.cs" />
     <Compile Include="NotifyPropertyChangedIgnoreAttribute.cs" />
     <Compile Include="ChildPropertyChangedEventArgs.cs" />
-    <Compile Include="PropertiesDependencieAnalyzer.cs" />
+    <Compile Include="PropertyDependencyAnalyzer.cs" />
     <Compile Include="NotifyPropertyChangedAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyChangesTracker.cs" />
