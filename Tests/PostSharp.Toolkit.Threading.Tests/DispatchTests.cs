@@ -25,27 +25,35 @@ namespace PostSharp.Toolkit.Threading.Tests
         [Test]
         public void WpfWindowMethods_AreDispatchedCorrectly()
         {
-            DispatchWpfObject window = null;
+            Exception e;
+            RunInWpfWindow(window => window.SetWindowTitle(), out e);
+            Assert.IsNull( e );
+        }
 
-            ManualResetEventSlim ready = new ManualResetEventSlim( false );
-            Thread windowThread = new Thread(
-                () =>
+        [Test]
+        [ExpectedException(typeof(AggregateException))]
+        public void WpfWindowMethods_ExceptionsAreDispatchedCorrectly()
+        {
+            Exception e;
+            RunInWpfWindow(window => window.ThrowException(), out e);
+            Assert.IsNull(e);
+
+        }
+
+        // TODO dispatcher beginInvoke not invoking methods
+        [Test]
+        [Ignore]
+        public void WpfWindowMethods_AsyncExceptionsAreDispatchedCorrectly()
+        {
+            Exception e;
+            RunInWpfWindow(
+                window =>
                     {
-                        window = new DispatchWpfObject( ready );
-                        window.Show();
-                        Dispatcher.Run();
-                    } );
-
-            windowThread.SetApartmentState( ApartmentState.STA );
-            windowThread.Start();
-
-            ready.Wait();
-
-            window.SetWindowTitle();
-
-            window.Dispatcher.InvokeShutdown();
-
-            windowThread.Join();
+                        window.SetWindowTitle(false);
+                        window.ThrowExceptionAsync();
+                    }, 
+                out e);
+            Assert.IsTrue( e != null && e.GetType() == typeof(ArgumentException) );
         }
 
         private DispatchWinFormsObject form;
@@ -54,32 +62,75 @@ namespace PostSharp.Toolkit.Threading.Tests
         public void WinFormsMethods_AreDispatchedCorrectly()
         {
             this.form = null;
-            ManualResetEventSlim ready = new ManualResetEventSlim( false );
-            Thread windowThread = new Thread( () =>
+            ManualResetEventSlim ready = new ManualResetEventSlim(false);
+            Thread windowThread = new Thread(() =>
                                                   {
-                                                      this.form = new DispatchWinFormsObject( ready );
-                                                      FormsApplication.Run( this.form );
-                                                  } );
+                                                      this.form = new DispatchWinFormsObject(ready);
+                                                      FormsApplication.Run(this.form);
+                                                  });
 
-            windowThread.SetApartmentState( ApartmentState.STA );
+            windowThread.SetApartmentState(ApartmentState.STA);
             windowThread.Start();
 
             ready.Wait();
 
             this.form.AddControl();
 
-            this.form.Invoke( new Action( this.form.Close ) );
+            this.form.Invoke(new Action(this.form.Close));
 
             windowThread.Join();
         }
 
-        [DesignerCategory( "" )]
+        private static void RunInWpfWindow(Action<DispatchWpfObject> action, out Exception thrownException)
+        {
+            DispatchWpfObject window = null;
+
+            Exception exception = null;
+            ManualResetEventSlim ready = new ManualResetEventSlim(false);
+
+            Thread windowThread = new Thread(
+                () =>
+                {
+                    try
+                    {
+                        window = new DispatchWpfObject(ready);
+                        window.Show();
+                        Dispatcher.Run();
+                    }
+                    catch (Exception e)
+                    {
+                        exception = e;
+                        throw;
+                    }
+
+                });
+
+            windowThread.SetApartmentState(ApartmentState.STA);
+            windowThread.Start();
+
+            ready.Wait();
+            ready.Reset();
+
+            action(window);
+
+            ready.Wait();
+            Thread.Sleep( 10 ); // wait for exception
+
+            window.Dispatcher.InvokeShutdown();
+
+            windowThread.Join();
+
+            thrownException = exception;
+        }
+
+        [DesignerCategory("")]
         public class DispatchWinFormsObject : Form
         {
             private readonly ManualResetEventSlim readyEvent;
 
-            public DispatchWinFormsObject( ManualResetEventSlim ready )
+            public DispatchWinFormsObject(ManualResetEventSlim ready)
             {
+
                 this.readyEvent = ready;
 
                 // Attributes set so window does not show during tests
@@ -87,27 +138,27 @@ namespace PostSharp.Toolkit.Threading.Tests
                 this.Width = 0;
                 this.Height = 0;
                 this.ShowInTaskbar = false;
-                this.SetStyle( ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true );
+                this.SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
             }
 
             // overriden so window does not show during tests
-            protected override void OnPaint( PaintEventArgs e )
+            protected override void OnPaint(PaintEventArgs e)
             {
             }
 
             // overriden so window does not show during tests
-            protected override void OnPaintBackground( PaintEventArgs e )
+            protected override void OnPaintBackground(PaintEventArgs e)
             {
             }
 
             [DispatchedMethod]
             public void AddControl()
             {
-                this.Controls.Add( new Control() ); // Adding control deterministically throws exception when done from outside UI thread 
+                this.Controls.Add(new Control()); // Adding control deterministically throws exception when done from outside UI thread 
             }
 
 
-            protected override void OnShown( EventArgs e )
+            protected override void OnShown(EventArgs e)
             {
                 this.readyEvent.Set();
             }
@@ -117,7 +168,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             private ManualResetEventSlim ready;
 
-            public DispatchWpfObject( ManualResetEventSlim ready )
+            public DispatchWpfObject(ManualResetEventSlim ready)
             {
                 this.ready = ready;
 
@@ -131,12 +182,30 @@ namespace PostSharp.Toolkit.Threading.Tests
             }
 
             [DispatchedMethod]
-            public void SetWindowTitle()
+            public void SetWindowTitle(bool setEvent = true)
             {
                 this.Title = "new title";
+                if (setEvent)
+                {
+                    this.ready.Set();
+                }
             }
 
-            protected override void OnInitialized( EventArgs e )
+            [DispatchedMethod]
+            public void ThrowException()
+            {
+                this.ready.Set();
+                throw new Exception("test exception");
+            }
+
+            [DispatchedMethod(true)]
+            public void ThrowExceptionAsync()
+            {
+                this.ready.Set();
+                throw new ArgumentException("test exception");
+            }
+
+            protected override void OnInitialized(EventArgs e)
             {
                 this.ready.Set();
             }

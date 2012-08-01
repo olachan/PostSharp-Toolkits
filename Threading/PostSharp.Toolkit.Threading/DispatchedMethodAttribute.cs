@@ -143,7 +143,13 @@ namespace PostSharp.Toolkit.Threading
                 }
                 else
                 {
-                    dispatcher.Invoke( new WorkItem( args ) );
+                    WorkItemWithExceptionInterceptor workItem = new WorkItemWithExceptionInterceptor(args);
+                    dispatcher.Invoke(workItem);
+
+                    if (workItem.HasError)
+                    {
+                        throw new AggregateException( "Exception has been thrown by the target of an invocation", workItem.Exception );
+                    }
                 }
             }
         }

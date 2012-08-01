@@ -78,6 +78,7 @@
     <Compile Include="ReaderWriterSynchronizedAttribute.cs" />
     <Compile Include="ReaderLockAttribute.cs" />
     <Compile Include="ThreadUnsafeException.cs" />
+    <Compile Include="WorkItemWithExceptionInterceptor.cs" />
     <Compile Include="WpfDispatcherBinding.cs" />
     <Compile Include="WriterLockAttribute.cs" />
     <Compile Include="DispatchedMethodAttribute.cs" />
