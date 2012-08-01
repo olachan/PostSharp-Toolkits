@@ -12,11 +12,23 @@
      <MSBuild Projects="PostSharp.Toolkits.sln" Properties="Configuration=Debug;Platform=Any CPU" />
      <MSBuild Projects="PostSharp.Toolkits.sln" Properties="Configuration=Release;Platform=Any CPU" />
    </Target>
-   
-   <Target Name="NuGet" DependsOnTargets="Prepare;QuickBuild">
+
+  <PropertyGroup>
+    <NuGetDependsOn>Test</NuGetDependsOn>
+  </PropertyGroup>
+  
+   <Target Name="NuGet" DependsOnTargets="$(NuGetDependsOn)">
     <MSBuild Projects="Build\NuGet\NuGet.proj" />
    </Target>
-   
-   <Target Name="Build" DependsOnTargets="NuGet" />
+
+  <Target Name="Upload" DependsOnTargets="$(NuGetDependsOn)">
+    <MSBuild Projects="Build\NuGet\NuGet.proj" Targets="Upload" />
+  </Target>
+
+  <Target Name="Test" DependsOnTargets="Prepare;QuickBuild">
+    <MSBuild Projects="PostSharp.Toolkits.BuildTests.proj" Condition="'$(SkipTest)'==''"/>
+  </Target>
+
+  <Target Name="Build" DependsOnTargets="NuGet" />
    	
 </Project>
