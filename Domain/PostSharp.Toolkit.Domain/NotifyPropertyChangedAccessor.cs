@@ -34,28 +34,36 @@ namespace PostSharp.Toolkit.Domain
                                                                                 "OnPropertyChanged", null, propertyParameter), objectParameter, propertyParameter)
                         .Compile();
 
-                //(object, propertyPath) => object.PostsharpToolkitsDomain_OnChildPropertyChanged(propertyName)
-                raiseChildPropertyChangedAction =
+                try
+                {
+                    //(object, propertyPath) => object.PostsharpToolkitsDomain_OnChildPropertyChanged(propertyName)
+                    raiseChildPropertyChangedAction =
                     Expression.Lambda<Action<object, string>>(Expression.Call(Expression.Convert(objectParameter, type),
                                                                                 "____PostSharpToolkitsDomain_OnChildPropertyChanged____", null,
                                                                                 propertyParameter), objectParameter, propertyParameter).Compile();
 
-                
-                ParameterExpression handlerParameter = Expression.Parameter( typeof(EventHandler<ChildPropertyChangedEventArgs>), "handler" );
 
-                //(object, handler) => object.PostsharpToolkitsDomain_ChildPropertyChanged += handler 
-                this.addChildPropertyChangedHandlerAction =
-                    Expression.Lambda<Action<object, EventHandler<ChildPropertyChangedEventArgs>>>(
+                    ParameterExpression handlerParameter = Expression.Parameter(typeof(EventHandler<ChildPropertyChangedEventArgs>), "handler");
+
+                    //(object, handler) => object.PostsharpToolkitsDomain_ChildPropertyChanged += handler 
+                    this.addChildPropertyChangedHandlerAction =
+                        Expression.Lambda<Action<object, EventHandler<ChildPropertyChangedEventArgs>>>(
+                                Expression.Call(
+                                    Expression.Convert(objectParameter, type), "add_____PostSharpToolkitsDomain_ChildPropertyChanged____", null, handlerParameter),
+                                 objectParameter, handlerParameter).Compile();
+
+                    //(object, handler) => object.PostsharpToolkitsDomain_ChildPropertyChanged -= handler 
+                    this.removeChildPropertyChangedHandlerAction =
+                        Expression.Lambda<Action<object, EventHandler<ChildPropertyChangedEventArgs>>>(
                             Expression.Call(
-                                Expression.Convert(objectParameter, type), "add_____PostSharpToolkitsDomain_ChildPropertyChanged____", null, handlerParameter),
-                             objectParameter, handlerParameter).Compile();
-
-                //(object, handler) => object.PostsharpToolkitsDomain_ChildPropertyChanged -= handler 
-                this.removeChildPropertyChangedHandlerAction =
-                    Expression.Lambda<Action<object, EventHandler<ChildPropertyChangedEventArgs>>>(
-                        Expression.Call(
-                                Expression.Convert(objectParameter, type), "remove_____PostSharpToolkitsDomain_ChildPropertyChanged____", null, handlerParameter),
-                        objectParameter, handlerParameter).Compile();
+                                    Expression.Convert(objectParameter, type), "remove_____PostSharpToolkitsDomain_ChildPropertyChanged____", null, handlerParameter),
+                            objectParameter, handlerParameter).Compile();
+                }
+                catch (InvalidOperationException)
+                {
+                    throw new NotInstrumentedClassInDependsOnException(string.Format( "Type {0} is not instrumented by NotifyPropertyChangedAttribute", type.Name ));
+                }
+                
             }
 
             public void RaisePropertyChanged(object obj, string propertyName)
