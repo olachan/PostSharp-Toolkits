@@ -1,22 +1,40 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\MSBuildCommunityTasks\MSBuild.Community.Tasks.Targets"/>
 
-	<PropertyGroup>
-		<PostSharpToolkitsDirectory>.</PostSharpToolkitsDirectory>
-	</PropertyGroup>
+  <PropertyGroup>
+    <PostSharpToolkitsDirectory>.</PostSharpToolkitsDirectory>
+  </PropertyGroup>
 
-	<Target Name="Prepare">
+  <Target Name="Prepare">
     <MSBuild Projects="Build\Versioning.targets" Targets="CreateVersionFiles"/>
   </Target>
 
-   <Target Name="QuickBuild">
-     <MSBuild Projects="PostSharp.Toolkits.sln" Properties="Configuration=Debug;Platform=Any CPU" />
-     <MSBuild Projects="PostSharp.Toolkits.sln" Properties="Configuration=Release;Platform=Any CPU" />
-   </Target>
-   
-   <Target Name="NuGet" DependsOnTargets="Prepare;QuickBuild">
+  <Target Name="QuickBuild">
+    <MSBuild Projects="PostSharp.Toolkits.sln" Properties="Configuration=Debug;Platform=Any CPU" />
+    <MSBuild Projects="PostSharp.Toolkits.sln" Properties="Configuration=Release;Platform=Any CPU" />
+  </Target>
+
+  <Target Name="NuGet" DependsOnTargets="Prepare;QuickBuild">
     <MSBuild Projects="Build\NuGet\NuGet.proj" />
-   </Target>
-   
-   <Target Name="Build" DependsOnTargets="NuGet" />
-   	
+  </Target>
+
+  <ItemGroup>
+    <TestAssembly Include="Tests\*\bin\Debug\*.Tests.dll"/>
+    <NUnitPath Include="packages\NUnit.Runners.2.6.0.12051\tools" />
+  </ItemGroup>
+
+  <Target Name="UnitTests" DependsOnTargets="QuickBuild">
+    <NUnit Assemblies="@(TestAssembly)"
+           ToolPath="@(NUnitPath)" />
+  </Target>
+
+  <Target Name="BuildTests">
+    <MSBuild Projects="Tests\PostSharp.Toolkit.Domain.BuilTests\PostSharp.Toolkit.Domain.BuilTests.csproj" Targets="Test" Properties="Configuration=Debug;Platform=AnyCPU"/>
+    <MSBuild Projects="Tests\PostSharp.Toolkit.Threading.BuildTests\PostSharp.Toolkit.Threading.BuildTests.csproj" Targets="Test" Properties="Configuration=Debug;Platform=AnyCPU"/>
+  </Target>
+
+  <Target Name="Test" DependsOnTargets="UnitTests;BuildTests" />
+
+  <Target Name="Build" DependsOnTargets="NuGet;Test" />
+
 </Project>

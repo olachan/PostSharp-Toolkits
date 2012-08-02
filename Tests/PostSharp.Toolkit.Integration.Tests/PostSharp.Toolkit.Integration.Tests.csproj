@@ -32,17 +32,24 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="nunit.framework, Version=2.6.0.12051, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NUnit.2.6.0.12054\lib\nunit.framework.dll</HintPath>
+    </Reference>
     <Reference Include="PostSharp, Version=2.1.0.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>$(PostSharpDir)\$(PostSharpBuild)\PostSharp.dll</HintPath>
     </Reference>
-    <Reference Include="nunit.framework, Version=2.6.0.12051, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BaseTestsFixture.cs" />
@@ -54,10 +61,6 @@
       <Project>{19C7E7BD-4C68-4796-97ED-24E6CEFD95B0}</Project>
       <Name>PostSharp.Toolkit.Diagnostics</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Domain\PostSharp.Toolkit.Domain\PostSharp.Toolkit.Domain.csproj">
-      <Project>{9648D4B9-9C05-4DB5-953B-DE3139B6087C}</Project>
-      <Name>PostSharp.Toolkit.Domain</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Threading\PostSharp.Toolkit.Threading\PostSharp.Toolkit.Threading.csproj">
       <Project>{A3338835-6A17-442C-A7B2-C4F2BDDC06F3}</Project>
       <Name>PostSharp.Toolkit.Threading</Name>
@@ -68,8 +71,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="packages.config" />
     <None Include="PostSharp.Toolkit.Integration.Tests.psproj">
       <SubType>Designer</SubType>
+      <TransformOnBuild>true</TransformOnBuild>
     </None>
   </ItemGroup>
   <Import Project="..\..\Dependencies\NuGet\nuget.targets" />

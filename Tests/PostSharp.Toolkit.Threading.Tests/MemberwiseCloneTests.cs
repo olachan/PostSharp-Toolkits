@@ -23,6 +23,7 @@ namespace PostSharp.Toolkit.Threading.Tests
     {
         // Failing test: known issue of postsharp - implicit aspect shearing after invoking MemberwiseClone
         [Test]
+        [Ignore]
         public void MemberwiseCloneTest()
         {
             ReaderWriterWithClone rw1 = new ReaderWriterWithClone();

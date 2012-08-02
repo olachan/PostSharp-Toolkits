@@ -19,6 +19,9 @@ namespace PostSharp.Toolkit.Threading.Tests
     [TestFixture]
     public class DetectDeadlocksTests
     {
+
+       
+
 #if !(DEBUG || DEBUG_THREADING)
         [Test]
 #endif

@@ -157,7 +157,11 @@ namespace PostSharp.Toolkit.Threading
                 AssemblyName assemblyName =
                     AppDomain.CurrentDomain.GetAssemblies().SelectMany( a => a.GetReferencedAssemblies() ).SingleOrDefault(
                         a => a.FullName == windowsBaseAssemblyName );
-                windowsBaseAssembly = Assembly.Load( assemblyName );
+
+                if ( assemblyName != null )
+                {
+                    windowsBaseAssembly = Assembly.Load( assemblyName );
+                }
             }
 
             return windowsBaseAssembly;

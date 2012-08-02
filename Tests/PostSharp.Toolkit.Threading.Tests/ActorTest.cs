@@ -34,7 +34,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             Assert.AreEqual(10, actorClass.Count);
         }
 
-        [Test]
+        [Test, RequiresMTA]
         public void TestFast()
         {
             const int n = 1000000;
