@@ -26,7 +26,9 @@ using PostSharp.Reflection;
 namespace PostSharp.Toolkit.Domain
 {
     /// <summary>
-    /// Under development. Early version !!!
+    /// Custom attribute that, specifies that class decorated with this attribute should implement <see cref="INotifyPropertyChanged"/>. 
+    /// If instrumented class does not implement <see cref="INotifyPropertyChanged"/> implementation will be introduced automatically.
+    /// Class will processed by automatic notification mechanism and all event will be raised automatically.
     /// </summary>
     [Serializable]
     [MulticastAttributeUsage(MulticastTargets.Class, Inheritance = MulticastInheritance.Strict, PersistMetaData = true)]

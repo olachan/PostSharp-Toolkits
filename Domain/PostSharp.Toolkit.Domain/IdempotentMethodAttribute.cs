@@ -7,6 +7,9 @@ using PostSharp.Extensibility;
 
 namespace PostSharp.Toolkit.Domain
 {
+    /// <summary>
+    /// Custom attribute specifying that marked Method is idempotent exp. that its result depends only upon its parameters.  
+    /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     [MulticastAttributeUsage(MulticastTargets.Method, PersistMetaData = true)]
     public class IdempotentMethodAttribute : MethodLevelAspect

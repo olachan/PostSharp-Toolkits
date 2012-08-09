@@ -61,6 +61,20 @@ namespace PostSharp.Toolkit.Domain.Tests
         }
 
         [Test]
+        [ExpectedException(typeof(NotInstrumentedClassInDependsOnException))]
+        public void DependsOnWithNotInstrumentedDependency()
+        {
+            TestHelpers.DoInpcTest<InpcWithNotInstrumentedDependencies>(
+                c =>
+                {
+                    c.InnerObject = new NotInstrumentedInpc();
+                    c.InnerObject.Property = "asd";
+                },
+                2,
+                "StringFromNotInstrumented");
+        }
+
+        [Test]
         public void TwoLevelDependsOn()
         {
             TestHelpers.DoInpcTest<InpcWithManualDependencies>(
@@ -225,6 +239,50 @@ namespace PostSharp.Toolkit.Domain.Tests
         {
             get { return this.superInnrObjectNonAuto; }
             set { this.superInnrObjectNonAuto = value; }
+        }
+    }
+
+    public class NotInstrumentedInpc : INotifyPropertyChanged
+    {
+        private string property;
+
+        public string Property
+        {
+            get
+            {
+                return this.property;
+            }
+            set
+            {
+                this.property = value;
+                this.OnPropertyChanged("Property");
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged( string propertyName )
+        {
+            PropertyChangedEventHandler handler = this.PropertyChanged;
+            if ( handler != null )
+            {
+                handler( this, new PropertyChangedEventArgs( propertyName ) );
+            }
+        }
+    }
+
+    [NotifyPropertyChanged]
+    public class InpcWithNotInstrumentedDependencies
+    {
+        public NotInstrumentedInpc InnerObject;
+
+        [DependsOn("InnerObject.StrConcat")]
+        public string StringFromNotInstrumented
+        {
+            get
+            {
+                return this.InnerObject.Property;
+            }
         }
     }
 

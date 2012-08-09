@@ -52,6 +52,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             {
                 if ( !(aggregateException.InnerExceptions.Count == 1 && aggregateException.InnerException is DeadlockException) )
                 {
+                    t2.Wait( timeout );
                     throw;
                 }
                 firstException = aggregateException.InnerException;

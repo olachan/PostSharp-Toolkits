@@ -15,6 +15,7 @@ using System.Windows.Forms;
 using System.Windows.Media;
 using System.Windows.Threading;
 using NUnit.Framework;
+
 using FormsApplication = System.Windows.Forms.Application;
 
 namespace PostSharp.Toolkit.Threading.Tests
@@ -25,19 +26,21 @@ namespace PostSharp.Toolkit.Threading.Tests
         [Test]
         public void WpfWindowMethods_AreDispatchedCorrectly()
         {
-            Exception e;
-            RunInWpfWindow(window => window.SetWindowTitle(), out e);
-            Assert.IsNull( e );
+            Exception uie;
+            Exception we;
+            RunInWpfWindow(window => window.SetWindowTitle(), out uie, out we);
+            Assert.IsNull( uie );
+            Assert.IsNull(we);
         }
 
         [Test]
-        [ExpectedException(typeof(AggregateException))]
         public void WpfWindowMethods_ExceptionsAreDispatchedCorrectly()
         {
-            Exception e;
-            RunInWpfWindow(window => window.ThrowException(), out e);
-            Assert.IsNull(e);
-
+            Exception uie;
+            Exception we;
+            RunInWpfWindow(window => window.ThrowException(), out uie, out we);
+            Assert.IsNull(uie);
+            Assert.IsTrue(we != null && we.GetType() == typeof(AggregateException));
         }
 
         // TODO dispatcher beginInvoke not invoking methods
@@ -45,15 +48,17 @@ namespace PostSharp.Toolkit.Threading.Tests
         [Ignore]
         public void WpfWindowMethods_AsyncExceptionsAreDispatchedCorrectly()
         {
-            Exception e;
+            Exception e1;
+            Exception e2;
             RunInWpfWindow(
                 window =>
                     {
                         window.SetWindowTitle(false);
                         window.ThrowExceptionAsync();
                     }, 
-                out e);
-            Assert.IsTrue( e != null && e.GetType() == typeof(ArgumentException) );
+                out e1,
+                out e2);
+            Assert.IsTrue( e1 != null && e1.GetType() == typeof(ArgumentException) );
         }
 
         private DispatchWinFormsObject form;
@@ -81,11 +86,14 @@ namespace PostSharp.Toolkit.Threading.Tests
             windowThread.Join();
         }
 
-        private static void RunInWpfWindow(Action<DispatchWpfObject> action, out Exception thrownException)
+        private static void RunInWpfWindow(Action<DispatchWpfObject> action, out Exception uiThreadException, out Exception workerThreadException)
         {
             DispatchWpfObject window = null;
 
             Exception exception = null;
+
+            workerThreadException = null;
+
             ManualResetEventSlim ready = new ManualResetEventSlim(false);
 
             Thread windowThread = new Thread(
@@ -96,6 +104,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                         window = new DispatchWpfObject(ready);
                         window.Show();
                         Dispatcher.Run();
+                        Dispatcher.ExitAllFrames();
                     }
                     catch (Exception e)
                     {
@@ -110,8 +119,14 @@ namespace PostSharp.Toolkit.Threading.Tests
 
             ready.Wait();
             ready.Reset();
-
-            action(window);
+            try
+            {
+                action(window);
+            }
+            catch ( Exception e )
+            {
+                workerThreadException = e;
+            }
 
             ready.Wait();
             Thread.Sleep( 10 ); // wait for exception
@@ -120,7 +135,7 @@ namespace PostSharp.Toolkit.Threading.Tests
 
             windowThread.Join();
 
-            thrownException = exception;
+            uiThreadException = exception;
         }
 
         [DesignerCategory("")]

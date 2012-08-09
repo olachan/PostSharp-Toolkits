@@ -85,6 +85,7 @@
     <Compile Include="BindingFlagsSet.cs" />
     <Compile Include="NotifyPropertyChangedAccessor.cs" />
     <Compile Include="FieldInfoWithCompiledGetter.cs" />
+    <Compile Include="NotInstrumentedClassInDependsOnException.cs" />
     <Compile Include="PropertyFieldBinding.cs" />
     <Compile Include="FieldValueComparer.cs" />
     <Compile Include="PropertyFieldBindingsMap.cs" />

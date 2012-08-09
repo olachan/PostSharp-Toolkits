@@ -10,6 +10,8 @@
 using System;
 using System.Text;
 
+using PostSharp.Toolkit.Threading;
+
 namespace TestAssembly
 {
     public class SimpleClass
