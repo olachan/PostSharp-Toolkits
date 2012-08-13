@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using PostSharp.Aspects;
 using PostSharp.Aspects.Configuration;
+using PostSharp.Aspects.Dependencies;
 using PostSharp.Aspects.Serialization;
 using PostSharp.Extensibility;
 
@@ -23,6 +24,8 @@ namespace PostSharp.Toolkit.Threading
     /// </summary>
     [Serializable]
     [MethodInterceptionAspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
+    [ProvideAspectRole(StandardRoles.Threading)]
+    [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, StandardRoles.Tracing)]
     public sealed class BackgroundMethodAttribute : MethodInterceptionAspect
     {
         // Check that the method returns 'void', has no out/ref argument.

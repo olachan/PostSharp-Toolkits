@@ -53,6 +53,7 @@ namespace PostSharp.Toolkit.Threading
     //[AspectRoleDependency(AspectDependencyAction.Conflict, ThreadingToolkitAspectRoles.ThreadingModel)]
     //[AspectTypeDependencyAttribute(AspectDependencyAction.Commute, typeof(ThreadUnsafeObjectAttribute))]
     [ProvideAspectRole( ThreadingToolkitAspectRoles.ThreadingModel )]
+    [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, StandardRoles.Tracing)]
     public sealed class ThreadUnsafeObjectAttribute : TypeLevelAspect, IAspectProvider
     {
         private readonly ThreadUnsafePolicy policy;

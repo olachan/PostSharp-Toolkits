@@ -34,6 +34,7 @@ namespace PostSharp.Toolkit.Threading
     [MulticastAttributeUsage( MulticastTargets.Class, Inheritance = MulticastInheritance.Strict, AllowMultiple = false )]
     // [AspectRoleDependency(AspectDependencyAction.Conflict, ThreadingToolkitAspectRoles.ThreadingModel)]
     [ProvideAspectRole( ThreadingToolkitAspectRoles.ThreadingModel )]
+    [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, StandardRoles.Tracing)]
     public sealed class ReaderWriterSynchronizedAttribute : InstanceLevelAspect, IReaderWriterSynchronized
     {
         [NonSerialized]

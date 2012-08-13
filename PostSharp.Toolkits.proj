@@ -20,7 +20,7 @@
   
    <ItemGroup>
     <TestAssembly Include="Tests\*\bin\Debug\*.Tests.dll"/>
-    <NUnitPath Include="packages\NUnit.Runners.2.6.0.12051\tools" />
+    <NUnitPath Include="packages\**\nunit-console.exe" />
   </ItemGroup>
   
    <Target Name="NuGet" DependsOnTargets="$(NuGetDependsOn)">
@@ -37,7 +37,7 @@
   
    <Target Name="UnitTests" DependsOnTargets="QuickBuild" Condition="'$(SkipTest)'==''">
     <NUnit Assemblies="@(TestAssembly)"
-           ToolPath="@(NUnitPath)" />
+           ToolPath="packages\%(NUnitPath.RecursiveDir)" />
   </Target>
 
   <Target Name="Test" DependsOnTargets="Prepare;QuickBuild;UnitTests;BuildTests" />

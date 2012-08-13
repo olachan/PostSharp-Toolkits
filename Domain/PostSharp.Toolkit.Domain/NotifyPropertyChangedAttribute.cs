@@ -32,6 +32,9 @@ namespace PostSharp.Toolkit.Domain
     /// </summary>
     [Serializable]
     [MulticastAttributeUsage(MulticastTargets.Class, Inheritance = MulticastInheritance.Strict, PersistMetaData = true)]
+    [ProvideAspectRole(StandardRoles.DataBinding)]
+    [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.After, StandardRoles.Tracing)]
+    [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.After, StandardRoles.Threading)]
     public class NotifyPropertyChangedAttribute : InstanceLevelAspect, IAspectProvider
     {
         // Compile-time use only

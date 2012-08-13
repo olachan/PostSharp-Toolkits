@@ -13,7 +13,8 @@
   <Data Name="XmlMulticast">
     <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics"
             AttributeTargetTypes="PostSharp.Toolkit.Integration.Tests.SimpleClass2" />
-    
+
+   
     <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics"
               AttributeTargetAssemblies="TestAssembly"
               AttributeTargetTypes="TestAssembly.DispatchWpfObject" />

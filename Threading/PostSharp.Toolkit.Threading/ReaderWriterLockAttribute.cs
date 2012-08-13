@@ -10,12 +10,15 @@
 using System;
 using System.Reflection;
 using PostSharp.Aspects;
+using PostSharp.Aspects.Dependencies;
 using PostSharp.Extensibility;
 
 namespace PostSharp.Toolkit.Threading
 {
     [Serializable]
     [MulticastAttributeUsage( MulticastTargets.Method, TargetMemberAttributes = MulticastAttributes.Instance, AllowMultiple = false )]
+    [ProvideAspectRole(StandardRoles.Threading)]
+    [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, StandardRoles.Tracing)]
     public abstract class ReaderWriterLockAttribute : OnMethodBoundaryAspect
     {
         private bool useDeadlockDetection;

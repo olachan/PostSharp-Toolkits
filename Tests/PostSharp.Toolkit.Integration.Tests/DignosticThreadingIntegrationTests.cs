@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Windows;
@@ -7,6 +8,7 @@ using System.Windows.Media;
 using NUnit.Framework;
 
 using PostSharp.Toolkit.Diagnostics;
+using PostSharp.Toolkit.Domain;
 using PostSharp.Toolkit.Threading;
 
 using TestAssembly;
@@ -18,6 +20,20 @@ namespace PostSharp.Toolkit.Integration.Tests
     [TestFixture]
     public class DignosticThreadingIntegrationTests : BaseTestsFixture
     {
+        [Test]
+        public void BackgroundMethodWithLoggingAndINPC_ExceptionThrown_IsLoggedProperly()
+        {
+            var c = new AsyncLoggedClass();
+            c.BackgroundException();
+            Thread.Sleep( 1000 );
+
+            string output = OutputString.ToString();
+
+            Assert.IsTrue( output.Contains( "exception occurred" ) );
+            Console.Error.WriteLine(output);
+        }
+
+
         [Test]
         public void LoggingToolkit_OnException_PrintsException()
         {
@@ -90,6 +106,19 @@ namespace PostSharp.Toolkit.Integration.Tests
 
         public void MethodWithObjectArguments(object arg0, StringBuilder arg1)
         {
+        }
+    }
+
+    [Log]
+    [NotifyPropertyChanged]
+    public class AsyncLoggedClass
+    {
+        public string Property { get; set; }
+
+        [BackgroundMethod]
+        public void BackgroundException()
+        {
+            throw new Exception();
         }
     }
 

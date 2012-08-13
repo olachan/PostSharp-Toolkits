@@ -8,6 +8,7 @@
 #endregion
 
 using System;
+using PostSharp.Aspects.Dependencies;
 
 namespace PostSharp.Toolkit.Threading
 {
@@ -15,6 +16,8 @@ namespace PostSharp.Toolkit.Threading
     /// Custom attribute that, when applied to a method or field runs checks made by <see cref="ThreadUnsafeObjectAttribute"/> even if target of the attribute is private or protected.
     /// </summary>
     [AttributeUsage( AttributeTargets.Method | AttributeTargets.Field )]
+    [ProvideAspectRole(StandardRoles.Threading)]
+    [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, StandardRoles.Tracing)]
     public class ThreadUnsafeMethodAttribute : Attribute
     {
     }

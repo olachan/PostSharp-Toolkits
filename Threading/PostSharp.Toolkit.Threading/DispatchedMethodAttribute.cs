@@ -34,6 +34,7 @@ namespace PostSharp.Toolkit.Threading
     [Serializable]
     [MulticastAttributeUsage( MulticastTargets.Method, TargetExternalMemberAttributes = MulticastAttributes.Internal, AllowMultiple = false )]
     [RequirePostSharp("PostSharp.Toolkit.Threading.Weaver", "PostSharp.Toolkit.Threading", AssemblyReferenceOnly = true)]
+    [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, StandardRoles.Tracing)]
     public sealed class DispatchedMethodAttribute : MethodLevelAspect, IAspectProvider
     {
         private static readonly TypeLevelAspectRepository typeLevelAspects;

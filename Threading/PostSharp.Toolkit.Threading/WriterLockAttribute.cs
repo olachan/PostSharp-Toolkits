@@ -32,6 +32,7 @@ namespace PostSharp.Toolkit.Threading
     [ProvideAspectRole( StandardRoles.Threading )]
     [AspectTypeDependency( AspectDependencyAction.Order, AspectDependencyPosition.Before, typeof(ReaderWriterSynchronizedAttribute) )]
     [AspectConfiguration( SerializerType = typeof(MsilAspectSerializer) )]
+    [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.Before, StandardRoles.Tracing)]
     public sealed class WriterLockAttribute : ReaderWriterLockAttribute
     {
         /// <summary>

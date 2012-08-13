@@ -58,7 +58,7 @@ namespace PostSharp.Toolkit.Domain
             //We need to grab all the properties and build a map of their dependencies
 
             IEnumerable<PropertyInfo> allProperties =
-                type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
                 .Where(p => !p.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), true).Any())
                 .ToList();
 

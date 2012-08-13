@@ -11,6 +11,7 @@ using System;
 using System.Reflection;
 using PostSharp.Aspects;
 using PostSharp.Aspects.Configuration;
+using PostSharp.Aspects.Dependencies;
 using PostSharp.Extensibility;
 
 namespace PostSharp.Toolkit.Diagnostics
@@ -27,6 +28,8 @@ namespace PostSharp.Toolkit.Diagnostics
         AllowMultiple = true )]
     [Metric( "UsedFeatures", "Toolkit.Diagnostics.Logging" )]
     [AspectConfigurationAttributeType( typeof(LogAspectConfigurationAttribute) )]
+    [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.After, StandardRoles.Threading)]
+    [ProvideAspectRole(StandardRoles.Tracing)]
     public class LogAttribute : MethodLevelAspect, ILogAspect
     {
 #if !SMALL

@@ -14,6 +14,8 @@
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -70,7 +72,6 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="InpcInheritanceTests.cs" />
     <Compile Include="InpcIntegrationTests.cs" />
     <Compile Include="InpcSerializationTests.cs" />
     <Compile Include="ManulaNotifyPropertyChangedAspectTests.cs" />
@@ -81,8 +82,9 @@
     <Compile Include="TestHelpers.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="nunit.framework">
-      <HintPath>..\..\packages\NUnit.2.6.0.12054\lib\nunit.framework.dll</HintPath>
+    <Reference Include="nunit.framework, Version=2.6.1.12217, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\NUnit.2.6.1\lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="PostSharp, Version=2.1.0.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
       <HintPath>$(PostSharpDir)/$(PostSharpBuild)/PostSharp.dll</HintPath>

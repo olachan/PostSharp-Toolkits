@@ -8,7 +8,9 @@
 #endregion
 
 using System;
+using PostSharp.Aspects.Dependencies;
 using PostSharp.Sdk.AspectInfrastructure;
+using PostSharp.Sdk.AspectInfrastructure.Dependencies;
 using PostSharp.Sdk.AspectWeaver;
 using PostSharp.Sdk.AspectWeaver.Transformations;
 using PostSharp.Sdk.CodeModel;
