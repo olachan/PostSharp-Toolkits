@@ -23,6 +23,7 @@ namespace PostSharp.Toolkit.Domain.Tests
         }
 
         [Test]
+        [Ignore]
         public void BasePropertyTest()
         {
             TestHelpers.DoInpcTest<DerivedInpc>(
@@ -35,6 +36,7 @@ namespace PostSharp.Toolkit.Domain.Tests
         }
 
         [Test]
+        [Ignore]
         public void DerivedBaseBasedPropTest()
         {
             TestHelpers.DoInpcTest<DerivedInpc>(
