@@ -234,7 +234,7 @@ namespace PostSharp.Toolkit.Domain
                 // build propertyToFieldBindings
                 PropertyFieldBindingsMap propertyToFieldBindings = new PropertyFieldBindingsMap(type, fieldValueComparer);
 
-                var allProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                var allProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
                 foreach (PropertyInfo propertyInfo in allProperties)
                 {

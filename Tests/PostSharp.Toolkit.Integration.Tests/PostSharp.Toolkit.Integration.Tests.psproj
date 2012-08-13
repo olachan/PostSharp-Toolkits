@@ -1,5 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
-<!-- Default project used when PostSharp is detected according to project references. -->
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Default project used when PostSharp is detected according to project references.  -->
 <Project xmlns="http://schemas.postsharp.org/1.0/configuration" ReferenceDirectory="{$ReferenceDirectory}">
 
   <Property Name="LoggingBackend" Value="console" />
@@ -12,11 +12,14 @@
   </Tasks>
   <Data Name="XmlMulticast">
     <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics"
-            AttributeTargetTypes="PostSharp.Toolkit.Integration.Tests.SimpleClass2" />
-    
+            AttributeTargetTypes="PostSharp.Toolkit.Integration.Tests.SimpleClass" />
+
     <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics"
-              AttributeTargetAssemblies="TestAssembly"
-              AttributeTargetTypes="TestAssembly.DispatchWpfObject" />
+              AttributeTargetTypes="PostSharp.Toolkit.Integration.Tests.SimpleDispatcherObject" />
+
+    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics"
+                  AttributeTargetTypes="PostSharp.Toolkit.Integration.Tests.DispatchWpfObject2" />
+    
   </Data>
 
 </Project>

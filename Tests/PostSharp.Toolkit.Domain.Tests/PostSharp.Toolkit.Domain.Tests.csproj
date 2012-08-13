@@ -70,7 +70,7 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="InpcInheritanceTests.cs" />
+    <Compile Include="InpcInhertianceTests.cs" />
     <Compile Include="InpcIntegrationTests.cs" />
     <Compile Include="InpcSerializationTests.cs" />
     <Compile Include="ManulaNotifyPropertyChangedAspectTests.cs" />

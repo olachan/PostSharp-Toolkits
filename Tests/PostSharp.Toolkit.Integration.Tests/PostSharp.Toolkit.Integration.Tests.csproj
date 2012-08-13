@@ -61,6 +61,14 @@
       <Project>{19C7E7BD-4C68-4796-97ED-24E6CEFD95B0}</Project>
       <Name>PostSharp.Toolkit.Diagnostics</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Domain\PostSharp.Toolkit.Domain\PostSharp.Toolkit.Domain.csproj">
+      <Project>{9648D4B9-9C05-4DB5-953B-DE3139B6087C}</Project>
+      <Name>PostSharp.Toolkit.Domain</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Threading\PostSharp.Toolkit.Threading.Weaver\PostSharp.Toolkit.Threading.Weaver.csproj">
+      <Project>{B30B75A1-16EF-4C3D-A818-7EB7C437D551}</Project>
+      <Name>PostSharp.Toolkit.Threading.Weaver</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Threading\PostSharp.Toolkit.Threading\PostSharp.Toolkit.Threading.csproj">
       <Project>{A3338835-6A17-442C-A7B2-C4F2BDDC06F3}</Project>
       <Name>PostSharp.Toolkit.Threading</Name>
@@ -74,7 +82,6 @@
     <None Include="packages.config" />
     <None Include="PostSharp.Toolkit.Integration.Tests.psproj">
       <SubType>Designer</SubType>
-      <TransformOnBuild>true</TransformOnBuild>
     </None>
   </ItemGroup>
   <Import Project="..\..\Dependencies\NuGet\nuget.targets" />
