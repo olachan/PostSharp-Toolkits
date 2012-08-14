@@ -18,10 +18,6 @@
     <NuGetDependsOn>Test</NuGetDependsOn>
   </PropertyGroup>
   
-   <ItemGroup>
-    <TestAssembly Include="Tests\*\bin\Debug\*.Tests.dll"/>
-    <NUnitPath Include="packages\**\nunit-console.exe" />
-  </ItemGroup>
   
    <Target Name="NuGet" DependsOnTargets="$(NuGetDependsOn)">
     <MSBuild Projects="Build\NuGet\NuGet.proj" />
@@ -36,6 +32,12 @@
   </Target>
   
    <Target Name="UnitTests" DependsOnTargets="QuickBuild" Condition="'$(SkipTest)'==''">
+   
+     <ItemGroup>
+        <TestAssembly Include="Tests\*\bin\Debug\*.Tests.dll"/>
+        <NUnitPath Include="packages\**\nunit-console.exe" />
+     </ItemGroup>
+
     <NUnit Assemblies="@(TestAssembly)"
            ToolPath="packages\%(NUnitPath.RecursiveDir)" />
   </Target>
