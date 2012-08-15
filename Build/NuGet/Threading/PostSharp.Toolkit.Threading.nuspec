@@ -25,6 +25,6 @@
     <file src="Release\PostSharp.Toolkit.Threading.dll" target="lib\net40"/>
     <file src="Release\PostSharp.Toolkit.Threading.Weaver.dll" target="tools"/>
     <file src="{SRC}Tools\*.ps1" target="tools"/>
-    <file src="{SRC}..\functions.ps1" target="tools"/>
+    <file src="functions.ps1" target="tools"/>
   </files>
 </package>
