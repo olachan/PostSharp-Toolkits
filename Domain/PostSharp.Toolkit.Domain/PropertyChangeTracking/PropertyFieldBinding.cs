@@ -9,6 +9,8 @@
 
 using System;
 
+using PostSharp.Toolkit.Domain.Tools;
+
 namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
 {
     /// <summary>

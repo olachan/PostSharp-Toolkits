@@ -7,24 +7,50 @@
 
 #endregion
 
-using System;
 using System.ComponentModel;
-using System.Linq;
 
 using NUnit.Framework;
 
-namespace PostSharp.Toolkit.Domain.Tests
+namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
 {
     [TestFixture]
-    public class ManulaINPCCodeContractDependsOnAspectTests
+    public class ManulaNotifyPropertyChangedAspectTests
     {
+        // TODO test checking if all events are raised on appropriate objects
+        //[Test]
+        //public void DependsOnHierarchyCheck()
+        //{
+        //    int masterEventCount = 0;
+        //    int innerObjectEventCount = 0;
+        //    int innerObject2EventCount = 0;
+        //    int innerObjectSuperInnrObjectEventCount = 0;
+        //    int innerObject2SuperInnrObjectEventCount = 0;
+
+        //    InpcWithManualDependencies master = new InpcWithManualDependencies();
+        //    ((INotifyPropertyChanged)master).PropertyChanged += ( s, a ) => masterEventCount++;
+        //    master.InnerObject = new InpcInnrClass();
+        //    ((INotifyPropertyChanged)master.InnerObject).PropertyChanged += (s, a) => innerObjectEventCount++;
+        //    master.InnerObject2 = new InpcInnrClass();
+        //    ((INotifyPropertyChanged)master.InnerObject2).PropertyChanged += (s, a) => innerObject2EventCount++;
+        //    master.InnerObject.SuperInnrObject = new InpcSuperInnrClass();
+        //    ((INotifyPropertyChanged)master.InnerObject.SuperInnrObject).PropertyChanged += (s, a) => innerObjectSuperInnrObjectEventCount++;
+
+        //    master.InnerObject2.SuperInnrObject = new InpcSuperInnrClass();
+        //    ((INotifyPropertyChanged)master.InnerObject2.SuperInnrObject).PropertyChanged += (s, a) => innerObject2SuperInnrObjectEventCount++;
+        //    master.InnerObject.SuperInnrObject.Str1 = "sadf";
+
+        //    master.DoSyblingChange();
+
+        //    // Assert.AreEqual(  );
+        //}
+
         [Test]
         public void SimpleDependsOn()
         {
-            TestHelpers.DoInpcTest<InpcWithManualDependenciesCC>(
+            TestHelpers.DoInpcTest<InpcWithManualDependencies>(
                 c =>
                     {
-                        c.InnerObject = new InpcInnrClassCC();
+                        c.InnerObject = new InpcInnrClass();
                         c.InnerObject.Str1 = "asd";
                         c.InnerObject.Str2 = "asfd";
                     },
@@ -36,10 +62,10 @@ namespace PostSharp.Toolkit.Domain.Tests
         [ExpectedException(typeof(NotInstrumentedClassInDependsOnException))]
         public void DependsOnWithNotInstrumentedDependency()
         {
-            TestHelpers.DoInpcTest<InpcWithNotInstrumentedDependenciesCC>(
+            TestHelpers.DoInpcTest<InpcWithNotInstrumentedDependencies>(
                 c =>
                 {
-                    c.InnerObject = new NotInstrumentedInpcCC();
+                    c.InnerObject = new NotInstrumentedInpc();
                     c.InnerObject.Property = "asd";
                 },
                 2,
@@ -49,11 +75,11 @@ namespace PostSharp.Toolkit.Domain.Tests
         [Test]
         public void TwoLevelDependsOn()
         {
-            TestHelpers.DoInpcTest<InpcWithManualDependenciesCC>(
+            TestHelpers.DoInpcTest<InpcWithManualDependencies>(
                 c =>
                     {
-                        c.InnerObject = new InpcInnrClassCC();
-                        c.InnerObject.SuperInnrObject = new InpcSuperInnrClassCC();
+                        c.InnerObject = new InpcInnrClass();
+                        c.InnerObject.SuperInnrObject = new InpcSuperInnrClass();
                         c.InnerObject.SuperInnrObject.Str1 = "afaskhjkhf";
                         c.InnerObject.SuperInnrObject.Str2 = "sgfhdhd";
                     },
@@ -64,11 +90,11 @@ namespace PostSharp.Toolkit.Domain.Tests
         [Test]
         public void TwoLevelDependsOn_WithNonAutoProperty()
         {
-            TestHelpers.DoInpcTest<InpcWithManualDependenciesCC>(
+            TestHelpers.DoInpcTest<InpcWithManualDependencies>(
                 c =>
                 {
-                    c.InnerObject = new InpcInnrClassCC();
-                    c.InnerObject.SuperInnrObjectNonAuto = new InpcSuperInnrClassCC();
+                    c.InnerObject = new InpcInnrClass();
+                    c.InnerObject.SuperInnrObjectNonAuto = new InpcSuperInnrClass();
                     c.InnerObject.SuperInnrObjectNonAuto.Str1 = "afasf";
                     c.InnerObject.SuperInnrObjectNonAuto.Str2 = "sgfhdhd";
                 },
@@ -79,11 +105,11 @@ namespace PostSharp.Toolkit.Domain.Tests
         [Test]
         public void TwoLevelDependsOn_ViaProperty()
         {
-            TestHelpers.DoInpcTest<InpcWithManualDependenciesCC>(
+            TestHelpers.DoInpcTest<InpcWithManualDependencies>(
                 c =>
                 {
-                    c.InnerObject2 = new InpcInnrClassCC();
-                    c.InnerObjectProperty.SuperInnrObject = new InpcSuperInnrClassCC();
+                    c.InnerObject2 = new InpcInnrClass();
+                    c.InnerObjectProperty.SuperInnrObject = new InpcSuperInnrClass();
                     c.InnerObjectProperty.SuperInnrObject.Str1 = "afasf";
                     c.InnerObjectProperty.SuperInnrObject.Str2 = "sgfhdhd";
                 },
@@ -94,12 +120,12 @@ namespace PostSharp.Toolkit.Domain.Tests
         [Test]
         public void TwoLevelDependsOn_ViaProperty_SideObjectChange()
         {
-            TestHelpers.DoInpcTest<InpcWithManualDependenciesCC>(
+            TestHelpers.DoInpcTest<InpcWithManualDependencies>(
                 c =>
                 {
-                    var innerObject = new InpcInnrClassCC();
+                    var innerObject = new InpcInnrClass();
                     c.InnerObject2 = innerObject;
-                    var superInnerObject = new InpcSuperInnrClassCC();
+                    var superInnerObject = new InpcSuperInnrClass();
                     innerObject.SuperInnrObject = superInnerObject;
                     superInnerObject.Str1 = "sadf";
                     superInnerObject.Str2 = "sag";
@@ -111,12 +137,12 @@ namespace PostSharp.Toolkit.Domain.Tests
         [Test]
         public void TwoLevelDependsOn_ViaProperty_PartlySideObjectChange()
         {
-            TestHelpers.DoInpcTest<InpcWithManualDependenciesCC>(
+            TestHelpers.DoInpcTest<InpcWithManualDependencies>(
                 c =>
                 {
-                    c.InnerObject2 = new InpcInnrClassCC();
+                    c.InnerObject2 = new InpcInnrClass();
                     var a = c.ConcatFromSuperInnerObjectViaProperty;
-                    var superInnerObject = new InpcSuperInnrClassCC();
+                    var superInnerObject = new InpcSuperInnrClass();
                     c.InnerObject2.SuperInnrObject = superInnerObject;
                     superInnerObject.Str1 = "sadf";
                     superInnerObject.Str2 = "sag";
@@ -124,10 +150,49 @@ namespace PostSharp.Toolkit.Domain.Tests
                 4,
                 "ConcatFromSuperInnerObjectViaProperty");
         }
+
+        [Test]
+        public void CyclicDependsOn()
+        {
+            TestHelpers.DoInpcTest<InpcCyclicDependency>(
+                c =>
+                    { 
+                        c.Str1 = "sdaf";
+                        c.Str2 = "sdgfdsf";
+                    },
+                2,
+                "A");
+        }
     }
 
     [NotifyPropertyChanged]
-    public class InpcSuperInnrClassCC
+    public class InpcCyclicDependency
+    {
+        public string Str1;
+
+        public string Str2;
+
+        [DependsOn("B", "Str1")]
+        public string A
+        {
+            get
+            {
+                return this.Str1;
+            }
+        }
+        
+        [DependsOn("A", "Str2")]
+        public string B
+        {
+            get
+            {
+                return this.Str2;
+            }
+        }
+    }
+
+    [NotifyPropertyChanged]
+    public class InpcSuperInnrClass
     {
         public string Str1;
 
@@ -143,12 +208,12 @@ namespace PostSharp.Toolkit.Domain.Tests
     }
 
     [NotifyPropertyChanged]
-    public class InpcInnrClassCC
+    public class InpcInnrClass
     {
         public string Str1;
 
         public string Str2;
-        private InpcSuperInnrClassCC superInnrObjectNonAuto;
+        private InpcSuperInnrClass superInnrObjectNonAuto;
 
         public string StrConcat
         {
@@ -158,24 +223,24 @@ namespace PostSharp.Toolkit.Domain.Tests
             }
         }
 
-        public void SetProperty(InpcSuperInnrClassCC c)
+        public void SetProperty(InpcSuperInnrClass c)
         {
-            Str1 = "sdfjkh";
-            Str2 = "sdkafkl";
+            this.Str1 = "sdfjkh";
+            this.Str2 = "sdkafkl";
             c.Str1 = "sdjkafh";
             c.Str2 = "sdjkafh";
         }
 
-        public InpcSuperInnrClassCC SuperInnrObject { get; set; }
+        public InpcSuperInnrClass SuperInnrObject { get; set; }
 
-        public InpcSuperInnrClassCC SuperInnrObjectNonAuto
+        public InpcSuperInnrClass SuperInnrObjectNonAuto
         {
             get { return this.superInnrObjectNonAuto; }
             set { this.superInnrObjectNonAuto = value; }
         }
     }
 
-    public class NotInstrumentedInpcCC : INotifyPropertyChanged
+    public class NotInstrumentedInpc : INotifyPropertyChanged
     {
         private string property;
 
@@ -205,33 +270,34 @@ namespace PostSharp.Toolkit.Domain.Tests
     }
 
     [NotifyPropertyChanged]
-    public class InpcWithNotInstrumentedDependenciesCC
+    public class InpcWithNotInstrumentedDependencies
     {
-        public NotInstrumentedInpcCC InnerObject;
+        public NotInstrumentedInpc InnerObject;
 
+        [DependsOn("InnerObject.Property")]
         public string StringFromNotInstrumented
         {
             get
             {
-                if (Depends.OnGuard)
-                    Depends.On(InnerObject.Property);
-                return this.InnerObject.Property;
+                var io = this.InnerObject;
+                return io.Property;
             }
         }
     }
 
     [NotifyPropertyChanged]
-    public class InpcWithManualDependenciesCC
+    public class InpcWithManualDependencies
     {
-        public InpcInnrClassCC InnerObject;
+        public InpcInnrClass InnerObject;
 
-        public InpcInnrClassCC InnerObject2;
+        public InpcInnrClass InnerObject2;
 
-        public InpcInnrClassCC InnerObjectProperty
+        public InpcInnrClass InnerObjectProperty
         {
             get
             {
-                return this.InnerObject2;
+                var io2 = this.InnerObject2;
+                return io2;
             }
         }
 
@@ -240,51 +306,45 @@ namespace PostSharp.Toolkit.Domain.Tests
             this.InnerObject.SetProperty( this.InnerObject2.SuperInnrObject );
         }
 
+        [DependsOn( "InnerObject.StrConcat" )]
         public string ConcatFromInnerObject
         {
             get
             {
-                if (Depends.OnGuard)
-                    Depends.On(InnerObject.StrConcat);
-                return this.InnerObject.StrConcat;
+                var io = this.InnerObject;
+                return io.StrConcat;
             }
         }
 
+        [DependsOn( "InnerObject.SuperInnrObject.StrConcat" )]
         public string ConcatFromSuperInnerObject
         {
             get
             {
-                if (Depends.OnGuard)
-                    Depends.On(InnerObject.SuperInnrObject.StrConcat);
-                return this.InnerObject.SuperInnrObject.StrConcat;
+                var io = this.InnerObject;
+                return io.SuperInnrObject.StrConcat;
             }
         }
 
+        [DependsOn("InnerObject.SuperInnrObjectNonAuto.StrConcat")]
         public string ConcatFromSuperInnerObjectNonAuto
         {
             get
             {
-                if (Depends.OnGuard)
-                    Depends.On(InnerObject.SuperInnrObjectNonAuto.StrConcat);
-
                 var io = this.InnerObject;
-
                 return io.SuperInnrObjectNonAuto.StrConcat;
             }
         }
 
+        [DependsOn("InnerObjectProperty.SuperInnrObject.StrConcat")]
         public string ConcatFromSuperInnerObjectViaProperty
         {
             get
             {
-                if (Depends.OnGuard)
-                    Depends.On(InnerObjectProperty.SuperInnrObject.StrConcat);
-
-                var iop = this.InnerObjectProperty;
-
+                var iop = this.InnerObject;
                 if (iop != null && iop.SuperInnrObject != null)
                 {
-                    return this.InnerObjectProperty.SuperInnrObject.StrConcat;
+                    return iop.SuperInnrObject.StrConcat;
                 }
                 else
                 {

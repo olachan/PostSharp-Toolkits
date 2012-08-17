@@ -82,9 +82,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="OperationTracking\FieldSnapshot.cs" />
+    <Compile Include="OperationTracking\IOpertaionTrackable.cs" />
+    <Compile Include="OperationTracking\NamedRestorePoint.cs" />
+    <Compile Include="OperationTracking\ObjectAccessors.cs" />
+    <Compile Include="OperationTracking\ObjectAccessorsMap.cs" />
+    <Compile Include="OperationTracking\SingleObjectTracker.cs" />
+    <Compile Include="OperationTracking\Snapshot.cs" />
+    <Compile Include="OperationTracking\SnapshotCollection.cs" />
+    <Compile Include="OperationTracking\TrackedObjectAttribute.cs" />
+    <Compile Include="OperationTracking\Tracker.cs" />
+    <Compile Include="OperationTracking\TrackerSnapshot.cs" />
     <Compile Include="Tools\BindingFlagsSet.cs" />
     <Compile Include="PropertyChangeTracking\NotifyPropertyChangedAccessor.cs" />
-    <Compile Include="PropertyChangeTracking\FieldInfoWithCompiledGetter.cs" />
+    <Compile Include="Tools\FieldInfoWithCompiledAccessors.cs" />
+    <Compile Include="Tools\FieldInfoWithCompiledGetter.cs" />
     <Compile Include="NotInstrumentedClassInDependsOnException.cs" />
     <Compile Include="PropertyChangeTracking\PropertyFieldBinding.cs" />
     <Compile Include="PropertyChangeTracking\FieldValueComparer.cs" />

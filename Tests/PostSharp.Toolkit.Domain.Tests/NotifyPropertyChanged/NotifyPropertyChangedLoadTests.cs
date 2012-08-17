@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 
 using NUnit.Framework;
 
-namespace PostSharp.Toolkit.Domain.Tests
+namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
 {
     [TestFixture]
     class NotifyPropertyChangedLoadTests

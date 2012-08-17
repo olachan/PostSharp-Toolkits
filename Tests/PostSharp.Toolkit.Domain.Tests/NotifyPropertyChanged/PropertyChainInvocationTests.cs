@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using NUnit.Framework;
 
-using NUnit.Framework;
-
-namespace PostSharp.Toolkit.Domain.Tests
+namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
 {
     [TestFixture]
     public class PropertyChainInvocationTests
@@ -55,7 +50,7 @@ namespace PostSharp.Toolkit.Domain.Tests
         {
             get
             {
-                return returnedString;
+                return this.returnedString;
             }
         }
     }

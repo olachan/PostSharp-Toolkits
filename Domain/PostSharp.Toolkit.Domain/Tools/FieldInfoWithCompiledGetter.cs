@@ -13,14 +13,14 @@ using System.Reflection;
 
 using PostSharp.Reflection;
 
-namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
+namespace PostSharp.Toolkit.Domain.Tools
 {
     [Serializable]
-    internal sealed class FieldInfoWithCompiledGetter
+    internal class FieldInfoWithCompiledGetter
     {
-        private readonly LocationInfo location;
+        protected readonly LocationInfo location;
 
-        private readonly Type type;
+        protected readonly Type type;
 
         public FieldInfoWithCompiledGetter( FieldInfo field, Type type )
         {
@@ -36,9 +36,9 @@ namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
             }
         }
 
-        public Func<object, object> GetValue { get; set; }
+        public Func<object, object> GetValue { get; private set; }
 
-        public void RuntimeInitialize()
+        public virtual void RuntimeInitialize()
         {
             if ( this.GetValue == null )
             {
@@ -71,4 +71,5 @@ namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
             }
         }
     }
+
 }

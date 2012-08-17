@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using NUnit.Framework;
 
-using NUnit.Framework;
-
-namespace PostSharp.Toolkit.Domain.Tests
+namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
 {
     [TestFixture]
     class NotifyPropertyChangedTests
@@ -73,7 +68,7 @@ namespace PostSharp.Toolkit.Domain.Tests
 
             public Address(string country)
             {
-                Country = country;
+                this.Country = country;
             }
         }
     }

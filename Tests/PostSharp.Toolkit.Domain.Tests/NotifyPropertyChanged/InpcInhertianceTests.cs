@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using NUnit.Framework;
 
-using NUnit.Framework;
-
-namespace PostSharp.Toolkit.Domain.Tests
+namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
 {
     [TestFixture]
     public class InpcInhertianceTests
@@ -57,7 +52,7 @@ namespace PostSharp.Toolkit.Domain.Tests
         {
             get
             {
-                return f;
+                return this.f;
             }
         }
     }
@@ -71,7 +66,7 @@ namespace PostSharp.Toolkit.Domain.Tests
         {
             get
             {
-                return f;
+                return this.f;
             }
         }
     }
