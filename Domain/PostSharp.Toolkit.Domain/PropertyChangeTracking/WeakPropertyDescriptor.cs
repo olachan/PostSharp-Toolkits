@@ -10,7 +10,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace PostSharp.Toolkit.Domain
+namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
 {
     internal class WeakPropertyDescriptor : IEquatable<WeakPropertyDescriptor>
     {

@@ -10,7 +10,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace PostSharp.Toolkit.Domain
+namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
 {
     /// <summary>
     /// class used to store static data between compile time and runtime
@@ -18,14 +18,10 @@ namespace PostSharp.Toolkit.Domain
     [Serializable]
     internal class PropertyDependencySerializationStore
     {
-        //private Dictionary<Type, NotifyPropertyChangedAccessor.NotifyPropertyChangedTypeAccessors> notifyPropertyChangedTypeAccessors;
-
         private Dictionary<string, List<string>> fieldDependentProperties;
 
-        public PropertyDependencySerializationStore(PropertiesDependencieAnalyzer analyzer)
+        public PropertyDependencySerializationStore( PropertiesDependencieAnalyzer analyzer )
         {
-            //this.notifyPropertyChangedTypeAccessors = notifyPropertyChangedTypeAccessors;
-
             if ( analyzer != null )
             {
                 this.fieldDependentProperties = analyzer.FieldDependentProperties;
@@ -34,21 +30,8 @@ namespace PostSharp.Toolkit.Domain
 
         public void CopyToMap()
         {
-            //this.DeserializeNotifyPropertyChangedAccessors();
             this.DeserializeFieldDependentProperties();
         }
-
-        //private void DeserializeNotifyPropertyChangedAccessors()
-        //{
-        //    if ( this.notifyPropertyChangedTypeAccessors == null )
-        //    {
-        //        return;
-        //    }
-
-        //    this.notifyPropertyChangedTypeAccessors.OnDeserialization( this );
-
-        //    NotifyPropertyChangedAccessor.SetAfterDeserialization( this.notifyPropertyChangedTypeAccessors );
-        //}
 
         private void DeserializeFieldDependentProperties()
         {

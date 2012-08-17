@@ -11,7 +11,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PostSharp.Toolkit.Domain
+namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
 {
     internal sealed class ChangedPropertiesAccumulator : IEnumerable<WeakPropertyDescriptor>
     {
@@ -24,7 +24,7 @@ namespace PostSharp.Toolkit.Domain
                 if ( weakPropertyDescriptor.Instance.IsAlive && ReferenceEquals( weakPropertyDescriptor.Instance.Target, obj ) &&
                      weakPropertyDescriptor.PropertyPath == propertyName )
                 {
-                    if (weakPropertyDescriptor.Processed)
+                    if ( weakPropertyDescriptor.Processed )
                     {
                         weakPropertyDescriptor.Processed = false;
                     }

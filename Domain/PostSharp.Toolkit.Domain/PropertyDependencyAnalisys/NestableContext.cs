@@ -10,7 +10,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace PostSharp.Toolkit.Domain
+namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
 {
     internal class NestableContext<TContextInfo> : INestableContext
         where TContextInfo : NestableContextInfo, new()

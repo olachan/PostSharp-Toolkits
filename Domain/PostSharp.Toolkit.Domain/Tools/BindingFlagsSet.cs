@@ -1,17 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
 
-namespace PostSharp.Toolkit.Domain
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
+using System.Reflection;
+
+namespace PostSharp.Toolkit.Domain.Tools
 {
     internal static class BindingFlagsSet
     {
-        public static BindingFlags AllMembers = BindingFlags.Public | 
-                                                BindingFlags.NonPublic | 
-                                                BindingFlags.Instance | 
-                                                BindingFlags.FlattenHierarchy |
+        public static BindingFlags AllMembers = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy |
                                                 BindingFlags.Static;
 
         public static BindingFlags AllInstanceDeclared = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;

@@ -18,7 +18,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription( "" )]
 [assembly: AssemblyConfiguration( "" )]
 [assembly: AssemblyCompany( "" )]
-[assembly: AssemblyProduct("PostSharp.Toolkit.Domain")]
+[assembly: AssemblyProduct( "PostSharp.Toolkit.Domain" )]
 [assembly: AssemblyCopyright( "Copyright ©  2012" )]
 [assembly: AssemblyTrademark( "" )]
 [assembly: AssemblyCulture( "" )]

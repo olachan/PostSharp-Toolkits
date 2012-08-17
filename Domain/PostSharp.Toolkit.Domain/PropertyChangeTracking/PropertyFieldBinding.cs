@@ -1,7 +1,15 @@
-using System;
-using System.Reflection;
+#region Copyright (c) 2012 by SharpCrafters s.r.o.
 
-namespace PostSharp.Toolkit.Domain
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
+using System;
+
+namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
 {
     /// <summary>
     /// Represents heuristically identified association of property value with a field.
@@ -10,14 +18,14 @@ namespace PostSharp.Toolkit.Domain
     [Serializable]
     internal sealed class PropertyFieldBinding : IEquatable<PropertyFieldBinding>
     {
-        public PropertyFieldBinding(string propertyName, FieldInfoWithCompiledGetter field, bool isActive)
+        public PropertyFieldBinding( string propertyName, FieldInfoWithCompiledGetter field, bool isActive )
         {
             this.PropertyName = propertyName;
             this.Field = field;
             this.IsActive = isActive;
         }
 
-        public PropertyFieldBinding(PropertyFieldBinding prototype)
+        public PropertyFieldBinding( PropertyFieldBinding prototype )
         {
             this.Field = prototype.Field;
             this.PropertyName = prototype.PropertyName;
@@ -30,15 +38,15 @@ namespace PostSharp.Toolkit.Domain
 
         public string PropertyName { get; private set; }
 
-        public override bool Equals(object obj)
+        public override bool Equals( object obj )
         {
             PropertyFieldBinding other = obj as PropertyFieldBinding;
-            return this.Equals(other);
+            return this.Equals( other );
         }
 
-        public bool Equals(PropertyFieldBinding other)
+        public bool Equals( PropertyFieldBinding other )
         {
-            if (other == null)
+            if ( other == null )
             {
                 return false;
             }

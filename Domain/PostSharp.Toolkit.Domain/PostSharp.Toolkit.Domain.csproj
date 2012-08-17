@@ -82,38 +82,38 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BindingFlagsSet.cs" />
-    <Compile Include="NotifyPropertyChangedAccessor.cs" />
-    <Compile Include="FieldInfoWithCompiledGetter.cs" />
+    <Compile Include="Tools\BindingFlagsSet.cs" />
+    <Compile Include="PropertyChangeTracking\NotifyPropertyChangedAccessor.cs" />
+    <Compile Include="PropertyChangeTracking\FieldInfoWithCompiledGetter.cs" />
     <Compile Include="NotInstrumentedClassInDependsOnException.cs" />
-    <Compile Include="PropertyFieldBinding.cs" />
-    <Compile Include="FieldValueComparer.cs" />
-    <Compile Include="PropertyFieldBindingsMap.cs" />
-    <Compile Include="ChangedPropertiesAccumulator.cs" />
-    <Compile Include="CollectionHelpers.cs" />
+    <Compile Include="PropertyChangeTracking\PropertyFieldBinding.cs" />
+    <Compile Include="PropertyChangeTracking\FieldValueComparer.cs" />
+    <Compile Include="PropertyChangeTracking\PropertyFieldBindingsMap.cs" />
+    <Compile Include="PropertyChangeTracking\ChangedPropertiesAccumulator.cs" />
+    <Compile Include="Tools\CollectionHelpers.cs" />
     <Compile Include="DependsOnAttribute.cs" />
-    <Compile Include="ExplicitDependencyMap.cs" />
-    <Compile Include="FieldDependenciesMap.cs" />
-    <Compile Include="DomainMessageSource.cs" />
+    <Compile Include="PropertyDependencyAnalisys\ExplicitDependencyMap.cs" />
+    <Compile Include="PropertyDependencyAnalisys\FieldDependenciesMap.cs" />
+    <Compile Include="Tools\DomainMessageSource.cs" />
     <Compile Include="IdempotentMethodAttribute.cs" />
-    <Compile Include="INestableContext.cs" />
-    <Compile Include="ChildPropertyChangedProcessor.cs" />
+    <Compile Include="PropertyDependencyAnalisys\INestableContext.cs" />
+    <Compile Include="PropertyChangeTracking\ChildPropertyChangedProcessor.cs" />
     <Compile Include="NotifyPropertyChangedController.cs" />
     <Compile Include="NotifyPropertyChangedSafeAttribute.cs" />
-    <Compile Include="NestableContext.cs" />
-    <Compile Include="NestableContextInfo.cs" />
+    <Compile Include="PropertyDependencyAnalisys\NestableContext.cs" />
+    <Compile Include="PropertyDependencyAnalisys\NestableContextInfo.cs" />
     <Compile Include="NotifyPropertyChangedIgnoreAttribute.cs" />
     <Compile Include="ChildPropertyChangedEventArgs.cs" />
-    <Compile Include="PropertyDependencyAnalyzer.cs" />
+    <Compile Include="PropertyDependencyAnalisys\PropertyDependencyAnalyzer.cs" />
     <Compile Include="NotifyPropertyChangedAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PropertyChangesTracker.cs" />
-    <Compile Include="PropertyDependencySerializationStore.cs" />
-    <Compile Include="ReflectionHelpers.cs" />
-    <Compile Include="StackContext.cs" />
-    <Compile Include="WeakHashSet.cs" />
-    <Compile Include="WeakPropertyDescriptor.cs" />
+    <Compile Include="PropertyChangeTracking\PropertyChangesTracker.cs" />
+    <Compile Include="PropertyDependencyAnalisys\PropertyDependencySerializationStore.cs" />
+    <Compile Include="Tools\ReflectionHelpers.cs" />
+    <Compile Include="PropertyChangeTracking\StackContext.cs" />
+    <Compile Include="PropertyChangeTracking\WeakPropertyDescriptor.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(PostSharpDir)\PostSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

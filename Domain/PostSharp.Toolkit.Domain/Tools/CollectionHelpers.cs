@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace PostSharp.Toolkit.Domain
+namespace PostSharp.Toolkit.Domain.Tools
 {
     internal static class CollectionHelpers
     {
@@ -26,16 +26,16 @@ namespace PostSharp.Toolkit.Domain
             return false;
         }
 
-        public static void AddToListValue<TKey, TValue>(this Dictionary<TKey, List<TValue>> dictionary, TKey key, TValue value)
+        public static void AddToListValue<TKey, TValue>( this Dictionary<TKey, List<TValue>> dictionary, TKey key, TValue value )
         {
             List<TValue> list;
-            if (!dictionary.TryGetValue(key, out list))
+            if ( !dictionary.TryGetValue( key, out list ) )
             {
                 list = new List<TValue>();
-                dictionary.Add(key, list);
+                dictionary.Add( key, list );
             }
 
-            list.Add(value);
+            list.Add( value );
         }
 
         public static bool AddIfNew<TKey, TValue>(
@@ -64,9 +64,9 @@ namespace PostSharp.Toolkit.Domain
             return value;
         }
 
-        public static void AddOrUpdate<TKey, TValue> (this Dictionary<TKey, TValue> dictionary, TKey key, TValue value)
+        public static void AddOrUpdate<TKey, TValue>( this Dictionary<TKey, TValue> dictionary, TKey key, TValue value )
         {
-            if (dictionary.ContainsKey( key ))
+            if ( dictionary.ContainsKey( key ) )
             {
                 dictionary.Remove( key );
             }

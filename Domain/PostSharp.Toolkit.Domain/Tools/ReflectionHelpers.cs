@@ -11,13 +11,13 @@ using System;
 using System.Linq;
 using System.Reflection;
 
-namespace PostSharp.Toolkit.Domain
+namespace PostSharp.Toolkit.Domain.Tools
 {
     internal static class ReflectionHelpers
     {
         public static bool IsFrameworkStaticMethod( this MethodBase method )
         {
-            if (!method.IsStatic || method.DeclaringType == null)
+            if ( !method.IsStatic || method.DeclaringType == null )
             {
                 return false;
             }
@@ -33,7 +33,7 @@ namespace PostSharp.Toolkit.Domain
             return attribute.Product == "Microsoft® .NET Framework";
         }
 
-        public static string FullName(this MemberInfo memberInfo)
+        public static string FullName( this MemberInfo memberInfo )
         {
             return memberInfo.DeclaringType == null ? memberInfo.Name : string.Format( "{0}.{1}", memberInfo.DeclaringType.FullName, memberInfo.Name );
         }
@@ -43,9 +43,9 @@ namespace PostSharp.Toolkit.Domain
             return method.GetCustomAttributes( typeof(IdempotentMethodAttribute), false ).Any();
         }
 
-        public static bool IsInpcIgnoredMethod(this MethodBase method)
+        public static bool IsInpcIgnoredMethod( this MethodBase method )
         {
-            return method.GetCustomAttributes(typeof(NotifyPropertyChangedIgnoreAttribute), false).Any();
+            return method.GetCustomAttributes( typeof(NotifyPropertyChangedIgnoreAttribute), false ).Any();
         }
 
         public static bool IsVoidNoRefOut( this MethodInfo methodInfo )
@@ -53,29 +53,31 @@ namespace PostSharp.Toolkit.Domain
             return (methodInfo.ReturnType == typeof(void) && !methodInfo.GetParameters().Any( p => p.ParameterType.IsByRef ));
         }
 
-        public static bool IsObjectToString(this MethodBase methodInfo)
+        public static bool IsObjectToString( this MethodBase methodInfo )
         {
             return (methodInfo.Name == "ToString" && methodInfo.DeclaringType == typeof(object));
         }
 
-        public static bool IsObjectGetHashCode(this MethodBase methodInfo)
+        public static bool IsObjectGetHashCode( this MethodBase methodInfo )
         {
             return (methodInfo.Name == "GetHashCode" && methodInfo.DeclaringType == typeof(object));
         }
 
-        public static bool IsIntrinsicOrObjectArray(this Type type)
+        public static bool IsIntrinsicOrObjectArray( this Type type )
         {
             return type.IsArray && (type.GetElementType().IsIntrinsic() || type.GetElementType() == typeof(object));
         }
 
-        public static bool IsIntrinsic(this Type type)
+        public static bool IsIntrinsic( this Type type )
         {
             return type.IsPrimitive || type == typeof(string);
         }
 
-       public static bool HasOnlyIntrinsicOrObjectParameters(this MethodBase methodInfo)
+        public static bool HasOnlyIntrinsicOrObjectParameters( this MethodBase methodInfo )
         {
-            return methodInfo.GetParameters().All(p => p.ParameterType.IsIntrinsic() || p.ParameterType.IsIntrinsicOrObjectArray() || p.ParameterType == typeof(object));
+            return
+                methodInfo.GetParameters().All(
+                    p => p.ParameterType.IsIntrinsic() || p.ParameterType.IsIntrinsicOrObjectArray() || p.ParameterType == typeof(object) );
         }
     }
 }
