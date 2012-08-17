@@ -70,25 +70,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         public Snapshot TakeSnapshot()
         {
-            Dictionary<int, FieldInfoWithCompiledAccessors> fieldAccessors = ObjectAccessorsMap.Map[this.Instance.GetType()].FieldAccessors;
-            Dictionary<int, object> fieldValues = fieldAccessors.ToDictionary( f => f.Key, f => f.Value.GetValue( this.Instance ) );
-            return new FieldSnapshot( (IOperationTrackable)this.Instance, fieldValues );
-        }
-
-        public void RestoreSnapshot( Snapshot snapshot )
-        {
-            FieldSnapshot fieldSnapshot;
-            if ((fieldSnapshot = snapshot as FieldSnapshot) == null)
-            {
-                throw new ArgumentException("Unsupported snapshot type");
-            }
-
-            Dictionary<int, FieldInfoWithCompiledAccessors> fieldAccessors = ObjectAccessorsMap.Map[this.Instance.GetType()].FieldAccessors;
-
-            foreach ( KeyValuePair<int, FieldInfoWithCompiledAccessors> fieldAccessor in fieldAccessors )
-            {
-                fieldAccessor.Value.SetValue( this.Instance, fieldSnapshot.FieldValues[fieldAccessor.Key] );
-            }
+            return new FieldSnapshot( (IOperationTrackable)this.Instance );
         }
     }
 }

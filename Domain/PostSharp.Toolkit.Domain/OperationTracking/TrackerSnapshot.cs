@@ -7,5 +7,10 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             : base( target )
         {
         }
+
+        public override void Restore()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

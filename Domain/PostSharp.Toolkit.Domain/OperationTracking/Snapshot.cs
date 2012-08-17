@@ -26,13 +26,14 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             }
         }
 
-        public void Restore()
-        {
-            IOperationTrackable target = Target.Target as IOperationTrackable;
-            if (target != null)
-            {
-                target.RestoreSnapshot( this );
-            }
-        }
+        public abstract void Restore();
+
+        //{
+        //    IOperationTrackable target = Target.Target as IOperationTrackable;
+        //    if (target != null)
+        //    {
+        //        target.RestoreSnapshot( this );
+        //    }
+        //}
     }
 }

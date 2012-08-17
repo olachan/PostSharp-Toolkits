@@ -31,10 +31,5 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         {
             return new TrackerSnapshot(this);
         }
-
-        protected override void RestoreSnapshot(Snapshot snapshot)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

@@ -9,7 +9,5 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
     public interface IOperationTrackable
     {
         Snapshot TakeSnapshot();
-
-        void RestoreSnapshot( Snapshot snapshot );
     }
 }

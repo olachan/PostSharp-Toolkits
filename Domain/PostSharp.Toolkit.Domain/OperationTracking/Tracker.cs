@@ -81,16 +81,9 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         protected abstract Snapshot TakeSnapshot();
 
-        protected abstract void RestoreSnapshot(Snapshot snapshot);
-
         Snapshot IOperationTrackable.TakeSnapshot()
         {
             return this.TakeSnapshot();
-        }
-
-        void IOperationTrackable.RestoreSnapshot(Snapshot snapshot)
-        {
-            this.RestoreSnapshot(snapshot);
         }
     }
 }
