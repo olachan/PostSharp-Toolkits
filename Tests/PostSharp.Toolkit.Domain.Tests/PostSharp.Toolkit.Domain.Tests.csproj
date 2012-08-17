@@ -72,6 +72,7 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ManulaINPCCodeContractDependsOnAspectTests.cs" />
     <Compile Include="InpcInhertianceTests.cs" />
     <Compile Include="InpcIntegrationTests.cs" />
     <Compile Include="InpcSerializationTests.cs" />

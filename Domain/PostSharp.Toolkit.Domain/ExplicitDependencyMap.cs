@@ -12,7 +12,7 @@ using System.Linq;
 namespace PostSharp.Toolkit.Domain
 {
     /// <summary>
-    /// Map of dependencies built with <see cref="DependsOnAttribute"/>
+    /// Map of dependencies built with <see cref="DependsOnAttribute"/> and <see cref="Depends.On"/> calls
     /// </summary>
     [Serializable]
     internal sealed class ExplicitDependencyMap
@@ -24,7 +24,7 @@ namespace PostSharp.Toolkit.Domain
             this.dependencies = dependencies.ToList();
         }
 
-        public ExplicitDependencyMap AddDependecy(string propertyName, string invocationPath)
+        public ExplicitDependencyMap AddDependency(string propertyName, string invocationPath)
         {
             ExplicitDependency dependency = this.dependencies.FirstOrDefault( d => d.PropertyName == propertyName );
 
@@ -36,6 +36,16 @@ namespace PostSharp.Toolkit.Domain
             else if (!dependency.Dependencies.Any(p => p.StartsWith( invocationPath )))
             {
                 dependency.Dependencies.Add(invocationPath);
+            }
+
+            return this;
+        }
+
+        public ExplicitDependencyMap AddDependencies(string propertyName, IEnumerable<string> invocationPaths)
+        {
+            foreach ( string invocationPath in invocationPaths )
+            {
+                this.AddDependency( propertyName, invocationPath );
             }
 
             return this;

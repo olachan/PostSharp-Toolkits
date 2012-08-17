@@ -4,18 +4,18 @@ namespace PostSharp.Toolkit.Domain
 {
     internal abstract class NestableContextInfo : IDisposable
     {
-        private INestableContext owner;
+        protected INestableContext Owner;
 
         internal void RegisterOwner( INestableContext owner )
         {
-            this.owner = owner;
+            this.Owner = owner;
         }
 
         public void Dispose()
         {
-            if ( this.owner != null )
+            if ( this.Owner != null )
             {
-                this.owner.Pop();
+                this.Owner.Pop();
             }
         }
     }

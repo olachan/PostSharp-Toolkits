@@ -65,12 +65,12 @@ namespace PostSharp.Toolkit.Domain
             IEnumerable<PropertyInfo> propertiesForImplicitAnalasis = allProperties.Where(p => !p.GetCustomAttributes(typeof(DependsOnAttribute), false).Any());
 
             var propertiesForExplicitAnalasis = allProperties
-                .Select(p => new { Property = p, DependsOnAttribute = p.GetCustomAttributes(typeof(DependsOnAttribute), false) })
-                .Where(p => p.DependsOnAttribute.Any());
+                .Select(p => new { Property = p, DependsOnAttributes = p.GetCustomAttributes(typeof(DependsOnAttribute), false) })
+                .Where(p => p.DependsOnAttributes.Any());
 
-            // build ExplicitDependencyMap. We nedd it here to add invocation chains.
-            var currentTypeExplicitDependencyMap = new ExplicitDependencyMap(
-                propertiesForExplicitAnalasis.Select(p => new ExplicitDependency(p.Property.Name, p.DependsOnAttribute.SelectMany(d => ((DependsOnAttribute)d).Dependencies))));
+            // build ExplicitDependencyMap. We need it here to add invocation chains.
+            ExplicitDependencyMap currentTypeExplicitDependencyMap = new ExplicitDependencyMap(
+                propertiesForExplicitAnalasis.Select(p => new ExplicitDependency(p.Property.Name, p.DependsOnAttributes.SelectMany(d => ((DependsOnAttribute)d).Dependencies))));
 
             foreach (PropertyInfo propertyInfo in propertiesForImplicitAnalasis)
             {
@@ -105,6 +105,17 @@ namespace PostSharp.Toolkit.Domain
         {
             private class AnalysisContext : NestableContextInfo
             {
+                public AnalysisContext Parent
+                {
+                    get
+                    {
+                        NestableContext<AnalysisContext> owner = (NestableContext<AnalysisContext>)this.Owner;
+                        return owner != null ? owner.Current : null;
+                    }
+                }
+
+                public bool PropertyAnalysisTerminated { get; private set; }
+
                 public Type CurrentType { get; private set; }
 
                 public MethodBase CurrentMethod { get; private set; }
@@ -138,6 +149,7 @@ namespace PostSharp.Toolkit.Domain
 
                 public AnalysisContext()
                 {
+                    this.PropertyAnalysisTerminated = false;
                 }
 
                 public AnalysisContext(Type currentType, MethodBase currentMethod, PropertyInfo currentProperty, ExplicitDependencyMap explicitDependencyMap)
@@ -148,9 +160,26 @@ namespace PostSharp.Toolkit.Domain
                     this.ExplicitDependencyMap = explicitDependencyMap;
                 }
 
+                public bool IsInCurrentProperty()
+                {
+                    return this.CurrentProperty.GetGetMethod() == this.CurrentMethod;
+                }
+
+                public void TerminateCurrentPropertyAnalysis()
+                {
+                    this.PropertyAnalysisTerminated = true;
+                }
+
                 public AnalysisContext CloneWithDifferentMethod(MethodBase method)
                 {
-                    return new AnalysisContext { CurrentMethod = method, CurrentProperty = this.CurrentProperty, CurrentType = this.CurrentType, ExplicitDependencyMap = this.ExplicitDependencyMap };
+                    return new AnalysisContext
+                        {
+                            CurrentMethod = method, 
+                            CurrentProperty = this.CurrentProperty, 
+                            CurrentType = this.CurrentType, 
+                            ExplicitDependencyMap = this.ExplicitDependencyMap,
+                            PropertyAnalysisTerminated = this.PropertyAnalysisTerminated
+                        };
                 }
             }
 
@@ -219,6 +248,11 @@ namespace PostSharp.Toolkit.Domain
 
             public override object VisitFieldExpression(IFieldExpression expression)
             {
+                if (this.context.Current.PropertyAnalysisTerminated)
+                {
+                    return expression;
+                }
+
                 ExpressionValidationResult validationResult = this.context.Current.Validate(expression);
 
                 if (validationResult.HasFlag(ExpressionValidationResult.ImmediateReturn))
@@ -233,14 +267,38 @@ namespace PostSharp.Toolkit.Domain
 
             public override object VisitMethodCallExpression(IMethodCallExpression expression)
             {
+                if (this.context.Current.PropertyAnalysisTerminated)
+                {
+                    return expression;
+                }
+
                 string invocationPath;
 
                 // if expression is property invocation chain add explicite dependency and don't analyze this branch.
-                if (this.context.Current.CurrentProperty.GetGetMethod() == this.context.Current.CurrentMethod &&
-                    GetPropertyInvocationChain(expression, out invocationPath))
+                if (this.context.Current.IsInCurrentProperty() &&
+                    this.TryGetPropertyInvocationChain(expression, out invocationPath))
                 {
-                    this.context.Current.ExplicitDependencyMap.AddDependecy(this.context.Current.CurrentProperty.Name, invocationPath);
+                    this.context.Current.ExplicitDependencyMap.AddDependency(this.context.Current.CurrentProperty.Name, invocationPath);
                     return base.VisitMethodCallExpression(expression);
+                }
+
+                List<string> ivocationPaths;
+
+                if (this.TryGetDependsOn(expression, out ivocationPaths))
+                {
+                    if (this.context.Current.Parent == null ||
+                        !this.context.Current.Parent.IsInCurrentProperty())
+                    {
+                        DomainMessageSource.Instance.Write(
+                              this.context.Current.CurrentProperty,
+                              SeverityType.Error,
+                              "INPC012",
+                              this.context.Current.CurrentMethod);
+                    }
+
+                    this.context.Current.TerminateCurrentPropertyAnalysis();
+                    this.context.Current.ExplicitDependencyMap.AddDependencies(this.context.Current.CurrentProperty.Name, ivocationPaths);
+                    return expression; //expression;// base.VisitMethodCallExpression(expression);
                 }
 
                 ExpressionValidationResult validationResult = this.context.Current.Validate(expression);
@@ -266,7 +324,7 @@ namespace PostSharp.Toolkit.Domain
                 return base.VisitMethodCallExpression(expression);
             }
 
-            private bool GetPropertyInvocationChain(IMethodCallExpression expression, out string invocationPath)
+            private bool TryGetPropertyInvocationChain(IExpression expression, out string invocationPath)
             {
                 invocationPath = null;
                 Stack<string> invocationStack = new Stack<string>();
@@ -285,7 +343,8 @@ namespace PostSharp.Toolkit.Domain
                     currentExpression = methodCallExpression.Instance;
                 }
 
-                if (currentExpression.SyntaxElementKind != SyntaxElementKind.This && currentExpression.SyntaxElementKind != SyntaxElementKind.Field)
+                if (currentExpression == null || 
+                    (currentExpression.SyntaxElementKind != SyntaxElementKind.This && currentExpression.SyntaxElementKind != SyntaxElementKind.Field))
                 {
                     return false;
                 }
@@ -298,6 +357,27 @@ namespace PostSharp.Toolkit.Domain
                 }
 
                 invocationPath = invocationStack.Aggregate(new StringBuilder(), (builder, s) => builder.Append('.').Append(s)).Remove(0, 1).ToString();
+
+                return true;
+            }
+
+            private bool TryGetDependsOn(IMethodCallExpression expression, out List<string> invocationPaths)
+            {
+                MethodInfo methodInfo = (MethodInfo)expression.Method;
+                invocationPaths = new List<string>();
+                if (methodInfo.Name != "On" || methodInfo.DeclaringType != typeof(Depends))
+                {
+                    return false;
+                }
+
+                foreach (IExpression exp in expression.Arguments)
+                {
+                    string invocationPath;
+                    if (this.TryGetPropertyInvocationChain(exp, out invocationPath))
+                    {
+                        invocationPaths.Add(invocationPath);
+                    }
+                }
 
                 return true;
             }
@@ -345,7 +425,8 @@ namespace PostSharp.Toolkit.Domain
                                 methodInfo => methodInfo.IsObjectToString(),
                                 methodInfo => methodInfo.IsObjectGetHashCode(),
                                 methodInfo => methodInfo.IsInpcIgnoredMethod(),
-                                methodInfo => methodInfo.DeclaringType == typeof(StringBuilder)),
+                                methodInfo => methodInfo.DeclaringType == typeof(StringBuilder),
+                                methodInfo => methodInfo.DeclaringType == typeof(Depends)),
                             new IdempotentMethodValidator(),
                             new VirtualMethodCallValidator(),
                             new OuterScopeObjectMethodCallValidator()
@@ -353,7 +434,8 @@ namespace PostSharp.Toolkit.Domain
 
                     this.fieldValidators = new List<IFieldValidator>()
                         {
-                            new OuterScopeObjectFieldValidator()
+                            new OuterScopeObjectFieldValidator(),
+                            new DependsFieldValidator()
                         };
                 }
 
@@ -441,6 +523,20 @@ namespace PostSharp.Toolkit.Domain
                             };
                         }
 
+                        return ExpressionValidationResultWithErrors.AcceptImidietReturn;
+                    }
+
+                    return ExpressionValidationResultWithErrors.Abstain;
+                }
+            }
+
+            private sealed class DependsFieldValidator : IFieldValidator
+            {
+                public ExpressionValidationResultWithErrors ValidateField(IFieldExpression fieldExpression, AnalysisContext currentContext)
+                {
+                    //Check for access to static fields or fields of other objects
+                    if (fieldExpression.Instance == null && fieldExpression.Field.DeclaringType == typeof(Depends))
+                    {
                         return ExpressionValidationResultWithErrors.AcceptImidietReturn;
                     }
 

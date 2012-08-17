@@ -276,12 +276,13 @@ namespace PostSharp.Toolkit.Domain.Tests
     {
         public NotInstrumentedInpc InnerObject;
 
-        [DependsOn("InnerObject.StrConcat")]
+        [DependsOn("InnerObject.Property")]
         public string StringFromNotInstrumented
         {
             get
             {
-                return this.InnerObject.Property;
+                var io = this.InnerObject;
+                return io.Property;
             }
         }
     }
@@ -297,7 +298,8 @@ namespace PostSharp.Toolkit.Domain.Tests
         {
             get
             {
-                return this.InnerObject2;
+                var io2 = this.InnerObject2;
+                return io2;
             }
         }
 
@@ -311,7 +313,8 @@ namespace PostSharp.Toolkit.Domain.Tests
         {
             get
             {
-                return this.InnerObject.StrConcat;
+                var io = this.InnerObject;
+                return io.StrConcat;
             }
         }
 
@@ -320,7 +323,8 @@ namespace PostSharp.Toolkit.Domain.Tests
         {
             get
             {
-                return this.InnerObject.SuperInnrObject.StrConcat;
+                var io = this.InnerObject;
+                return io.SuperInnrObject.StrConcat;
             }
         }
 
@@ -329,7 +333,8 @@ namespace PostSharp.Toolkit.Domain.Tests
         {
             get
             {
-                return this.InnerObject.SuperInnrObjectNonAuto.StrConcat;
+                var io = this.InnerObject;
+                return io.SuperInnrObjectNonAuto.StrConcat;
             }
         }
 
@@ -338,9 +343,10 @@ namespace PostSharp.Toolkit.Domain.Tests
         {
             get
             {
-                if (this.InnerObjectProperty != null && this.InnerObjectProperty.SuperInnrObject != null)
+                var iop = this.InnerObject;
+                if (iop != null && iop.SuperInnrObject != null)
                 {
-                    return this.InnerObjectProperty.SuperInnrObject.StrConcat;
+                    return iop.SuperInnrObject.StrConcat;
                 }
                 else
                 {

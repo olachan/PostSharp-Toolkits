@@ -45,7 +45,7 @@ namespace PostSharp.Toolkit.Domain
                     case 6:
                         return "Base class of type {0} implements INotifyChildPropertyChanged or INotifyPropertyChanged but is not instrumented with NotifyPropertyChangedAttribute";
                     case 7:
-                        return "Property {0} depends no more than 5 fields of matching type. Some optymalizations are not possible";
+                        return "Property {0} depends no more than 5 fields of matching type. Some optimizations not possible";
                     case 8:
                         return
                             "Class {0} implements INotifyPropertyChanged but does not define an OnPropertyChanged method with the following signature: void OnPropertyChanged(string propertyName).";
@@ -59,6 +59,8 @@ namespace PostSharp.Toolkit.Domain
                         return "NotifyPropertyChangedAttribute: automatic analysis of property {0} failed. " +
                                "Method {1} contains virtual method call." +
                                "Use InstanceScopedProperty attribute to specify that property value depends only on state of current instance or DependsOn attribute to explicitly specify dependencies.";
+                    case 12:
+                        return "Depends.On method used within {0} which is not a property";
                     default:
                         return null;
                 }
