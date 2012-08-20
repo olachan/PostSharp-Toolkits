@@ -6,28 +6,28 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
     {
         private readonly WeakReference target;
 
-        public SingleObjectTracker(IOperationTrackable target)
+        public SingleObjectTracker(ITrackable target)
         {
             this.target = new WeakReference( target );
         }
 
-        public void AddObjectSnapshot()
+        public void AddObjectSnapshot(string name = null)
         {
-            IOperationTrackable trackable = this.target.Target as IOperationTrackable;
+            ITrackable trackable = this.target.Target as ITrackable;
 
             if (trackable!= null)
             {
-                this.AddSnapshot( trackable.TakeSnapshot() );
+                ISnapshot snapshot = trackable.TakeSnapshot();
+                if (name != null)
+                {
+                    snapshot.ConvertToNamedRestorePoint( name );
+                }
+
+                this.AddSnapshot(snapshot);
             }
         }
 
-        public void AddNamedSnapshot(string name)
-        {
-            this.AddNamedRestorePoint(name);
-            this.AddObjectSnapshot();
-        }
-
-        protected override Snapshot TakeSnapshot()
+        protected override ISnapshot TakeSnapshot()
         {
             return new TrackerSnapshot(this);
         }

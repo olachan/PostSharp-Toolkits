@@ -9,12 +9,11 @@ using System.Collections.Generic;
 
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
-    public abstract class Tracker : IOperationTrackable
+    public abstract class Tracker : ITrackable
     {
-        // TODO scope should be protected but SnapshotCollection should be internal
-        private SnapshotCollection UndoSnapshots;
+        protected ISnapshotCollection UndoSnapshots;
 
-        private SnapshotCollection RedoSnapshots;
+        protected ISnapshotCollection RedoSnapshots;
 
         protected Tracker ParentTracker;
 
@@ -24,7 +23,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             this.RedoSnapshots = new SnapshotCollection();
         }
 
-        public virtual void AddSnapshot(Snapshot snapshot)
+        public virtual void AddSnapshot(ISnapshot snapshot)
         {
             this.UndoSnapshots.Push(snapshot);
             this.RedoSnapshots.Clear();
@@ -38,10 +37,16 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         public virtual void Undo()
         {
             this.AddSnapshotOfThisToParentTracker();
+            var snapshot = this.UndoSnapshots.Pop();
+            if (snapshot != null)
+            {
+                this.RedoSnapshots.Push( snapshot.Restore() );
 
-            Snapshot undoSnapshot = this.UndoSnapshots.Pop();
-            this.RedoSnapshots.Push(undoSnapshot.SnapshotTarget.TakeSnapshot());
-            undoSnapshot.Restore();
+                if (snapshot is SnapshotCollection.EmptyNamedRestorePoint)
+                {
+                    this.Undo();
+                }
+            }
         }
 
         public virtual void Redo()
@@ -49,39 +54,49 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             // TODO what should happen here? add next snapshopt to parent or delete last(proper) snapshot from parent
             this.AddSnapshotOfThisToParentTracker();
 
-            Snapshot redoSnapshot = this.RedoSnapshots.Pop();
-            this.UndoSnapshots.Push(redoSnapshot);
-            redoSnapshot.Restore();
+            var snapshot = this.RedoSnapshots.Pop();
+            if (snapshot != null)
+            {
+                this.UndoSnapshots.Push(snapshot.Restore());
+
+                if (snapshot is SnapshotCollection.EmptyNamedRestorePoint)
+                {
+                    this.Redo();
+                }
+            }
         }
 
         public virtual void RestoreNamedRestorePoint(string name)
         {
-            // TODO batch redo functionality
+            // TODO consider batch redo functionality
 
             this.AddSnapshotOfThisToParentTracker();
 
-            Stack<Snapshot> snapshotsToResore = this.UndoSnapshots.GetSnapshotsToRestorePoint(name);
+            Stack<ISnapshot> snapshotsToResore = this.UndoSnapshots.GetSnapshotsToRestorePoint(name);
+
+            // Stack<ISnapshot> redoBatch = new Stack<ISnapshot>();
 
             while (snapshotsToResore.Count > 0)
             {
-                Snapshot undoSnapshot = snapshotsToResore.Pop();
                 // TODO consider optimization
-                this.RedoSnapshots.Push(undoSnapshot.SnapshotTarget.TakeSnapshot());
-                undoSnapshot.Restore();
+                //redoBatch.Push(snapshotsToResore.Pop().Restore());
+                this.RedoSnapshots.Push(snapshotsToResore.Pop().Restore());
             }
+
+            //this.RedoSnapshots.Push( new BatchSnapshot( redoBatch ) );
         }
 
         protected virtual void AddSnapshotOfThisToParentTracker()
         {
             if (this.ParentTracker != null)
             {
-                ParentTracker.AddSnapshot(((IOperationTrackable)this).TakeSnapshot());
+                ParentTracker.AddSnapshot(((ITrackable)this).TakeSnapshot());
             }
         }
 
-        protected abstract Snapshot TakeSnapshot();
+        protected abstract ISnapshot TakeSnapshot();
 
-        Snapshot IOperationTrackable.TakeSnapshot()
+        ISnapshot ITrackable.TakeSnapshot()
         {
             return this.TakeSnapshot();
         }

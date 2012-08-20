@@ -4,10 +4,13 @@
 // 
 // For licensing terms, see file License.txt
 #endregion
+
+using System;
+
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
-    public interface IOperationTrackable
+    public class DoNotTrackAttribute : Attribute
     {
-        Snapshot TakeSnapshot();
+         
     }
 }

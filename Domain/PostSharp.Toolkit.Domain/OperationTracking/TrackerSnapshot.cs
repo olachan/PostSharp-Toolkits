@@ -3,12 +3,12 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
     class TrackerSnapshot : Snapshot
     {
         // TODO implement
-        public TrackerSnapshot( IOperationTrackable target )
+        public TrackerSnapshot( ITrackable target )
             : base( target )
         {
         }
 
-        public override void Restore()
+        public override ISnapshot Restore()
         {
             throw new System.NotImplementedException();
         }

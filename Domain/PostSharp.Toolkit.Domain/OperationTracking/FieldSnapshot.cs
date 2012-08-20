@@ -16,7 +16,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
     {
         public Dictionary<int, object> FieldValues { get; private set; }
 
-        public FieldSnapshot( IOperationTrackable target )
+        public FieldSnapshot( ITrackable target )
             : base(target)
         {
             Dictionary<int, FieldInfoWithCompiledAccessors> fieldAccessors = ObjectAccessorsMap.Map[target.GetType()].FieldAccessors;
@@ -24,14 +24,16 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             this.FieldValues = fieldValues;
         }
 
-        public override void Restore()
+        public override ISnapshot Restore()
         {
-            object instance = this.Target.Target;
+            ITrackable instance = this.Target.Target;
 
             if (instance == null)
             {
-                return;
+                return null;
             }
+
+            ISnapshot snapshot = instance.TakeSnapshot();
 
             Dictionary<int, FieldInfoWithCompiledAccessors> fieldAccessors = ObjectAccessorsMap.Map[instance.GetType()].FieldAccessors;
 
@@ -39,6 +41,8 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             {
                 fieldAccessor.Value.SetValue(instance, this.FieldValues[fieldAccessor.Key]);
             }
+
+            return snapshot;
         }
     }
 }

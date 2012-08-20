@@ -8,11 +8,12 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Reflection;
 using System.Runtime.Serialization;
 
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
-using PostSharp.Toolkit.Domain.PropertyDependencyAnalisys;
+using PostSharp.Aspects.Dependencies;
 using PostSharp.Toolkit.Domain.Tools;
 
 using System.Linq;
@@ -21,10 +22,13 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 {
     // TODO analyze inheritance behavior 
     [Serializable]
-    [IntroduceInterface(typeof(IOperationTrackable))]
-    public class TrackedObjectAttribute : InstanceLevelAspect, IOperationTrackable
+    [IntroduceInterface(typeof(ITrackedObject))]
+    public class TrackedObjectAttribute : InstanceLevelAspect, ITrackedObject
     {
         private ObjectAccessorsMap mapForSerialization;
+
+        [NonSerialized]
+        private SingleObjectTracker tracker;
 
         [OnSerializing]
         public void OnSerializing(StreamingContext context)
@@ -68,9 +72,79 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             base.RuntimeInitialize(type);
         }
 
-        public Snapshot TakeSnapshot()
+        public override object CreateInstance(AdviceArgs adviceArgs)
         {
-            return new FieldSnapshot( (IOperationTrackable)this.Instance );
+            TrackedObjectAttribute aspect = (TrackedObjectAttribute)base.CreateInstance(adviceArgs);
+
+            aspect.tracker = new SingleObjectTracker((ITrackable)adviceArgs.Instance);
+
+            return aspect;
+        }
+
+        [OnMethodInvokeAdvice]
+        [MethodPointcut("SelectMethods")]
+        public void OnMethodInvoke(MethodInterceptionArgs args)
+        {
+            if (StackTrace.StackPeek() != args.Instance)
+            {
+                tracker.AddObjectSnapshot();
+            }
+            try
+            {
+                StackTrace.PushOnStack(args.Instance);
+                args.Proceed();
+            }
+            finally
+            {
+                StackTrace.PopFromStack();
+                //if (StackTrace.StackPeek() != args.Instance)
+                //{
+                //    tracker.AddObjectSnapshot();
+                //}
+            }
+        }
+
+        private IEnumerable<MethodBase> SelectMethods(Type type)
+        {
+            return type
+                .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
+                .Where(m => !m.Name.StartsWith("get_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_"))
+                .Where( m => !m.IsDefined( typeof(DoNotTrackAttribute), true ) );
+        }
+
+        public ISnapshot TakeSnapshot()
+        {
+            return new FieldSnapshot( (ITrackable)this.Instance );
+        }
+
+        public void Undo()
+        {
+            this.tracker.Undo();
+        }
+
+        public void Redo()
+        {
+            this.tracker.Redo();
+        }
+
+        public void AddObjectSnapshot( string name )
+        {
+            this.tracker.AddObjectSnapshot( name );
+        }
+
+        public void AddObjectSnapshot()
+        {
+            this.tracker.AddObjectSnapshot();
+        }
+
+        public void AddNamedRestorePoint( string name )
+        {
+            this.tracker.AddNamedRestorePoint( name );
+        }
+
+        public void RestoreNamedRestorePoint( string name )
+        {
+            this.tracker.RestoreNamedRestorePoint( name );
         }
     }
 }

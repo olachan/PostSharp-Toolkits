@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -5,65 +6,133 @@ using PostSharp.Toolkit.Domain.Tools;
 
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
-    internal class SnapshotCollection
+    internal class SnapshotCollection : ISnapshotCollection
     {
-        private int currentItemIndex = 0;
-        private readonly Stack<Snapshot> snapshots;
+        //private int currentItemIndex = 0;
+        private readonly Stack<ISnapshot> snapshots;
 
-        private readonly Dictionary<string, Stack<int>> namedRestorePoints; 
+        private readonly Dictionary<string, int> namedRestorePoints; 
 
         public SnapshotCollection()
         {
-            this.namedRestorePoints = new Dictionary<string, Stack<int>>();
-            this.snapshots = new Stack<Snapshot>();
+            this.namedRestorePoints = new Dictionary<string, int>();
+            this.snapshots = new Stack<ISnapshot>();
         }
 
-        public void Push(Snapshot snapshot)
+        public void Push(ISnapshot snapshot)
         {
-            this.currentItemIndex++;
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            //this.currentItemIndex++;
             this.snapshots.Push( snapshot );
+
+            if (snapshot.IsNamedRestorePoint)
+            {
+                this.AddNamedRestorePoint( snapshot );
+            }
         }
 
-        public Snapshot Pop()
+        public ISnapshot Pop()
         {
-            this.currentItemIndex--;
-            return this.snapshots.Pop();
-        }
-
-        public void AddNamedRestorePoint(string name)
-        {
-            Stack<int> indexStack = this.namedRestorePoints.GetOrCreate( name, () => new Stack<int>() );
-            indexStack.Push( this.currentItemIndex );
-        }
-
-        public Stack<Snapshot> GetSnapshotsToRestorePoint(string name)
-        {
-            Stack<int> indexStack;
-            if (!this.namedRestorePoints.TryGetValue( name, out indexStack ))
+            if (this.snapshots.Count == 0)
             {
                 return null;
             }
 
-            int restoreIndex = indexStack.Pop();
-            List<Snapshot> restoreSnapshots = new List<Snapshot>();
+            ISnapshot snapshot = this.snapshots.Pop();
+
+            if ( !snapshot.IsNamedRestorePoint )
+            {
+                return snapshot;
+            }
+
+            this.DecreaseRestorePointCount(snapshot.Name);
+
+            return snapshot; //this.snapshots.Pop();
+        }
+
+        private void DecreaseRestorePointCount( string name )
+        {
+            this.namedRestorePoints[name] -= 1;
+
+            if (this.namedRestorePoints[name] == 0)
+            {
+                this.namedRestorePoints.Remove(name);
+            }
+        }
+
+        public void AddNamedRestorePoint(string name)
+        {
+            this.Push( new EmptyNamedRestorePoint( name ) );
+        }
+
+        private void AddNamedRestorePoint(ISnapshot restorePoint)
+        {
+            int namedRestorePointCount;
+
+            if (!namedRestorePoints.TryGetValue(restorePoint.Name, out namedRestorePointCount))
+            {
+                namedRestorePointCount = 0;
+            }
+
+            namedRestorePoints.AddOrUpdate(restorePoint.Name, namedRestorePointCount + 1);
+        }
+
+        public Stack<ISnapshot> GetSnapshotsToRestorePoint(string name)
+        {
+            if (!namedRestorePoints.ContainsKey( name ))
+            {
+                throw new ArgumentException(string.Format("No restore point named {0}", name));
+            }
+
+            this.DecreaseRestorePointCount(name);
+
+            List<ISnapshot> restoreSnapshots = new List<ISnapshot>();
+
+            ISnapshot restorePoint = null;
 
             // TODO performance optimization
-            while ( this.currentItemIndex > restoreIndex )
+            while (restorePoint == null || restorePoint.Name != name)
             {
-                this.currentItemIndex--;
-                restoreSnapshots.Add( this.snapshots.Pop() );
+                restorePoint = this.snapshots.Pop();
+                restoreSnapshots.Add(restorePoint);
             }
 
             restoreSnapshots.Reverse();
 
-            return new Stack<Snapshot>(restoreSnapshots);
+            return new Stack<ISnapshot>(restoreSnapshots);
         }
 
         public void Clear()
         {
             this.snapshots.Clear();
-            this.namedRestorePoints.Clear();
-            this.currentItemIndex = 0;
+            //this.namedRestorePoints.Clear();
+            //this.currentItemIndex = 0;
+        }
+
+        public sealed class EmptyNamedRestorePoint : ISnapshot
+        {
+            public bool IsNamedRestorePoint { get { return true; } }
+
+            public string Name { get; private set; }
+
+            public void ConvertToNamedRestorePoint( string name )
+            {
+                Name = name;
+            }
+
+            public EmptyNamedRestorePoint(string name)
+            {
+                Name = name;
+            }
+
+            public ISnapshot Restore()
+            {
+                return this;
+            }
         }
     }
 }

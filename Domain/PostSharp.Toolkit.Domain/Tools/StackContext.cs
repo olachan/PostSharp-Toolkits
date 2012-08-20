@@ -10,7 +10,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
+namespace PostSharp.Toolkit.Domain.Tools
 {
     internal class StackContext : IEnumerable<object>
     {
