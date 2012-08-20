@@ -25,6 +25,11 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         public virtual void AddSnapshot(ISnapshot snapshot)
         {
+            if (this.ParentTracker != null)
+            {
+                this.ParentTracker.AddSnapshot( new DelegateSnapshot<Tracker>(this, t => t.Undo(), t => t.Redo()) );
+            }
+
             this.UndoSnapshots.Push(snapshot);
             this.RedoSnapshots.Clear();
         }

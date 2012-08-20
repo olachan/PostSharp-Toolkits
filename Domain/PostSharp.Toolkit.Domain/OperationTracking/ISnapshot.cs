@@ -5,6 +5,9 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         ISnapshot Restore();
         bool IsNamedRestorePoint { get; }
         string Name { get; }
+
+        // ITrackable SnapshotTarget { get; }
+
         void ConvertToNamedRestorePoint( string name );
     }
 }

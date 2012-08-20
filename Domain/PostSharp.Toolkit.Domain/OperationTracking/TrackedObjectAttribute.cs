@@ -7,13 +7,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.Serialization;
 
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
-using PostSharp.Aspects.Dependencies;
 using PostSharp.Toolkit.Domain.Tools;
 
 using System.Linq;
@@ -21,6 +19,9 @@ using System.Linq;
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
     // TODO analyze inheritance behavior 
+    /// <summary>
+    /// Early development version!!!
+    /// </summary>
     [Serializable]
     [IntroduceInterface(typeof(ITrackedObject))]
     public class TrackedObjectAttribute : InstanceLevelAspect, ITrackedObject
@@ -52,9 +53,9 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
         {
-            if (!ObjectAccessorsMap.Map.ContainsKey( type ))
+            if (!ObjectAccessorsMap.Map.ContainsKey(type))
             {
-                ObjectAccessorsMap.Map.Add( type, new ObjectAccessors( type ) );
+                ObjectAccessorsMap.Map.Add(type, new ObjectAccessors(type));
             }
 
             base.CompileTimeInitialize(type, aspectInfo);
@@ -63,7 +64,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         public override void RuntimeInitialize(Type type)
         {
             var fieldAccessors = ObjectAccessorsMap.Map[type].FieldAccessors.Values;
-            foreach ( FieldInfoWithCompiledAccessors fieldAccessor in fieldAccessors )
+            foreach (FieldInfoWithCompiledAccessors fieldAccessor in fieldAccessors)
             {
                 //TODO performance impact?
                 fieldAccessor.RuntimeInitialize();
@@ -85,7 +86,10 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         [MethodPointcut("SelectMethods")]
         public void OnMethodInvoke(MethodInterceptionArgs args)
         {
-            if (StackTrace.StackPeek() != args.Instance)
+            // TODO: method attribute compile time map
+            if (StackTrace.StackPeek() != args.Instance &&
+                !args.Method.GetCustomAttributes(typeof(DoNotMakeAutomaticSnapshotAttribute), true).Any() ||
+                args.Method.GetCustomAttributes(typeof(AlwaysMakeAutomaticSnapshotAttribute), true).Any())
             {
                 tracker.AddObjectSnapshot();
             }
@@ -96,7 +100,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             }
             finally
             {
-                StackTrace.PopFromStack();
+                StackTrace.PopFromStack(); //TODO: snapshot add strategy
                 //if (StackTrace.StackPeek() != args.Instance)
                 //{
                 //    tracker.AddObjectSnapshot();
@@ -106,15 +110,17 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         private IEnumerable<MethodBase> SelectMethods(Type type)
         {
-            return type
-                .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
-                .Where(m => !m.Name.StartsWith("get_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_"))
-                .Where( m => !m.IsDefined( typeof(DoNotTrackAttribute), true ) );
+            return
+                type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly).Where(
+                    m =>
+                    m.IsDefined(typeof(AlwaysMakeAutomaticSnapshotAttribute), true) ||
+                    (!m.Name.StartsWith("get_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")));
+            // .Where( m => !m.IsDefined( typeof(DoNotMakeAutomaticSnapshotAttribute), true ) );
         }
 
         public ISnapshot TakeSnapshot()
         {
-            return new FieldSnapshot( (ITrackable)this.Instance );
+            return new FieldSnapshot((ITrackable)this.Instance);
         }
 
         public void Undo()
@@ -127,9 +133,9 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             this.tracker.Redo();
         }
 
-        public void AddObjectSnapshot( string name )
+        public void AddObjectSnapshot(string name)
         {
-            this.tracker.AddObjectSnapshot( name );
+            this.tracker.AddObjectSnapshot(name);
         }
 
         public void AddObjectSnapshot()
@@ -137,14 +143,22 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             this.tracker.AddObjectSnapshot();
         }
 
-        public void AddNamedRestorePoint( string name )
+        public void AddNamedRestorePoint(string name)
         {
-            this.tracker.AddNamedRestorePoint( name );
+            this.tracker.AddNamedRestorePoint(name);
         }
 
-        public void RestoreNamedRestorePoint( string name )
+        public void RestoreNamedRestorePoint(string name)
         {
-            this.tracker.RestoreNamedRestorePoint( name );
+            this.tracker.RestoreNamedRestorePoint(name);
+        }
+
+        public SingleObjectTracker Tracker
+        {
+            get
+            {
+                return this.tracker;
+            }
         }
     }
 }

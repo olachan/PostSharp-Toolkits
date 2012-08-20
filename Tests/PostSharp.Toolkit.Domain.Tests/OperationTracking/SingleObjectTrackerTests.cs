@@ -17,7 +17,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
         [Test]
         public void SimpleUndoTest()
         {
-            TrackedObject to = new TrackedObject();
+            SimpleTrackedObject to = new SimpleTrackedObject();
 
             to.ChangeValues( 1,2,3 );
 
@@ -31,7 +31,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
         [Test]
         public void SimpleUndoRedoTest()
         {
-            TrackedObject to = new TrackedObject();
+            SimpleTrackedObject to = new SimpleTrackedObject();
             var sot = (ITrackedObject)to;
 
             to.ChangeValues(1, 2, 3);
@@ -52,7 +52,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
         [Test]
         public void MultipleUndoRedoTest()
         {
-            TrackedObject to = new TrackedObject();
+            SimpleTrackedObject to = new SimpleTrackedObject();
             var sot = (ITrackedObject)to;
 
 
@@ -102,7 +102,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
         [Test]
         public void NamedRestorePointTest()
         {
-            TrackedObject to = new TrackedObject();
+            SimpleTrackedObject to = new SimpleTrackedObject();
             var sot = (ITrackedObject)to;
 
             to.ChangeValues(1, 2, 3);
@@ -137,7 +137,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
         [Test]
         public void RedoAfterNamedRestorePointTest_RestoresPoint()
         {
-            TrackedObject to = new TrackedObject();
+            SimpleTrackedObject to = new SimpleTrackedObject();
             var sot = (ITrackedObject)to;
 
             to.ChangeValues(1, 2, 3);
@@ -178,7 +178,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
         [Test]
         public void MultipleNamedRestorePointsTest()
         {
-            TrackedObject to = new TrackedObject();
+            SimpleTrackedObject to = new SimpleTrackedObject();
             var sot = (ITrackedObject)to;
 
             to.ChangeValues(1, 2, 3);
@@ -213,10 +213,48 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
             Assert.AreEqual(0, to.P2);
             Assert.AreEqual(0, to.P3);
         }
+
+        [Test]
+        public void SimpleUndoRedoWithAttributesTest()
+        {
+            TrackedObject to = new TrackedObject();
+            var sot = (ITrackedObject)to;
+
+            to.ChangeValuesTracked(1, 2, 3);
+
+            sot.Undo();
+            sot.Undo();
+            
+            Assert.AreEqual(0, to.P1);
+            Assert.AreEqual(0, to.P2);
+            Assert.AreEqual(0, to.P3);
+
+            sot.Redo();
+            sot.Redo();
+
+            Assert.AreEqual(1, to.P1);
+            Assert.AreEqual(2, to.P2);
+            Assert.AreEqual(3, to.P3);
+
+            to.ChangeValuesNotTracked( 0, 0, 0 );
+            to.ChangeValuesNotTracked(1, 2, 3);
+
+            sot.Undo();
+
+            Assert.AreEqual(1, to.P1);
+            Assert.AreEqual(2, to.P2);
+            Assert.AreEqual(0, to.P3);
+
+            sot.Redo();
+
+            Assert.AreEqual(1, to.P1);
+            Assert.AreEqual(2, to.P2);
+            Assert.AreEqual(3, to.P3);
+        }
     }
 
     [TrackedObject]
-    public class TrackedObject
+    public class SimpleTrackedObject
     {
         public int P1 { get; set; }
 
@@ -229,6 +267,40 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
             this.P1 = p1.HasValue ? p1.Value : this.P1;
             this.P2 = p2.HasValue ? p2.Value : this.P2;
             this.P3 = p3.HasValue ? p3.Value : this.P3;
+        }
+    }
+
+    [TrackedObject]
+    public class TrackedObject
+    {
+        public int P1 { get; set; }
+
+        public int P2 { get; set; }
+
+        public int P3 { get; [AlwaysMakeAutomaticSnapshot]set; }
+
+        public void ChangeValuesTracked(int? p1 = null, int? p2 = null, int? p3 = null)
+        {
+            if (p1.HasValue)
+            {
+                this.P1 = p1.Value;
+            }
+
+            if(p2.HasValue)
+            {
+                this.P2 = p2.Value;
+            }
+            
+            if (p3.HasValue)
+            {
+                this.P3 = p3.Value;
+            }
+        }
+
+        [DoNotMakeAutomaticSnapshot]
+        public void ChangeValuesNotTracked(int? p1 = null, int? p2 = null, int? p3 = null)
+        {
+            this.ChangeValuesTracked( p1, p2, p3 );
         }
     }
 }

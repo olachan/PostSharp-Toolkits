@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 using PostSharp.Toolkit.Domain.Tools;
 
+using System.Linq;
+
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
     internal class SnapshotCollection : ISnapshotCollection
@@ -17,6 +19,17 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         {
             this.namedRestorePoints = new Dictionary<string, int>();
             this.snapshots = new Stack<ISnapshot>();
+        }
+
+        private SnapshotCollection(Stack<ISnapshot> snapshots, Dictionary<string, int> namedRestorePoints)
+        {
+            this.namedRestorePoints = namedRestorePoints;
+            this.snapshots = snapshots;
+        }
+
+        public ISnapshotCollection Clone()
+        {
+            return new SnapshotCollection(new Stack<ISnapshot>(this.snapshots.Reverse()), this.namedRestorePoints.ToDictionary( k => k.Key, v => v.Value ) );
         }
 
         public void Push(ISnapshot snapshot)
@@ -53,6 +66,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
             return snapshot; //this.snapshots.Pop();
         }
+
 
         private void DecreaseRestorePointCount( string name )
         {

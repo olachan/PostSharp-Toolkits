@@ -82,9 +82,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="OperationTracking\AlwaysMakeAutomaticSnapshotAttribute.cs" />
     <Compile Include="OperationTracking\BatchSnapshot.cs" />
-    <Compile Include="OperationTracking\DoNotTrackAttribute.cs" />
+    <Compile Include="OperationTracking\DelegateSnapshot.cs" />
+    <Compile Include="OperationTracking\DoNotMakeAutomaticSnapshotAttribute.cs" />
     <Compile Include="OperationTracking\FieldSnapshot.cs" />
+    <Compile Include="OperationTracking\GlobalTracker.cs" />
     <Compile Include="OperationTracking\ITrackable.cs" />
     <Compile Include="OperationTracking\ISnapshot.cs" />
     <Compile Include="OperationTracking\ISnapshotCollection.cs" />
@@ -97,7 +100,7 @@
     <Compile Include="OperationTracking\StackTrace.cs" />
     <Compile Include="OperationTracking\TrackedObjectAttribute.cs" />
     <Compile Include="OperationTracking\Tracker.cs" />
-    <Compile Include="OperationTracking\TrackerSnapshot.cs" />
+    <Compile Include="OperationTracking\SingleObjectTrackerSnapshot.cs" />
     <Compile Include="OperationTracking\WeakReference.cs" />
     <Compile Include="Tools\BindingFlagsSet.cs" />
     <Compile Include="PropertyChangeTracking\NotifyPropertyChangedAccessor.cs" />

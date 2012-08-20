@@ -13,5 +13,9 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         void Clear();
 
         void AddNamedRestorePoint(string name);
+
+        ISnapshotCollection Clone();
+
+        //ISnapshot Pop(ITrackable target);
     }
 }

@@ -2,22 +2,24 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 {
     public interface ITrackedObject : ITrackable
     {
-        [DoNotTrack]
+        SingleObjectTracker Tracker { get; }
+
+        [DoNotMakeAutomaticSnapshot]
         void Undo();
 
-        [DoNotTrack]
+        [DoNotMakeAutomaticSnapshot]
         void Redo();
 
-        [DoNotTrack]
+        [DoNotMakeAutomaticSnapshot]
         void AddObjectSnapshot( string name );
 
-        [DoNotTrack]
+        [DoNotMakeAutomaticSnapshot]
         void AddObjectSnapshot();
 
-        [DoNotTrack]
+        [DoNotMakeAutomaticSnapshot]
         void AddNamedRestorePoint(string name);
 
-        [DoNotTrack]
+        [DoNotMakeAutomaticSnapshot]
         void RestoreNamedRestorePoint( string name );
     }
 }

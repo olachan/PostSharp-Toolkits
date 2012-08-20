@@ -27,6 +27,8 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         public string Name { get; private set; }
 
+        public ITrackable SnapshotTarget { get; private set; }
+
         public void ConvertToNamedRestorePoint( string name )
         {
             throw new System.NotImplementedException();
