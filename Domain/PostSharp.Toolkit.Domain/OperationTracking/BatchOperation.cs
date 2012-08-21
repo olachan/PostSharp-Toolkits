@@ -18,12 +18,20 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         public void AddOperation(IOperation operation)
         {
-            this.snapshots.Add( operation );
+            this.snapshots.Add(operation);
+        }
+
+        public int OpertaionCount
+        {
+            get
+            {
+                return snapshots.Count;
+            }
         }
 
         public void Undo()
         {
-            foreach ( IOperation snapshot in snapshots )
+            foreach (IOperation snapshot in snapshots)
             {
                 snapshot.Undo();
             }
@@ -33,7 +41,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         {
             //TODO optimize
             snapshots.Reverse();
-            foreach ( IOperation snapshot in snapshots )
+            foreach (IOperation snapshot in snapshots)
             {
                 snapshot.Redo();
             }
@@ -44,7 +52,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         public string Name { get; private set; }
 
-        public void ConvertToNamedRestorePoint( string name )
+        public void ConvertToNamedRestorePoint(string name)
         {
             this.IsNamedRestorePoint = true;
             this.Name = name;

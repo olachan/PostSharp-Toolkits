@@ -28,12 +28,12 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
     {
         private ObjectAccessorsMap mapForSerialization;
 
-        private Dictionary<string, MethodOperationStrategy> methodAttributes;
+        private Dictionary<string, MethodSnapshotStrategy> methodAttributes;
 
         private bool hasTrackedProperties;
         
         [NonSerialized]
-        private ObjectTracker tracker;
+        private IObjectTracker tracker;
 
         [OnSerializing]
         public void OnSerializing(StreamingContext context)
@@ -62,21 +62,21 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
                 ObjectAccessorsMap.Map.Add(type, new ObjectAccessors(type));
             }
 
-            methodAttributes = new Dictionary<string, MethodOperationStrategy>();
+            methodAttributes = new Dictionary<string, MethodSnapshotStrategy>();
 
             foreach (MethodInfo method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
             {
                 if (method.GetCustomAttributes( typeof(DoNotMakeAutomaticOperationAttribute), true ).Any())
                 {
-                    this.methodAttributes.Add( method.Name, MethodOperationStrategy.Never);
+                    this.methodAttributes.Add( method.Name, MethodSnapshotStrategy.Never);
                 }
                 else if (method.GetCustomAttributes(typeof(AlwaysMakeAutomaticOperationAttribute), true).Any())
                 {
-                    this.methodAttributes.Add(method.Name, MethodOperationStrategy.Always);
+                    this.methodAttributes.Add(method.Name, MethodSnapshotStrategy.Always);
                 }
                 else
                 {
-                    this.methodAttributes.Add(method.Name, MethodOperationStrategy.Auto);
+                    this.methodAttributes.Add(method.Name, MethodSnapshotStrategy.Auto);
                 }
             }
 
@@ -112,11 +112,12 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         //[MethodPointcut("SelectTrackedProperties")]
         //public void OnTrackedPropertySet(LocationInterceptionArgs args)
         //{
-        //    ITrackedObject trackedObject = (ITrackedObject)args.Value;
+        //    ITrackedObject trackedObject = (ITrackedObject)args.GetCurrentValue();
 
         //    if (trackedObject != null)
         //    {
-        //        ((AggregateTracker)this.tracker).RemoveDependentTracker( trackedObject.Tracker );
+        //        trackedObject.Tracker
+        //        // ((AggregateTracker)this.tracker).RemoveDependentTracker(trackedObject.Tracker);
         //    }
 
         //    args.ProceedSetValue();
@@ -145,8 +146,8 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             var methodStrategy = methodAttributes[args.Method.Name];
             bool chunkStarted = false;
 
-            if ((StackTrace.StackPeek() != args.Instance && methodStrategy == MethodOperationStrategy.Auto) || 
-                methodStrategy == MethodOperationStrategy.Always)
+            if ((StackTrace.StackPeek() != args.Instance && methodStrategy == MethodSnapshotStrategy.Auto) || 
+                methodStrategy == MethodSnapshotStrategy.Always)
             {
                 ThisTracker.StartChunk();
                 chunkStarted = true;
@@ -170,6 +171,16 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             }
         }
 
+        private IEnumerable<MethodBase> SelectMethods(Type type)
+        {
+            return
+                type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly).Where(
+                    m =>
+                    m.IsDefined(typeof(AlwaysMakeAutomaticOperationAttribute), true) ||
+                    (!m.Name.StartsWith("get_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")));
+            // .Where( m => !m.IsDefined( typeof(DoNotMakeAutomaticSnapshotAttribute), true ) );
+        }
+
         [OnLocationSetValueAdvice]
         [MethodPointcut("SelectFields")]
         public void OnFieldSet(LocationInterceptionArgs args)
@@ -182,8 +193,22 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             }
 
             object oldValue = args.GetCurrentValue();
+
+            //TODO optimization
+            if (oldValue != null && args.Location.PropertyInfo.IsDefined(typeof(TrackedPropertyAttribute), false))
+            {
+                ITrackedObject ov = (ITrackedObject)oldValue;
+                ov.Tracker = new SingleObjectTracker( ov );
+            }
+
             args.ProceedSetValue();
             object newValue = args.Value;
+
+            if (newValue != null && args.Location.PropertyInfo.IsDefined(typeof(TrackedPropertyAttribute), false))
+            {
+                ITrackedObject ov = (ITrackedObject)newValue;
+                ov.Tracker = ThisTracker;
+            }
 
             ThisTracker.AddOperationToChunk( new FieldOperation( (ITrackable)this.Instance, args.LocationFullName, oldValue, newValue ) );
 
@@ -200,15 +225,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             return type.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly );
         }
 
-        private IEnumerable<MethodBase> SelectMethods(Type type)
-        {
-            return
-                type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly).Where(
-                    m =>
-                    m.IsDefined(typeof(AlwaysMakeAutomaticOperationAttribute), true) ||
-                    (!m.Name.StartsWith("get_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")));
-            // .Where( m => !m.IsDefined( typeof(DoNotMakeAutomaticOperationAttribute), true ) );
-        }
+       
 
         //public IOperation TakeSnapshot()
         //{
@@ -251,6 +268,10 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             {
                 return this.tracker;
             }
+            set
+            {
+                this.tracker = value;
+            }
         }
 
         public IObjectTracker ThisTracker
@@ -261,7 +282,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             }
         }
 
-        private enum MethodOperationStrategy
+        private enum MethodSnapshotStrategy
         {
             Always,
             Never,

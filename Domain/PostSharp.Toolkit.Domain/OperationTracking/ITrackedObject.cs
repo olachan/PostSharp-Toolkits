@@ -2,7 +2,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 {
     public interface ITrackedObject : ITrackable
     {
-        IObjectTracker Tracker { get; }
+        IObjectTracker Tracker { get; set; } // TODO make set internal
 
         [DoNotMakeAutomaticOperation]
         void Undo();

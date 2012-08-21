@@ -8,33 +8,19 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         protected ITrackable Target;
 
         protected BatchOperation CurrentChunk;
-        
+
+        private int currentChunkCounter;
+
         protected ObjectTracker(ITrackable target)
         {
             this.Target = target;
+            this.currentChunkCounter = 0;
         }
 
         public virtual void SetParentTracker(Tracker tracker)
         {
             this.ParentTracker = tracker;
         }
-
-        //public virtual void AddObjectSnapshot(string name = null)
-        //{
-        //    IOperation operation = this.GetTargetSnapshot();
-
-        //    if ( operation == null )
-        //    {
-        //        return;
-        //    }
-
-        //    if (name != null)
-        //    {
-        //        operation.ConvertToNamedRestorePoint( name );
-        //    }
-
-        //    this.AddOperation(operation);
-        //}
 
         // TODO check if CurrentChunk is ended
         public virtual void StartChunk()
@@ -43,6 +29,8 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             {
                 return;
             }
+
+            this.currentChunkCounter++;
 
             if (CurrentChunk == null)
             {
@@ -57,8 +45,17 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
                 return;
             }
 
-            this.AddOperation( CurrentChunk );
-            CurrentChunk = null;
+            this.currentChunkCounter--;
+
+            if (currentChunkCounter == 0)
+            {
+                if ( CurrentChunk != null && CurrentChunk.OpertaionCount > 0 )
+                {
+                    this.AddOperation( CurrentChunk );
+                }
+
+                CurrentChunk = null;
+            }
         }
 
         public virtual bool IsChunkActive
@@ -78,18 +75,6 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
             this.CurrentChunk.AddOperation( operation );
         }
-
-        //protected virtual IOperation GetTargetSnapshot()
-        //{
-        //    ITrackable trackable = this.Target;
-        //    IOperation operation = null;
-        //    if (trackable!= null)
-        //    {
-        //        operation = trackable.TakeSnapshot();
-        //    }
-
-        //    return operation;
-        //}
 
         protected override void AddUndoOperationToParentTracker(List<IOperation> snapshots, IOperationCollection undoOperations, IOperationCollection redoOperations)
         {

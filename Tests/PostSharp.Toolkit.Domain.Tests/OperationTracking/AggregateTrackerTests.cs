@@ -16,7 +16,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
     {
         //TODO: feature not implemented
         [Test]
-        [Ignore]
+        //[Ignore]
         public void SimpleGlobalTrackerTest()
         {
             AggregateTrackedObject root = new AggregateTrackedObject();
@@ -46,7 +46,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
         }
 
         [Test]
-        [Ignore]
+        //[Ignore]
         public void AggregateMethodChangingDependentTest()
         {
             AggregateTrackedObject root = new AggregateTrackedObject();
@@ -72,14 +72,26 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
     [TrackedObject]
     public class AggregateTrackedObject
     {
+        [TrackedProperty]
+        private SimpleTrackedObject dependentTrackedObject;
+
         public int P1 { get; set; }
 
         public int P2 { get; set; }
 
         public int P3 { get; set; }
 
-        [TrackedProperty]
-        public SimpleTrackedObject DependentTrackedObject { get; set; }
+        public SimpleTrackedObject DependentTrackedObject
+        {
+            get
+            {
+                return this.dependentTrackedObject;
+            }
+            set
+            {
+                this.dependentTrackedObject = value;
+            }
+        }
 
         public void ChangeValues(int? p1 = null, int? p2 = null, int? p3 = null)
         {
