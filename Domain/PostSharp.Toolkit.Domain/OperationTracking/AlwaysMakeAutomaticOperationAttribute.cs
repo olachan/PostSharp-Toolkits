@@ -9,7 +9,7 @@ using System;
 
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
-    public class DoNotMakeAutomaticSnapshotAttribute : Attribute
+    public class AlwaysMakeAutomaticOperationAttribute : Attribute
     {
          
     }

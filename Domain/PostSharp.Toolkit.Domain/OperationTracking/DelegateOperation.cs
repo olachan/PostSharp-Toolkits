@@ -2,36 +2,43 @@ using System;
 
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
-    internal class DelegateSnapshot<TTarget> : Snapshot
+    internal class DelegateOperation<TTarget> : Operation
         where TTarget : class, ITrackable 
     {
         public Action<TTarget> UndoAction { get; set; }
 
         public Action<TTarget> RedoAction { get; set; }
 
-        public DelegateSnapshot(TTarget target, Action<TTarget> undoAction, Action<TTarget> redoAction)
+        public DelegateOperation(TTarget target, Action<TTarget> undoAction, Action<TTarget> redoAction)
             : base( target )
         {
             this.UndoAction = undoAction;
             this.RedoAction = redoAction;
         }
 
-        public DelegateSnapshot(TTarget target, Action<TTarget> undoAction, Action<TTarget> redoAction, string restorePointName)
+        public DelegateOperation(TTarget target, Action<TTarget> undoAction, Action<TTarget> redoAction, string restorePointName)
             : base( target, restorePointName )
         {
             this.UndoAction = undoAction;
             this.RedoAction = redoAction;
         }
 
-        public override ISnapshot Restore()
+        public override void Undo()
         {
-            TTarget sot = this.Target.Target as TTarget;
+            TTarget sot = this.Target as TTarget;
             if ( sot != null )
             {
                 this.UndoAction( sot );
             }
+        }
 
-            return new DelegateSnapshot<TTarget>( sot, this.RedoAction, this.UndoAction );
+        public override void Redo()
+        {
+            TTarget sot = this.Target as TTarget;
+            if (sot != null)
+            {
+                this.RedoAction(sot);
+            }
         }
     }
 }

@@ -6,6 +6,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
@@ -17,9 +18,8 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             return this;
         }
 
-        protected override ISnapshot TakeSnapshot()
-        {
-            throw new NotSupportedException();
+        protected override void AddUndoOperationToParentTracker( List<IOperation> snapshots, IOperationCollection undoOperations, IOperationCollection redoOperations )
+        {   
         }
     }
 }

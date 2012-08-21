@@ -1,13 +1,12 @@
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
-    public interface ISnapshot
+    public interface IOperation
     {
-        ISnapshot Restore();
+        void Undo();
         bool IsNamedRestorePoint { get; }
         string Name { get; }
-
-        // ITrackable SnapshotTarget { get; }
-
         void ConvertToNamedRestorePoint( string name );
+
+        void Redo();
     }
 }
