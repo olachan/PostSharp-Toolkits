@@ -16,17 +16,17 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
     [Serializable]
     internal class ObjectAccessors
     {
-        public Dictionary<int, FieldInfoWithCompiledAccessors> FieldAccessors { get; private set; }
+        public Dictionary<string, FieldInfoWithCompiledAccessors> FieldAccessors { get; private set; }
 
         public ObjectAccessors(Type type)
         {
-            FieldAccessors = new Dictionary<int, FieldInfoWithCompiledAccessors>();
+            FieldAccessors = new Dictionary<string, FieldInfoWithCompiledAccessors>();
             int index = 0;
             FieldInfo[] fields = type.GetFields( BindingFlagsSet.AllInstance );
 
             foreach ( FieldInfo fieldInfo in fields )
             {
-                FieldAccessors.Add( index++, new FieldInfoWithCompiledAccessors( fieldInfo, type ) );
+                FieldAccessors.Add( fieldInfo.FullName(), new FieldInfoWithCompiledAccessors( fieldInfo, type ) );
             }
         }
     }

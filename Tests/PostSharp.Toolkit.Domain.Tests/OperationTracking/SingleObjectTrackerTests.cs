@@ -223,14 +223,14 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
             to.ChangeValuesTracked(1, 2, 3);
 
             sot.Undo();
-            sot.Undo();
+            // sot.Undo();
             
             Assert.AreEqual(0, to.P1);
             Assert.AreEqual(0, to.P2);
             Assert.AreEqual(0, to.P3);
 
             sot.Redo();
-            sot.Redo();
+            // sot.Redo();
 
             Assert.AreEqual(1, to.P1);
             Assert.AreEqual(2, to.P2);
@@ -277,7 +277,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
 
         public int P2 { get; set; }
 
-        public int P3 { get; [AlwaysMakeAutomaticSnapshot]set; }
+        public int P3 { get; [AlwaysMakeAutomaticOperation]set; }
 
         public void ChangeValuesTracked(int? p1 = null, int? p2 = null, int? p3 = null)
         {
@@ -297,7 +297,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
             }
         }
 
-        [DoNotMakeAutomaticSnapshot]
+        [DoNotMakeAutomaticOperation]
         public void ChangeValuesNotTracked(int? p1 = null, int? p2 = null, int? p3 = null)
         {
             this.ChangeValuesTracked( p1, p2, p3 );

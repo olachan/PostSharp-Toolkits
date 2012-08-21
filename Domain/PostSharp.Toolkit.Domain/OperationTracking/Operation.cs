@@ -9,25 +9,27 @@ using System;
 
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
-    public abstract class Snapshot : ISnapshot
+    public abstract class Operation : IOperation
     {
-        protected WeakReference<ITrackable> Target;
+        protected ITrackable Target;
 
-        protected Snapshot(ITrackable target)
+        protected Operation(ITrackable target)
         {
-            this.Target = new WeakReference<ITrackable>(target);
+            this.Target = target;
         }
 
-        protected Snapshot(ITrackable target, string restorePointName)
+        protected Operation(ITrackable target, string restorePointName)
             : this(target)
         {
             this.IsNamedRestorePoint = true;
             this.Name = restorePointName;
         }
 
-        public ITrackable SnapshotTarget { get { return this.Target.Target; } }
+        public ITrackable OperationTarget { get { return this.Target; } }
 
-        public abstract ISnapshot Restore();
+        public abstract void Undo();
+
+        public abstract void Redo();
 
         public bool IsNamedRestorePoint { get; private set; }
 

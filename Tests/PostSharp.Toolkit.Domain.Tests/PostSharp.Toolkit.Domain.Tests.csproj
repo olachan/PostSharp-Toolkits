@@ -80,6 +80,7 @@
     <Compile Include="NotifyPropertyChanged\AutomaticNotifyPropertyChangedAspectTests.cs" />
     <Compile Include="NotifyPropertyChanged\NotifyPropertyChangedLoadTests.cs" />
     <Compile Include="NotifyPropertyChanged\NotifyPropertyChangedTests.cs" />
+    <Compile Include="OperationTracking\AggregateTrackerTests.cs" />
     <Compile Include="OperationTracking\GlobalTrackerTests.cs" />
     <Compile Include="OperationTracking\SingleObjectTrackerTests.cs" />
     <Compile Include="NotifyPropertyChanged\PropertyChainInvocationTests.cs" />

@@ -9,7 +9,9 @@ using System;
 
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
-    public class AlwaysMakeAutomaticSnapshotAttribute : Attribute
+    //TODO replace with aspect and add compile time check of property type (it has to be ITrackedObject)
+    [AttributeUsage(AttributeTargets.Property)]
+    public class TrackedPropertyAttribute : Attribute
     {
          
     }

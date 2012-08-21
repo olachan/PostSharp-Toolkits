@@ -6,104 +6,135 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
     public abstract class Tracker : ITrackable
     {
-        protected ISnapshotCollection UndoSnapshots;
+        protected IOperationCollection UndoOperations;
 
-        protected ISnapshotCollection RedoSnapshots;
+        protected IOperationCollection RedoOperations;
 
         protected Tracker ParentTracker;
 
+        public bool DisableCollectingData { get; set; }
+
         protected Tracker()
         {
-            this.UndoSnapshots = new SnapshotCollection();
-            this.RedoSnapshots = new SnapshotCollection();
+            this.UndoOperations = new OperationCollection();
+            this.RedoOperations = new OperationCollection();
+            this.DisableCollectingData = false;
         }
 
-        public virtual void AddSnapshot(ISnapshot snapshot)
+        public virtual void AddOperation(IOperation operation, bool addToParent = true)
         {
-            if (this.ParentTracker != null)
+            if (addToParent && this.ParentTracker != null)
             {
-                this.ParentTracker.AddSnapshot( new DelegateSnapshot<Tracker>(this, t => t.Undo(), t => t.Redo()) );
+                this.ParentTracker.AddOperation(new DelegateOperation<Tracker>(this, t => t.Undo(false), t => t.Redo(false)));
             }
 
-            this.UndoSnapshots.Push(snapshot);
-            this.RedoSnapshots.Clear();
+            this.UndoOperations.Push(operation);
+            this.RedoOperations.Clear();
         }
 
         public virtual void AddNamedRestorePoint(string name)
         {
-            this.UndoSnapshots.AddNamedRestorePoint(name);
+            this.UndoOperations.AddNamedRestorePoint(name);
         }
 
-        public virtual void Undo()
+        public virtual void Undo(bool addToParent = true)
         {
-            this.AddSnapshotOfThisToParentTracker();
-            var snapshot = this.UndoSnapshots.Pop();
+            this.DisableCollectingData = true;
+            
+            IOperationCollection undoOperations = this.UndoOperations.Clone();
+            IOperationCollection redoOperations = this.RedoOperations.Clone();
+
+            var snapshot = this.UndoOperations.Pop();
             if (snapshot != null)
             {
-                this.RedoSnapshots.Push( snapshot.Restore() );
+                if (addToParent)
+                {
+                    this.AddUndoOperationToParentTracker(snapshot, undoOperations, redoOperations);
+                }
 
-                if (snapshot is SnapshotCollection.EmptyNamedRestorePoint)
+                snapshot.Undo();
+                this.RedoOperations.Push(snapshot);
+
+                if (snapshot is OperationCollection.EmptyNamedRestorePoint)
                 {
                     this.Undo();
                 }
             }
+            this.DisableCollectingData = false;
+
         }
 
-        public virtual void Redo()
+        public virtual void Redo(bool addToParent = true)
         {
-            // TODO what should happen here? add next snapshopt to parent or delete last(proper) snapshot from parent
-            this.AddSnapshotOfThisToParentTracker();
+            this.DisableCollectingData = true;
 
-            var snapshot = this.RedoSnapshots.Pop();
+            // TODO what should happen here? add next snapshopt to parent or delete last(proper) operation from parent
+
+            IOperationCollection undoOperations = this.UndoOperations.Clone();
+            IOperationCollection redoOperations = this.RedoOperations.Clone();
+            var snapshot = this.RedoOperations.Pop();
             if (snapshot != null)
             {
-                this.UndoSnapshots.Push(snapshot.Restore());
+                if (addToParent)
+                {
+                    this.AddUndoOperationToParentTracker(snapshot, undoOperations, redoOperations);
+                }
 
-                if (snapshot is SnapshotCollection.EmptyNamedRestorePoint)
+                snapshot.Redo();
+                this.UndoOperations.Push(snapshot);
+
+                if (snapshot is OperationCollection.EmptyNamedRestorePoint)
                 {
                     this.Redo();
                 }
             }
+            this.DisableCollectingData = false;
+
         }
 
         public virtual void RestoreNamedRestorePoint(string name)
         {
-            // TODO consider batch redo functionality
+            this.DisableCollectingData = true;
 
-            this.AddSnapshotOfThisToParentTracker();
+            IOperationCollection undoOperations = this.UndoOperations.Clone();
+            IOperationCollection redoOperations = this.RedoOperations.Clone();
 
-            Stack<ISnapshot> snapshotsToResore = this.UndoSnapshots.GetSnapshotsToRestorePoint(name);
+            Stack<IOperation> snapshotsToResore = this.UndoOperations.GetOperationsToRestorePoint(name);
 
-            // Stack<ISnapshot> redoBatch = new Stack<ISnapshot>();
+            var snapshotsForParent = snapshotsToResore.ToList();
+            snapshotsForParent.Reverse();
+
+            this.AddUndoOperationToParentTracker(snapshotsForParent, undoOperations, redoOperations);
+
+            // Stack<IOperation> redoBatch = new Stack<IOperation>();
 
             while (snapshotsToResore.Count > 0)
             {
                 // TODO consider optimization
-                //redoBatch.Push(snapshotsToResore.Pop().Restore());
-                this.RedoSnapshots.Push(snapshotsToResore.Pop().Restore());
+                //redoBatch.Push(snapshotsToResore.Pop().Undo());
+                IOperation operation = snapshotsToResore.Pop();
+
+
+                operation.Undo();
+                this.RedoOperations.Push(operation);
             }
+            this.DisableCollectingData = false;
 
-            //this.RedoSnapshots.Push( new BatchSnapshot( redoBatch ) );
+            //this.redoOperations.Push( new BatchOperation( redoBatch ) );
         }
 
-        protected virtual void AddSnapshotOfThisToParentTracker()
+        protected abstract void AddUndoOperationToParentTracker(List<IOperation> snapshots, IOperationCollection undoOperations, IOperationCollection redoOperations);
+
+        protected virtual void AddUndoOperationToParentTracker(IOperation operation, IOperationCollection undoOperations, IOperationCollection redoOperations)
         {
-            if (this.ParentTracker != null)
-            {
-                ParentTracker.AddSnapshot(((ITrackable)this).TakeSnapshot());
-            }
+            this.AddUndoOperationToParentTracker(new List<IOperation>() { operation }, undoOperations, redoOperations);
         }
 
-        protected abstract ISnapshot TakeSnapshot();
-
-        ISnapshot ITrackable.TakeSnapshot()
-        {
-            return this.TakeSnapshot();
-        }
     }
 }

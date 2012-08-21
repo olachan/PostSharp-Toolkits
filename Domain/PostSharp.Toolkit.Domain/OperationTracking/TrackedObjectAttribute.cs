@@ -28,8 +28,12 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
     {
         private ObjectAccessorsMap mapForSerialization;
 
+        private Dictionary<string, MethodOperationStrategy> methodAttributes;
+
+        private bool hasTrackedProperties;
+        
         [NonSerialized]
-        private SingleObjectTracker tracker;
+        private ObjectTracker tracker;
 
         [OnSerializing]
         public void OnSerializing(StreamingContext context)
@@ -58,6 +62,27 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
                 ObjectAccessorsMap.Map.Add(type, new ObjectAccessors(type));
             }
 
+            methodAttributes = new Dictionary<string, MethodOperationStrategy>();
+
+            foreach (MethodInfo method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
+            {
+                if (method.GetCustomAttributes( typeof(DoNotMakeAutomaticOperationAttribute), true ).Any())
+                {
+                    this.methodAttributes.Add( method.Name, MethodOperationStrategy.Never);
+                }
+                else if (method.GetCustomAttributes(typeof(AlwaysMakeAutomaticOperationAttribute), true).Any())
+                {
+                    this.methodAttributes.Add(method.Name, MethodOperationStrategy.Always);
+                }
+                else
+                {
+                    this.methodAttributes.Add(method.Name, MethodOperationStrategy.Auto);
+                }
+            }
+
+            hasTrackedProperties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
+                .Any(m => m.IsDefined(typeof(TrackedPropertyAttribute), true));
+
             base.CompileTimeInitialize(type, aspectInfo);
         }
 
@@ -77,21 +102,54 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         {
             TrackedObjectAttribute aspect = (TrackedObjectAttribute)base.CreateInstance(adviceArgs);
 
-            aspect.tracker = new SingleObjectTracker((ITrackable)adviceArgs.Instance);
+            aspect.tracker = new SingleObjectTracker((ITrackable)adviceArgs.Instance);// hasTrackedProperties ? (ObjectTracker)new AggregateTracker((ITrackable)adviceArgs.Instance) : new SingleObjectTracker((ITrackable)adviceArgs.Instance);
 
             return aspect;
         }
+
+        // TODO cope with field initializers
+        //[OnLocationSetValueAdvice]
+        //[MethodPointcut("SelectTrackedProperties")]
+        //public void OnTrackedPropertySet(LocationInterceptionArgs args)
+        //{
+        //    ITrackedObject trackedObject = (ITrackedObject)args.Value;
+
+        //    if (trackedObject != null)
+        //    {
+        //        ((AggregateTracker)this.tracker).RemoveDependentTracker( trackedObject.Tracker );
+        //    }
+
+        //    args.ProceedSetValue();
+
+        //    trackedObject = (ITrackedObject)args.Value;
+
+        //    if (trackedObject != null)
+        //    {
+        //        ((AggregateTracker)this.tracker).AddDependentTracker(trackedObject.Tracker);
+        //    }
+        //}
+
+        //private IEnumerable<PropertyInfo> SelectTrackedProperties(Type type)
+        //{
+        //    return
+        //        type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
+        //        .Where(m => m.IsDefined(typeof(TrackedPropertyAttribute), true));
+        //}
 
         [OnMethodInvokeAdvice]
         [MethodPointcut("SelectMethods")]
         public void OnMethodInvoke(MethodInterceptionArgs args)
         {
             // TODO: method attribute compile time map
-            if (StackTrace.StackPeek() != args.Instance &&
-                !args.Method.GetCustomAttributes(typeof(DoNotMakeAutomaticSnapshotAttribute), true).Any() ||
-                args.Method.GetCustomAttributes(typeof(AlwaysMakeAutomaticSnapshotAttribute), true).Any())
+
+            var methodStrategy = methodAttributes[args.Method.Name];
+            bool chunkStarted = false;
+
+            if ((StackTrace.StackPeek() != args.Instance && methodStrategy == MethodOperationStrategy.Auto) || 
+                methodStrategy == MethodOperationStrategy.Always)
             {
-                tracker.AddObjectSnapshot();
+                ThisTracker.StartChunk();
+                chunkStarted = true;
             }
             try
             {
@@ -101,6 +159,10 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             finally
             {
                 StackTrace.PopFromStack(); //TODO: snapshot add strategy
+                if (chunkStarted)
+                {
+                    ThisTracker.EndChunk();
+                }
                 //if (StackTrace.StackPeek() != args.Instance)
                 //{
                 //    tracker.AddObjectSnapshot();
@@ -108,57 +170,102 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             }
         }
 
+        [OnLocationSetValueAdvice]
+        [MethodPointcut("SelectFields")]
+        public void OnFieldSet(LocationInterceptionArgs args)
+        {
+            bool endChunk = false;
+            if (!ThisTracker.IsChunkActive)
+            {
+                endChunk = true;
+                ThisTracker.StartChunk();
+            }
+
+            object oldValue = args.GetCurrentValue();
+            args.ProceedSetValue();
+            object newValue = args.Value;
+
+            ThisTracker.AddOperationToChunk( new FieldOperation( (ITrackable)this.Instance, args.LocationFullName, oldValue, newValue ) );
+
+            if (endChunk)
+            {
+                ThisTracker.EndChunk();
+            }
+
+        }
+
+        private IEnumerable<FieldInfo> SelectFields(Type type)
+        {
+            // Select only fields that are relevant
+            return type.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly );
+        }
+
         private IEnumerable<MethodBase> SelectMethods(Type type)
         {
             return
                 type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly).Where(
                     m =>
-                    m.IsDefined(typeof(AlwaysMakeAutomaticSnapshotAttribute), true) ||
+                    m.IsDefined(typeof(AlwaysMakeAutomaticOperationAttribute), true) ||
                     (!m.Name.StartsWith("get_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")));
-            // .Where( m => !m.IsDefined( typeof(DoNotMakeAutomaticSnapshotAttribute), true ) );
+            // .Where( m => !m.IsDefined( typeof(DoNotMakeAutomaticOperationAttribute), true ) );
         }
 
-        public ISnapshot TakeSnapshot()
-        {
-            return new FieldSnapshot((ITrackable)this.Instance);
-        }
+        //public IOperation TakeSnapshot()
+        //{
+        //    return new FieldOperation((ITrackable)this.Instance);
+        //}
 
         public void Undo()
         {
-            this.tracker.Undo();
+            this.ThisTracker.Undo();
         }
 
         public void Redo()
         {
-            this.tracker.Redo();
+            this.ThisTracker.Redo();
         }
 
-        public void AddObjectSnapshot(string name)
-        {
-            this.tracker.AddObjectSnapshot(name);
-        }
+        //public void AddObjectSnapshot(string name)
+        //{
+        //    this.tracker.AddObjectSnapshot(name);
+        //}
 
-        public void AddObjectSnapshot()
-        {
-            this.tracker.AddObjectSnapshot();
-        }
+        //public void AddObjectSnapshot()
+        //{
+        //    this.tracker.AddObjectSnapshot();
+        //}
 
         public void AddNamedRestorePoint(string name)
         {
-            this.tracker.AddNamedRestorePoint(name);
+            this.ThisTracker.AddNamedRestorePoint(name);
         }
 
         public void RestoreNamedRestorePoint(string name)
         {
-            this.tracker.RestoreNamedRestorePoint(name);
+            this.ThisTracker.RestoreNamedRestorePoint(name);
         }
 
-        public SingleObjectTracker Tracker
+        public IObjectTracker Tracker
         {
             get
             {
                 return this.tracker;
             }
+        }
+
+        public IObjectTracker ThisTracker
+        {
+            get
+            {
+                return ((ITrackedObject)this.Instance).Tracker;
+            }
+        }
+
+        private enum MethodOperationStrategy
+        {
+            Always,
+            Never,
+            Auto,
         }
     }
 }
