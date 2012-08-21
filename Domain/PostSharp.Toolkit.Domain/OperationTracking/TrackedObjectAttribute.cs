@@ -107,36 +107,6 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             return aspect;
         }
 
-        // TODO cope with field initializers
-        //[OnLocationSetValueAdvice]
-        //[MethodPointcut("SelectTrackedProperties")]
-        //public void OnTrackedPropertySet(LocationInterceptionArgs args)
-        //{
-        //    ITrackedObject trackedObject = (ITrackedObject)args.GetCurrentValue();
-
-        //    if (trackedObject != null)
-        //    {
-        //        trackedObject.Tracker
-        //        // ((AggregateTracker)this.tracker).RemoveDependentTracker(trackedObject.Tracker);
-        //    }
-
-        //    args.ProceedSetValue();
-
-        //    trackedObject = (ITrackedObject)args.Value;
-
-        //    if (trackedObject != null)
-        //    {
-        //        ((AggregateTracker)this.tracker).AddDependentTracker(trackedObject.Tracker);
-        //    }
-        //}
-
-        //private IEnumerable<PropertyInfo> SelectTrackedProperties(Type type)
-        //{
-        //    return
-        //        type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
-        //        .Where(m => m.IsDefined(typeof(TrackedPropertyAttribute), true));
-        //}
-
         [OnMethodInvokeAdvice]
         [MethodPointcut("SelectMethods")]
         public void OnMethodInvoke(MethodInterceptionArgs args)
@@ -164,10 +134,6 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
                 {
                     ThisTracker.EndChunk();
                 }
-                //if (StackTrace.StackPeek() != args.Instance)
-                //{
-                //    tracker.AddObjectSnapshot();
-                //}
             }
         }
 
@@ -225,13 +191,6 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             return type.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly );
         }
 
-       
-
-        //public IOperation TakeSnapshot()
-        //{
-        //    return new FieldOperation((ITrackable)this.Instance);
-        //}
-
         public void Undo()
         {
             this.ThisTracker.Undo();
@@ -241,16 +200,6 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         {
             this.ThisTracker.Redo();
         }
-
-        //public void AddObjectSnapshot(string name)
-        //{
-        //    this.tracker.AddObjectSnapshot(name);
-        //}
-
-        //public void AddObjectSnapshot()
-        //{
-        //    this.tracker.AddObjectSnapshot();
-        //}
 
         public void AddNamedRestorePoint(string name)
         {
