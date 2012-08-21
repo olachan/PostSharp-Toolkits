@@ -31,78 +31,78 @@ namespace PostSharp.Toolkit.Domain
     /// </summary>
     public static class Depends
     {
-        // if(false) cant be used due to compiler optimizations
-        public static readonly bool OnGuard = false;
+        // if(false) cannot be used explicitly due to compiler optimizations
+        public static readonly bool Guard = false;
 
-        // params attribute cant be used because it emits array assignment to local variable not a direct call to method
+        // params attribute cannot be used because it emits array assignment to local variable not a direct call to method
         /// <summary>
         /// Specifies explicit dependency
         /// </summary>
-        public static void On( object dependecie1 )
+        public static void On( object dependency1 )
         {
         }
 
-        public static void On( object dependecie1, object dependecie2 )
+        public static void On( object dependency1, object dependency2 )
         {
         }
 
-        public static void On( object dependecie1, object dependecie2, object dependecie3 )
+        public static void On( object dependency1, object dependency2, object dependency3 )
         {
         }
 
-        public static void On( object dependecie1, object dependecie2, object dependecie3, object dependecie4 )
+        public static void On( object dependency1, object dependency2, object dependency3, object dependency4 )
         {
         }
 
-        public static void On( object dependecie1, object dependecie2, object dependecie3, object dependecie4, object dependecie5 )
+        public static void On( object dependency1, object dependency2, object dependency3, object dependency4, object dependency5 )
         {
         }
 
-        public static void On( object dependecie1, object dependecie2, object dependecie3, object dependecie4, object dependecie5, object dependecie6 )
-        {
-        }
-
-        public static void On(
-            object dependecie1, object dependecie2, object dependecie3, object dependecie4, object dependecie5, object dependecie6, object dependecie7 )
+        public static void On( object dependency1, object dependency2, object dependency3, object dependency4, object dependency5, object dependency6 )
         {
         }
 
         public static void On(
-            object dependecie1,
-            object dependecie2,
-            object dependecie3,
-            object dependecie4,
-            object dependecie5,
-            object dependecie6,
-            object dependecie7,
-            object dependecie8 )
+            object dependency1, object dependency2, object dependency3, object dependency4, object dependency5, object dependency6, object dependency7 )
         {
         }
 
         public static void On(
-            object dependecie1,
-            object dependecie2,
-            object dependecie3,
-            object dependecie4,
-            object dependecie5,
-            object dependecie6,
-            object dependecie7,
-            object dependecie8,
-            object dependecie9 )
+            object dependency1,
+            object dependency2,
+            object dependency3,
+            object dependency4,
+            object dependency5,
+            object dependency6,
+            object dependency7,
+            object dependency8 )
         {
         }
 
         public static void On(
-            object dependecie1,
-            object dependecie2,
-            object dependecie3,
-            object dependecie4,
-            object dependecie5,
-            object dependecie6,
-            object dependecie7,
-            object dependecie8,
-            object dependecie9,
-            object dependecie10 )
+            object dependency1,
+            object dependency2,
+            object dependency3,
+            object dependency4,
+            object dependency5,
+            object dependency6,
+            object dependency7,
+            object dependency8,
+            object dependency9 )
+        {
+        }
+
+        public static void On(
+            object dependency1,
+            object dependency2,
+            object dependency3,
+            object dependency4,
+            object dependency5,
+            object dependency6,
+            object dependency7,
+            object dependency8,
+            object dependency9,
+            object dependency10 )
         {
         }
     }

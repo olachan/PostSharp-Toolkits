@@ -72,17 +72,17 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="NotifyPropertyChanged\ManulaINPCCodeContractDependsOnAspectTests.cs" />
+    <Compile Include="NotifyPropertyChanged\AutomaticNotifyPropertyChangedAspectTests.cs" />
     <Compile Include="NotifyPropertyChanged\InpcInhertianceTests.cs" />
     <Compile Include="NotifyPropertyChanged\InpcIntegrationTests.cs" />
     <Compile Include="NotifyPropertyChanged\InpcSerializationTests.cs" />
+    <Compile Include="NotifyPropertyChanged\ManulaINPCCodeContractDependsOnAspectTests.cs" />
     <Compile Include="NotifyPropertyChanged\ManulaNotifyPropertyChangedAspectTests.cs" />
-    <Compile Include="NotifyPropertyChanged\AutomaticNotifyPropertyChangedAspectTests.cs" />
     <Compile Include="NotifyPropertyChanged\NotifyPropertyChangedLoadTests.cs" />
     <Compile Include="NotifyPropertyChanged\NotifyPropertyChangedTests.cs" />
+    <Compile Include="NotifyPropertyChanged\PropertyChainInvocationTests.cs" />
     <Compile Include="OperationTracking\GlobalTrackerTests.cs" />
     <Compile Include="OperationTracking\SingleObjectTrackerTests.cs" />
-    <Compile Include="NotifyPropertyChanged\PropertyChainInvocationTests.cs" />
     <Compile Include="TestHelpers.cs" />
   </ItemGroup>
   <ItemGroup>
