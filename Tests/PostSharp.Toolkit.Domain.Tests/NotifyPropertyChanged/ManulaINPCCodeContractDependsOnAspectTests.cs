@@ -211,7 +211,7 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         {
             get
             {
-                if (Depends.OnGuard)
+                if (Depends.Guard)
                     Depends.On(this.InnerObject.Property);
                 return this.InnerObject.Property;
             }
@@ -242,7 +242,7 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         {
             get
             {
-                if (Depends.OnGuard)
+                if (Depends.Guard)
                     Depends.On(this.InnerObject.StrConcat);
                 return this.InnerObject.StrConcat;
             }
@@ -252,7 +252,7 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         {
             get
             {
-                if (Depends.OnGuard)
+                if (Depends.Guard)
                     Depends.On(this.InnerObject.SuperInnrObject.StrConcat);
                 return this.InnerObject.SuperInnrObject.StrConcat;
             }
@@ -262,7 +262,7 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         {
             get
             {
-                if (Depends.OnGuard)
+                if (Depends.Guard)
                     Depends.On(this.InnerObject.SuperInnrObjectNonAuto.StrConcat);
 
                 var io = this.InnerObject;
@@ -275,7 +275,7 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         {
             get
             {
-                if (Depends.OnGuard)
+                if (Depends.Guard)
                     Depends.On(this.InnerObjectProperty.SuperInnrObject.StrConcat);
 
                 var iop = this.InnerObjectProperty;

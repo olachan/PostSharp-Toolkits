@@ -8,7 +8,25 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
     [TestFixture]
     public class AutomaticNotifyPropertyChangedAspectTests
     {
-       
+        [Test]
+        public void InnerClassPropertyChange_GeneratesSingleEventOnDependentProperty()
+        {
+            TestHelpers.DoInpcTest<InpcBasicClass>(
+                c =>
+                    {
+                        c.Inner.Property = 5;
+                    },
+                1,
+                "InnerClassProperty" );
+            TestHelpers.DoInpcTest<InpcBasicClass>(
+                c =>
+                {
+                    var x = c.Inner;
+                    x.Property = 7;
+                },
+                1,
+                "InnerClassProperty");
+        }
 
         [Test]
         public void MultipleInstancesTest()
@@ -394,12 +412,15 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         }
     }
 
+    [NotifyPropertyChanged]
     public class InpcAutoInnerClass
     {
         public int Sum(int left, int right)
         {
             return left + right;
         }
+
+        public int Property { get; set; }
     }
 
     [NotifyPropertyChanged]
@@ -418,6 +439,11 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         public string Str2;
 
         public InpcAutoInnerClass Inner = new InpcAutoInnerClass();
+
+        public int InnerClassProperty
+        {
+            get { return this.Inner.Property; }
+        }
 
         public string StaticFrameworkMethodBasedProperty
         {
