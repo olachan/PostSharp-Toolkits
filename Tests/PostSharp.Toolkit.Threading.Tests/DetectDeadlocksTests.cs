@@ -25,11 +25,11 @@ namespace PostSharp.Toolkit.Threading.Tests
             // wait for any pending exceptions from background tasks
             try
             {
-                GC.RegisterForFullGCNotification(1, 1);
+                //GC.RegisterForFullGCNotification(1, 1);
 
                 GC.Collect(GC.MaxGeneration);
 
-                GC.WaitForFullGCComplete();
+                //GC.WaitForFullGCComplete();
 
                 GC.WaitForPendingFinalizers();
             }
