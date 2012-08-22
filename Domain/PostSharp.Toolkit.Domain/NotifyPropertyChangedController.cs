@@ -32,21 +32,33 @@ namespace PostSharp.Toolkit.Domain
         /// Raise all events on specific object
         /// </summary>
         /// <param name="instance">object to raise events on</param>
-        public static void RaiseEvents( object instance )
-        {
-            PropertyChangesTracker.RaisePropertyChangedOnlyOnSpecifiedInstance( instance );
-        }
-
-        public static void RaiseEvents(object instance, string propertyName)
+        public static void RaiseEvents(object instance)
         {
             PropertyChangesTracker.RaisePropertyChangedOnlyOnSpecifiedInstance(instance);
         }
 
-        public static void RaiseEvents<T>(T instance, Expression<Action<T>> propertySelector)
+        public static void RaisePropertyChanged(object instance, string propertyName)
         {
-            var body = propertySelector.Body as MemberExpression;
-            var expression = body.Expression as ConstantExpression;
-            RaiseEvents(instance, body.Member.Name);
+            NotifyPropertyChangedAccessor.RaisePropertyChanged(instance, propertyName);
+        }
+
+        public static void RaisePropertyChanged<T, TProperty>(T instance, Expression<Func<T, TProperty>> propertySelector)
+        {
+            var memberExpression = propertySelector.Body as MemberExpression;
+            if (memberExpression == null)
+            {
+                var unaryExpression = propertySelector.Body as UnaryExpression;
+                if (unaryExpression != null)
+                {
+                    memberExpression = unaryExpression.Operand as MemberExpression;
+                    if (memberExpression == null)
+                        throw new NotImplementedException();
+                }
+                else
+                    throw new NotImplementedException();
+            }
+
+            RaisePropertyChanged(instance, memberExpression.Member.Name);
         }
     }
 }

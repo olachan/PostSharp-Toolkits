@@ -13,11 +13,11 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         {
             TestHelpers.DoInpcTest<InpcBasicClass>(
                 c =>
-                    {
-                        c.Inner.Property = 5;
-                    },
+                {
+                    c.Inner.Property = 5;
+                },
                 1,
-                "InnerClassProperty" );
+                "InnerClassProperty");
             TestHelpers.DoInpcTest<InpcBasicClass>(
                 c =>
                 {
@@ -312,6 +312,8 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
             "BaseClasseBasedProperty");
         }
 
+        
+
     }
 
     [NotifyPropertyChanged]
@@ -408,7 +410,7 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         [IdempotentMethod]
         public static string StateIndependentMethod(string format, params object[] parameters)
         {
-            return string.Format( format, parameters );
+            return string.Format(format, parameters);
         }
     }
 
@@ -422,6 +424,8 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
 
         public int Property { get; set; }
     }
+
+   
 
     [NotifyPropertyChanged]
     public class InpcBasicClass
@@ -457,7 +461,7 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         {
             get
             {
-                return InpcDerrivedClass.StateIndependentMethod( "{0} {1}", this.Str1, this.Str2 );
+                return InpcDerrivedClass.StateIndependentMethod("{0} {1}", this.Str1, this.Str2);
             }
         }
 
@@ -471,7 +475,7 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
 
         public override string ToString()
         {
-            return string.Format( "{0} {1}", this.Str1, this.Str2 );
+            return string.Format("{0} {1}", this.Str1, this.Str2);
         }
 
         [NotifyPropertyChangedSafe]
@@ -479,7 +483,7 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         {
             get
             {
-                return this.Inner.Sum( this.Field1, this.Field2 );
+                return this.Inner.Sum(this.Field1, this.Field2);
             }
         }
 
@@ -588,6 +592,6 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
     //[NotifyPropertyChanged]
     //public class Derrived : Base
     //{
-       
+
     //}
 }

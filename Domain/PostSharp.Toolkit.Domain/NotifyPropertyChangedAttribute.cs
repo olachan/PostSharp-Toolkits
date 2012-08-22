@@ -96,7 +96,7 @@ namespace PostSharp.Toolkit.Domain
 
             this.childPropertyChangedProcessor.HandleFieldChange( args );
 
-            PropertyChangesTracker.RaisePropertyChangedIfNeeded( args );
+            PropertyChangesTracker.RaisePropertyChangedIfNeeded( args.Instance );
         }
 
         private IEnumerable<FieldInfo> SelectFields( Type type )
@@ -141,10 +141,7 @@ namespace PostSharp.Toolkit.Domain
             finally
             {
                 PropertyChangesTracker.PopFromStack();
-                if ( PropertyChangesTracker.StackPeek() != args.Instance )
-                {
-                    PropertyChangesTracker.RaisePropertyChanged( args.Instance );
-                }
+                PropertyChangesTracker.RaisePropertyChangedIfNeeded(args.Instance);
             }
         }
 
@@ -168,6 +165,7 @@ namespace PostSharp.Toolkit.Domain
             }
 
             this.childPropertyChangedProcessor.HookHandlersToAllFields();
+            this.childPropertyChangedProcessor.HookPropertyChangedHandler();
 
             this.initialized = true;
         }

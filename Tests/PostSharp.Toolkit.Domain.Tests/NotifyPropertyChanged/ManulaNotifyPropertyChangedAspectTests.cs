@@ -163,6 +163,43 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
                 2,
                 "A");
         }
+
+        [Test]
+        public void ManualRaiseTest()
+        {
+            TestHelpers.DoInpcTest<InpcWithIgnoreClass>(
+            c =>
+            {
+                c.IgnoredProperty = 1;
+            },
+            0,
+            "DependentProperty");
+
+            TestHelpers.DoInpcTest<InpcWithIgnoreClass>(
+            c =>
+            {
+                c.IgnoredProperty = 1;
+                NotifyPropertyChangedController.RaisePropertyChanged(c, x => x.IgnoredProperty);
+            },
+            1,
+            "DependentProperty");
+        }
+    }
+
+    [NotifyPropertyChanged]
+    public class InpcWithIgnoreClass
+    {
+        [NotifyPropertyChangedIgnore]
+        public int IgnoredProperty { get; set; }
+
+        [DependsOn("IgnoredProperty")]
+        public int DependentProperty
+        {
+            get
+            {
+                return this.IgnoredProperty;
+            }
+        }
     }
 
     [NotifyPropertyChanged]

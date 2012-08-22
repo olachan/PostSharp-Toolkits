@@ -19,6 +19,9 @@ namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
 {
     internal static class PropertyChangesTracker
     {
+        [ThreadStatic]
+        private static bool areEventsFiring;
+
         private static readonly ThreadLocal<ChangedPropertiesAccumulator> propertyChangesAcumulator =
             new ThreadLocal<ChangedPropertiesAccumulator>( () => new ChangedPropertiesAccumulator() );
 
@@ -51,6 +54,14 @@ namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
             }
         }
 
+        public static bool AreEventsFiring
+        {
+            get
+            {
+                return areEventsFiring;
+            }
+        }
+
         public static void PushOnStack( object o )
         {
             StackContext.PushOnStack( o );
@@ -66,11 +77,11 @@ namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
             return StackContext.Count == 0 ? null : StackContext.Peek();
         }
 
-        public static void RaisePropertyChangedIfNeeded( LocationInterceptionArgs args )
+        public static void RaisePropertyChangedIfNeeded( object instance )
         {
-            if ( StackPeek() != args.Instance )
+            if (!ReferenceEquals( StackPeek(), instance))
             {
-                RaisePropertyChanged( args.Instance );
+                RaisePropertyChanged(instance);
             }
         }
 
@@ -119,6 +130,7 @@ namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
         private static void RaisePropertyChangesInternal(
             ChangedPropertiesAccumulator accumulator, bool raiseChildPropertyChanges, Func<WeakPropertyDescriptor, bool> propertySelectorPredicate )
         {
+            areEventsFiring = true;
             accumulator.Compact();
 
             List<WeakPropertyDescriptor> objectsToRaisePropertyChanged;
@@ -165,6 +177,8 @@ namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
                 //Notifications may cause generation of new notifications, continue until there is nothing left to raise
             }
             while ( objectsToRaisePropertyChanged.Count > 0 && ++loopCount <= 32 );
+
+            areEventsFiring = false;
 
             //TODO: Verify the loop above will always stop.
             //If there's a risk it won't, call RaiseChildPropertyChanged from NPCAttribute.ChildPropertyChangedEventHandler to bubble up CNPC notifications

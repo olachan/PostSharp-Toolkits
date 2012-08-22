@@ -24,7 +24,7 @@ namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
     {
         // collection of handelers attached to objects. Maintained to unhook handler when no longer needed.
         [NonSerialized]
-        private Dictionary<string, NotifyChildPropertyChangedEventHandlerDescriptor> notifyChildPropertyChangedHandlers;
+        private readonly Dictionary<string, NotifyChildPropertyChangedEventHandlerDescriptor> notifyChildPropertyChangedHandlers;
 
         // comparer to compare old and new value based on field type (reference, value)
         private readonly FieldValueComparer fieldValueComparer;
@@ -77,6 +77,20 @@ namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
             foreach ( FieldInfoWithCompiledGetter fieldInfo in this.propertyToFieldBindings.FiledInfos.Values )
             {
                 this.HookNotifyChildPropertyChangedHandler( fieldInfo.GetValue( this.instance ), fieldInfo.FieldName );
+            }
+        }
+
+        public void HookPropertyChangedHandler()
+        {
+            NotifyPropertyChangedAccessor.AddPropertyChangedHandler( this.instance, this.OnPropertyChanged );
+        }
+
+        private void OnPropertyChanged(object sender, PropertyChangedEventArgs eventArgs )
+        {
+            if (!PropertyChangesTracker.AreEventsFiring)
+            {
+                this.ChildPropertyChanged( new List<string>(){eventArgs.PropertyName} );
+                PropertyChangesTracker.RaisePropertyChangedIfNeeded(this.instance);
             }
         }
 
