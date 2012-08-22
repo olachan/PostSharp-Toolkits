@@ -38,8 +38,6 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         [OnSerializing]
         public void OnSerializing(StreamingContext context)
         {
-            //TODO: Consider better serialization mechanism
-
             //Grab the dependencies map to serialize if, if no other aspect has done it before
             mapForSerialization = ObjectAccessorsMap.GetForSerialization();
         }

@@ -7,6 +7,10 @@
 
 #endregion
 
+using System;
+using System.ComponentModel;
+using System.Linq.Expressions;
+
 using PostSharp.Toolkit.Domain.PropertyChangeTracking;
 
 namespace PostSharp.Toolkit.Domain
@@ -31,6 +35,18 @@ namespace PostSharp.Toolkit.Domain
         public static void RaiseEvents( object instance )
         {
             PropertyChangesTracker.RaisePropertyChangedOnlyOnSpecifiedInstance( instance );
+        }
+
+        public static void RaiseEvents(object instance, string propertyName)
+        {
+            PropertyChangesTracker.RaisePropertyChangedOnlyOnSpecifiedInstance(instance);
+        }
+
+        public static void RaiseEvents<T>(T instance, Expression<Action<T>> propertySelector)
+        {
+            var body = propertySelector.Body as MemberExpression;
+            var expression = body.Expression as ConstantExpression;
+            RaiseEvents(instance, body.Member.Name);
         }
     }
 }

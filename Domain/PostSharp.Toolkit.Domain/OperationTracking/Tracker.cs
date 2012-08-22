@@ -74,8 +74,6 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         {
             this.DisableCollectingData = true;
 
-            // TODO what should happen here? add next snapshopt to parent or delete last(proper) operation from parent
-
             IOperationCollection undoOperations = this.UndoOperations.Clone();
             IOperationCollection redoOperations = this.RedoOperations.Clone();
             var snapshot = this.RedoOperations.Pop();
@@ -112,21 +110,14 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
             this.AddUndoOperationToParentTracker(snapshotsForParent, undoOperations, redoOperations);
 
-            // Stack<IOperation> redoBatch = new Stack<IOperation>();
-
             while (snapshotsToResore.Count > 0)
             {
                 // TODO consider optimization
-                //redoBatch.Push(snapshotsToResore.Pop().Undo());
                 IOperation operation = snapshotsToResore.Pop();
-
-
                 operation.Undo();
                 this.RedoOperations.Push(operation);
             }
             this.DisableCollectingData = false;
-
-            //this.redoOperations.Push( new BatchOperation( redoBatch ) );
         }
 
         protected abstract void AddUndoOperationToParentTracker(List<IOperation> snapshots, IOperationCollection undoOperations, IOperationCollection redoOperations);
