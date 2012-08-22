@@ -29,12 +29,7 @@ namespace PostSharp.Toolkit.Threading.Tests
 
                 GC.Collect(GC.MaxGeneration);
 
-                GCNotificationStatus status;
-                do
-                {
-                    status = GC.WaitForFullGCComplete();
-                }
-                while ( status != GCNotificationStatus.Succeeded );
+                GC.WaitForFullGCComplete();
 
                 GC.WaitForPendingFinalizers();
             }
