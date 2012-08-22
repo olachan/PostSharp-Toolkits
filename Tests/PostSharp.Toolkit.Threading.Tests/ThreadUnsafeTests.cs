@@ -16,6 +16,18 @@ namespace PostSharp.Toolkit.Threading.Tests
     [TestFixture]
     public class ThreadUnsafeTests
     {
+        [TearDown]
+        public void TearDown()
+        {
+            // wait for any pending exceptions from background tasks
+            try
+            {
+                GC.Collect(GC.MaxGeneration);
+                GC.WaitForPendingFinalizers();
+            }
+            catch { }
+        }
+
 #if !(DEBUG || DEBUG_THREADING)
         [Test]
 #endif
