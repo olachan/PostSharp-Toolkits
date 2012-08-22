@@ -19,8 +19,28 @@ namespace PostSharp.Toolkit.Threading.Tests
     [TestFixture]
     public class DetectDeadlocksTests
     {
+        [TearDown]
+        public void TearDown()
+        {
+            // wait for any pending exceptions from background tasks
+            try
+            {
+                GC.RegisterForFullGCNotification(1, 1);
 
-       
+                GC.Collect(GC.MaxGeneration);
+
+                GCNotificationStatus status;
+                do
+                {
+                    status = GC.WaitForFullGCComplete();
+                }
+                while ( status != GCNotificationStatus.Succeeded );
+
+                GC.WaitForPendingFinalizers();
+            }
+            catch { }
+        }
+
 
 #if !(DEBUG || DEBUG_THREADING)
         [Test]
