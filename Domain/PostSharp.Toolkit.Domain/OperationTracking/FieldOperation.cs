@@ -22,12 +22,12 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         private readonly FieldInfoWithCompiledAccessors fieldAccessor;
 
-        public FieldOperation( ITrackable target, string fieldFullName, object oldValue, object newValue )
+        public FieldOperation( ITrackable target, Type implementingType, string fieldFullName, object oldValue, object newValue )
             : base(target)
         {
             this.oldValue = oldValue;
             this.newValue = newValue;
-            this.fieldAccessor = ObjectAccessorsMap.Map[this.Target.GetType()].FieldAccessors[fieldFullName];
+            this.fieldAccessor = ObjectAccessorsMap.Map[implementingType].FieldAccessors[fieldFullName];
         }
 
         public override void Undo()

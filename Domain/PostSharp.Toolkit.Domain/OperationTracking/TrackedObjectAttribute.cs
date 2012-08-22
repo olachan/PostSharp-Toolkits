@@ -12,6 +12,7 @@ using System.Runtime.Serialization;
 
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
+using PostSharp.Extensibility;
 using PostSharp.Toolkit.Domain.Tools;
 
 using System.Linq;
@@ -23,7 +24,8 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
     /// Early development version!!!
     /// </summary>
     [Serializable]
-    [IntroduceInterface(typeof(ITrackedObject), OverrideAction = InterfaceOverrideAction.Ignore)]
+    [IntroduceInterface(typeof(ITrackedObject), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
+    [MulticastAttributeUsage(MulticastTargets.Class, Inheritance = MulticastInheritance.Strict)]
     public class TrackedObjectAttribute : InstanceLevelAspect, ITrackedObject
     {
         private ObjectAccessorsMap mapForSerialization;
@@ -185,7 +187,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
                 trackedObject.SetTracker(ThisTracker);
             }
 
-            ThisTracker.AddOperationToChunk( new FieldOperation( (ITrackable)this.Instance, args.LocationFullName, oldValue, newValue ) );
+            ThisTracker.AddOperationToChunk( new FieldOperation( (ITrackable)this.Instance, args.Location.DeclaringType, args.LocationFullName, oldValue, newValue ) );
 
             if (endChunk)
             {

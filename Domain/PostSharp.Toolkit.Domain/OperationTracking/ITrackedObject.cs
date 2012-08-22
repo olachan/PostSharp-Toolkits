@@ -15,13 +15,6 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         [DoNotMakeAutomaticOperation]
         void Redo();
 
-
-        //[DoNotMakeAutomaticSnapshot]
-        //void AddObjectSnapshot( string name );
-
-        //[DoNotMakeAutomaticSnapshot]
-        //void AddObjectSnapshot();
-
         [DoNotMakeAutomaticOperation]
         void AddNamedRestorePoint(string name);
 

@@ -14,10 +14,8 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
     [TestFixture]
     public class AggregateTrackerTests
     {
-        //TODO: feature not implemented
         [Test]
-        //[Ignore]
-        public void SimpleGlobalTrackerTest()
+        public void SimpleAggregateTrackerTest()
         {
             AggregateTrackedObject root = new AggregateTrackedObject();
             
@@ -46,7 +44,6 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
         }
 
         [Test]
-        //[Ignore]
         public void AggregateMethodChangingDependentTest()
         {
             AggregateTrackedObject root = new AggregateTrackedObject();

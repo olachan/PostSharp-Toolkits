@@ -8,8 +8,11 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using PostSharp.Toolkit.Threading;
+
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
+    [ThreadUnsafeObject]
     public abstract class Tracker : ITracker, ITrackable
     {
         protected IOperationCollection UndoOperations;
@@ -50,18 +53,18 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             IOperationCollection undoOperations = this.UndoOperations.Clone();
             IOperationCollection redoOperations = this.RedoOperations.Clone();
 
-            var snapshot = this.UndoOperations.Pop();
-            if (snapshot != null)
+            var operation = this.UndoOperations.Pop();
+            if (operation != null)
             {
                 if (addToParent)
                 {
-                    this.AddUndoOperationToParentTracker(snapshot, undoOperations, redoOperations);
+                    this.AddUndoOperationToParentTracker(operation, undoOperations, redoOperations);
                 }
 
-                snapshot.Undo();
-                this.RedoOperations.Push(snapshot);
+                operation.Undo();
+                this.RedoOperations.Push(operation);
 
-                if (snapshot is OperationCollection.EmptyNamedRestorePoint)
+                if (operation is OperationCollection.EmptyNamedRestorePoint)
                 {
                     this.Undo();
                 }
@@ -76,18 +79,18 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
             IOperationCollection undoOperations = this.UndoOperations.Clone();
             IOperationCollection redoOperations = this.RedoOperations.Clone();
-            var snapshot = this.RedoOperations.Pop();
-            if (snapshot != null)
+            var operation = this.RedoOperations.Pop();
+            if (operation != null)
             {
                 if (addToParent)
                 {
-                    this.AddUndoOperationToParentTracker(snapshot, undoOperations, redoOperations);
+                    this.AddUndoOperationToParentTracker(operation, undoOperations, redoOperations);
                 }
 
-                snapshot.Redo();
-                this.UndoOperations.Push(snapshot);
+                operation.Redo();
+                this.UndoOperations.Push(operation);
 
-                if (snapshot is OperationCollection.EmptyNamedRestorePoint)
+                if (operation is OperationCollection.EmptyNamedRestorePoint)
                 {
                     this.Redo();
                 }
@@ -127,18 +130,5 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             this.AddUndoOperationToParentTracker(new List<IOperation>() { operation }, undoOperations, redoOperations);
         }
 
-    }
-
-    public interface ITracker
-    {
-        void AddOperation(IOperation operation, bool addToParent = true);
-
-        void AddNamedRestorePoint(string name);
-
-        void Undo(bool addToParent = true);
-
-        void Redo(bool addToParent = true);
-
-        void RestoreNamedRestorePoint(string name);
     }
 }

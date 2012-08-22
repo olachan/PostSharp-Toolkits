@@ -2,7 +2,7 @@ using System;
 
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
-    internal class DelegateOperation<TTarget> : Operation
+    public class DelegateOperation<TTarget> : Operation
         where TTarget : class, ITrackable 
     {
         public Action<TTarget> UndoAction { get; set; }
