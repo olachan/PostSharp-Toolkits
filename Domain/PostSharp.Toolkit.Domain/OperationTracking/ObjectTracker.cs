@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -9,12 +10,11 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         protected BatchOperation CurrentChunk;
 
-        private int currentChunkCounter;
+        protected ChunkToken CurrentChunkToken;
 
         protected ObjectTracker(ITrackable target)
         {
             this.Target = target;
-            this.currentChunkCounter = 0;
         }
 
         public virtual void SetParentTracker(Tracker tracker)
@@ -22,40 +22,65 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             this.ParentTracker = tracker;
         }
 
-        // TODO check if CurrentChunk is ended
+        public ObjectTrackingChunkToken GetNewChunkToken()
+        {
+            return new ObjectTrackingChunkToken( this );
+        }
+
+        public ChunkToken StartNamedChunk()
+        {
+            if (CurrentChunkToken != null)
+            {
+                throw new NotSupportedException("multiple named chunks are not supported");
+            }
+
+            this.StartChunk();
+
+            CurrentChunkToken = new ChunkToken();
+
+            return CurrentChunkToken;
+        }
+
+        public void EndNamedChunk(ChunkToken token)
+        {
+            if (!ReferenceEquals(CurrentChunkToken, token))
+            {
+                throw new ArgumentException("passed token does not match current chunk's token");
+            }
+
+            CurrentChunkToken = null;
+
+            this.EndChunk();
+        }
+
         public virtual void StartChunk()
         {
-            if (DisableCollectingData)
+            if (DisableCollectingData || CurrentChunkToken != null)
             {
                 return;
             }
 
-            this.currentChunkCounter++;
-
-            if (CurrentChunk == null)
+            if (CurrentChunk != null)
             {
-                CurrentChunk = new BatchOperation();
+                this.EndChunk();
             }
+
+            CurrentChunk = new BatchOperation();
         }
 
         public virtual void EndChunk()
         {
-            if (DisableCollectingData)
+            if (DisableCollectingData || CurrentChunkToken != null)
             {
                 return;
             }
 
-            this.currentChunkCounter--;
-
-            if (currentChunkCounter == 0)
+            if (CurrentChunk != null && CurrentChunk.OpertaionCount > 0)
             {
-                if ( CurrentChunk != null && CurrentChunk.OpertaionCount > 0 )
-                {
-                    this.AddOperation( CurrentChunk );
-                }
-
-                CurrentChunk = null;
+                this.AddOperation(CurrentChunk);
             }
+
+            CurrentChunk = null;
         }
 
         public virtual bool IsChunkActive
@@ -66,6 +91,14 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             }
         }
 
+        public int OperationCount
+        {
+            get
+            {
+                return this.UndoOperations.Count;
+            }
+        }
+
         public virtual void AddOperationToChunk(IOperation operation)
         {
             if (DisableCollectingData)
@@ -73,7 +106,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
                 return;
             }
 
-            this.CurrentChunk.AddOperation( operation );
+            this.CurrentChunk.AddOperation(operation);
         }
 
         protected override void AddUndoOperationToParentTracker(List<IOperation> snapshots, IOperationCollection undoOperations, IOperationCollection redoOperations)
@@ -85,7 +118,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
                         this,
                         undoOperations,
                         redoOperations,
-                        snapshots.Select( s => (IOperation)(new InvertOperationWrapper( s )) ).ToList() ) );
+                        snapshots.Select(s => (IOperation)(new InvertOperationWrapper(s))).ToList()));
             }
 
         }
@@ -95,5 +128,9 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             this.UndoOperations = undoOperations;
             this.RedoOperations = redoOperations;
         }
+    }
+
+    public class ChunkToken
+    {
     }
 }

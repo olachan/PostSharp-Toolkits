@@ -223,14 +223,14 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
             to.ChangeValuesTracked(1, 2, 3);
 
             sot.Undo();
-            // sot.Undo();
+            sot.Undo();
             
             Assert.AreEqual(0, to.P1);
             Assert.AreEqual(0, to.P2);
             Assert.AreEqual(0, to.P3);
 
             sot.Redo();
-            // sot.Redo();
+            sot.Redo();
 
             Assert.AreEqual(1, to.P1);
             Assert.AreEqual(2, to.P2);
@@ -244,6 +244,45 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
             Assert.AreEqual(1, to.P1);
             Assert.AreEqual(2, to.P2);
             Assert.AreEqual(0, to.P3);
+
+            sot.Redo();
+
+            Assert.AreEqual(1, to.P1);
+            Assert.AreEqual(2, to.P2);
+            Assert.AreEqual(3, to.P3);
+        }
+
+        [Test]
+        public void NamedChunkTest()
+        {
+            SimpleTrackedObject to = new SimpleTrackedObject();
+            var sot = (ITrackedObject)to;
+
+            using ( sot.Tracker.GetNewChunkToken() )
+            {
+                to.ChangeValues(4, 5, 6);
+                to.ChangeValues(7, 8, 9);
+                to.ChangeValues(10, 11, 12);
+            }
+
+            sot.Undo();
+            Assert.AreEqual(0, to.P1);
+            Assert.AreEqual(0, to.P2);
+            Assert.AreEqual(0, to.P3);
+
+            sot.Redo();
+
+            Assert.AreEqual(10, to.P1);
+            Assert.AreEqual(11, to.P2);
+            Assert.AreEqual(12, to.P3);
+
+            to.ChangeValues(1, 2, 3);
+            
+            sot.Undo();
+
+            Assert.AreEqual(10, to.P1);
+            Assert.AreEqual(11, to.P2);
+            Assert.AreEqual(12, to.P3);
 
             sot.Redo();
 

@@ -14,7 +14,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
     {
         public GlobalTracker Track(ITrackedObject target)
         {
-            target.Tracker.SetParentTracker( this );
+            target.Tracker.ParentTracker = this;
             return this;
         }
 

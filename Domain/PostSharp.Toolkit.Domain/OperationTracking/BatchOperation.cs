@@ -31,21 +31,21 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         public void Undo()
         {
-            foreach (IOperation snapshot in snapshots)
-            {
-                snapshot.Undo();
-            }
-        }
-
-        public void Redo()
-        {
             //TODO optimize
             snapshots.Reverse();
             foreach (IOperation snapshot in snapshots)
             {
-                snapshot.Redo();
+                snapshot.Undo();
             }
             snapshots.Reverse();
+        }
+
+        public void Redo()
+        {
+            foreach (IOperation snapshot in snapshots)
+            {
+                snapshot.Redo();
+            }
         }
 
         public bool IsNamedRestorePoint { get; private set; }

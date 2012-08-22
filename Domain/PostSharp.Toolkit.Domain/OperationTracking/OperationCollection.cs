@@ -11,25 +11,33 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
     internal class OperationCollection : IOperationCollection
     {
         //private int currentItemIndex = 0;
-        private readonly Stack<IOperation> snapshots;
+        private readonly Stack<IOperation> operations;
 
-        private readonly Dictionary<string, int> namedRestorePoints; 
+        private readonly Dictionary<string, int> namedRestorePoints;
 
         public OperationCollection()
         {
             this.namedRestorePoints = new Dictionary<string, int>();
-            this.snapshots = new Stack<IOperation>();
+            this.operations = new Stack<IOperation>();
         }
 
-        private OperationCollection(Stack<IOperation> snapshots, Dictionary<string, int> namedRestorePoints)
+        private OperationCollection(Stack<IOperation> operations, Dictionary<string, int> namedRestorePoints)
         {
             this.namedRestorePoints = namedRestorePoints;
-            this.snapshots = snapshots;
+            this.operations = operations;
         }
 
         public IOperationCollection Clone()
         {
-            return new OperationCollection(new Stack<IOperation>(this.snapshots.Reverse()), this.namedRestorePoints.ToDictionary( k => k.Key, v => v.Value ) );
+            return new OperationCollection(new Stack<IOperation>(this.operations.Reverse()), this.namedRestorePoints.ToDictionary(k => k.Key, v => v.Value));
+        }
+
+        public int Count
+        {
+            get
+            {
+                return this.operations.Count;
+            }
         }
 
         public void Push(IOperation operation)
@@ -40,35 +48,35 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             }
 
             //this.currentItemIndex++;
-            this.snapshots.Push( operation );
+            this.operations.Push(operation);
 
             if (operation.IsNamedRestorePoint)
             {
-                this.AddNamedRestorePoint( operation );
+                this.AddNamedRestorePoint(operation);
             }
         }
 
         public IOperation Pop()
         {
-            if (this.snapshots.Count == 0)
+            if (this.operations.Count == 0)
             {
                 return null;
             }
 
-            IOperation operation = this.snapshots.Pop();
+            IOperation operation = this.operations.Pop();
 
-            if ( !operation.IsNamedRestorePoint )
+            if (!operation.IsNamedRestorePoint)
             {
                 return operation;
             }
 
             this.DecreaseRestorePointCount(operation.Name);
 
-            return operation; //this.snapshots.Pop();
+            return operation; //this.operations.Pop();
         }
 
 
-        private void DecreaseRestorePointCount( string name )
+        private void DecreaseRestorePointCount(string name)
         {
             this.namedRestorePoints[name] -= 1;
 
@@ -80,7 +88,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         public void AddNamedRestorePoint(string name)
         {
-            this.Push( new EmptyNamedRestorePoint( name ) );
+            this.Push(new EmptyNamedRestorePoint(name));
         }
 
         private void AddNamedRestorePoint(IOperation restorePoint)
@@ -97,7 +105,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         public Stack<IOperation> GetOperationsToRestorePoint(string name)
         {
-            if (!namedRestorePoints.ContainsKey( name ))
+            if (!namedRestorePoints.ContainsKey(name))
             {
                 throw new ArgumentException(string.Format("No restore point named {0}", name));
             }
@@ -111,7 +119,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             // TODO performance optimization
             while (restorePoint == null || restorePoint.Name != name)
             {
-                restorePoint = this.snapshots.Pop();
+                restorePoint = this.operations.Pop();
                 restoreOperations.Add(restorePoint);
             }
 
@@ -122,7 +130,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         public void Clear()
         {
-            this.snapshots.Clear();
+            this.operations.Clear();
             //this.namedRestorePoints.Clear();
             //this.currentItemIndex = 0;
         }
@@ -133,7 +141,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
             public string Name { get; private set; }
 
-            public void ConvertToNamedRestorePoint( string name )
+            public void ConvertToNamedRestorePoint(string name)
             {
                 Name = name;
             }

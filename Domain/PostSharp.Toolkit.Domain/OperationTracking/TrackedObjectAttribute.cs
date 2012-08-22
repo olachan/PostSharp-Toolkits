@@ -23,15 +23,15 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
     /// Early development version!!!
     /// </summary>
     [Serializable]
-    [IntroduceInterface(typeof(ITrackedObject))]
+    [IntroduceInterface(typeof(ITrackedObject), OverrideAction = InterfaceOverrideAction.Ignore)]
     public class TrackedObjectAttribute : InstanceLevelAspect, ITrackedObject
     {
         private ObjectAccessorsMap mapForSerialization;
 
         private Dictionary<string, MethodSnapshotStrategy> methodAttributes;
 
-        private bool hasTrackedProperties;
-        
+        private HashSet<string> trackedFields;
+
         [NonSerialized]
         private IObjectTracker tracker;
 
@@ -80,8 +80,15 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
                 }
             }
 
-            hasTrackedProperties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
-                .Any(m => m.IsDefined(typeof(TrackedPropertyAttribute), true));
+            trackedFields = new HashSet<string>();
+
+            foreach (FieldInfo fieldInfo in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            {
+                if (fieldInfo.IsDefined( typeof(TrackedPropertyAttribute), false ))
+                {
+                    trackedFields.Add( fieldInfo.Name );
+                }
+            }
 
             base.CompileTimeInitialize(type, aspectInfo);
         }
@@ -102,7 +109,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         {
             TrackedObjectAttribute aspect = (TrackedObjectAttribute)base.CreateInstance(adviceArgs);
 
-            aspect.tracker = new SingleObjectTracker((ITrackable)adviceArgs.Instance);// hasTrackedProperties ? (ObjectTracker)new AggregateTracker((ITrackable)adviceArgs.Instance) : new SingleObjectTracker((ITrackable)adviceArgs.Instance);
+            aspect.SetTracker( new SingleObjectTracker((ITrackable)adviceArgs.Instance));
 
             return aspect;
         }
@@ -111,13 +118,11 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         [MethodPointcut("SelectMethods")]
         public void OnMethodInvoke(MethodInterceptionArgs args)
         {
-            // TODO: method attribute compile time map
-
             var methodStrategy = methodAttributes[args.Method.Name];
             bool chunkStarted = false;
-
-            if ((StackTrace.StackPeek() != args.Instance && methodStrategy == MethodSnapshotStrategy.Auto) || 
-                methodStrategy == MethodSnapshotStrategy.Always)
+            ITrackedObject stackPeek = StackTrace.StackPeek() as ITrackedObject;
+            if (methodStrategy == MethodSnapshotStrategy.Always || 
+               (methodStrategy == MethodSnapshotStrategy.Auto && (stackPeek == null || !ReferenceEquals(stackPeek.Tracker, ThisTracker))))
             {
                 ThisTracker.StartChunk();
                 chunkStarted = true;
@@ -129,7 +134,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             }
             finally
             {
-                StackTrace.PopFromStack(); //TODO: snapshot add strategy
+                StackTrace.PopFromStack();
                 if (chunkStarted)
                 {
                     ThisTracker.EndChunk();
@@ -160,20 +165,26 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
             object oldValue = args.GetCurrentValue();
 
-            //TODO optimization
-            if (oldValue != null && args.Location.PropertyInfo.IsDefined(typeof(TrackedPropertyAttribute), false))
+            if (oldValue != null && trackedFields.Contains( args.LocationFullName ))
             {
-                ITrackedObject ov = (ITrackedObject)oldValue;
-                ov.Tracker = new SingleObjectTracker( ov );
+                ITrackedObject trackedObject = (ITrackedObject)oldValue;
+                IObjectTracker newTracker = new SingleObjectTracker( trackedObject );
+                newTracker.ParentTracker = this.ThisTracker.ParentTracker;
+                trackedObject.SetTracker(newTracker);
             }
 
             args.ProceedSetValue();
             object newValue = args.Value;
 
-            if (newValue != null && args.Location.PropertyInfo.IsDefined(typeof(TrackedPropertyAttribute), false))
+            if (newValue != null && trackedFields.Contains(args.LocationName))
             {
-                ITrackedObject ov = (ITrackedObject)newValue;
-                ov.Tracker = ThisTracker;
+                ITrackedObject trackedObject = (ITrackedObject)newValue;
+                if (trackedObject.Tracker == null || trackedObject.Tracker.OperationCount != 0)
+                {
+                    throw new ArgumentException("attaching modified object to aggregate is not supported");
+                }
+
+                trackedObject.SetTracker(ThisTracker);
             }
 
             ThisTracker.AddOperationToChunk( new FieldOperation( (ITrackable)this.Instance, args.LocationFullName, oldValue, newValue ) );
@@ -217,11 +228,14 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             {
                 return this.tracker;
             }
-            set
-            {
-                this.tracker = value;
-            }
         }
+
+        public void SetTracker(IObjectTracker tracker)
+        {
+            this.tracker = tracker;
+        }
+
+        public int OperationCount { get; private set; }
 
         public IObjectTracker ThisTracker
         {

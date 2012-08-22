@@ -17,5 +17,6 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         IOperationCollection Clone();
 
         //IOperation Pop(ITrackable target);
+        int Count { get; }
     }
 }

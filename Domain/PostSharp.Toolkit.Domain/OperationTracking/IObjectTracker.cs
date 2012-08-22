@@ -1,18 +1,8 @@
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
-    public interface IObjectTracker : ITrackable
+    public interface IObjectTracker : ITracker, ITrackable
     {
-        void SetParentTracker(Tracker tracker); //TODO: internal interface?
-
-        // void AddObjectSnapshot(string name = null);
-
-        void AddNamedRestorePoint(string name);
-
-        void Undo(bool addToParent = true);
-
-        void Redo(bool addToParent = true);
-
-        void RestoreNamedRestorePoint(string name);
+        ITracker ParentTracker { get; set; } //TODO: internal interface?
 
         void StartChunk();
 
@@ -21,5 +11,13 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         void AddOperationToChunk(IOperation operation);
 
         bool IsChunkActive { get; }
+
+        int OperationCount { get; }
+
+        ObjectTrackingChunkToken GetNewChunkToken();
+
+        ChunkToken StartNamedChunk();
+
+        void EndNamedChunk(ChunkToken token);
     }
 }

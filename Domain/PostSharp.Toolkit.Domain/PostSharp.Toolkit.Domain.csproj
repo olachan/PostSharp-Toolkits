@@ -98,6 +98,7 @@
     <Compile Include="OperationTracking\ObjectAccessorsMap.cs" />
     <Compile Include="OperationTracking\ObjectTracker.cs" />
     <Compile Include="OperationTracking\ObjectTrackerOperation.cs" />
+    <Compile Include="OperationTracking\ObjectTrackingChunkToken.cs" />
     <Compile Include="OperationTracking\SingleObjectTracker.cs" />
     <Compile Include="OperationTracking\Operation.cs" />
     <Compile Include="OperationTracking\OperationCollection.cs" />

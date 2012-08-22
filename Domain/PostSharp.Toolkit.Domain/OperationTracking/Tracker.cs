@@ -10,13 +10,13 @@ using System.Linq;
 
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
-    public abstract class Tracker : ITrackable
+    public abstract class Tracker : ITracker, ITrackable
     {
         protected IOperationCollection UndoOperations;
 
         protected IOperationCollection RedoOperations;
 
-        protected Tracker ParentTracker;
+        public ITracker ParentTracker { get; set; }
 
         public bool DisableCollectingData { get; set; }
 
@@ -136,5 +136,18 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             this.AddUndoOperationToParentTracker(new List<IOperation>() { operation }, undoOperations, redoOperations);
         }
 
+    }
+
+    public interface ITracker
+    {
+        void AddOperation(IOperation operation, bool addToParent = true);
+
+        void AddNamedRestorePoint(string name);
+
+        void Undo(bool addToParent = true);
+
+        void Redo(bool addToParent = true);
+
+        void RestoreNamedRestorePoint(string name);
     }
 }
