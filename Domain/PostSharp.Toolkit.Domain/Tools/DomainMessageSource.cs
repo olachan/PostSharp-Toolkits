@@ -62,7 +62,9 @@ namespace PostSharp.Toolkit.Domain.Tools
                     case 12:
                         return "Depends.On method used within {0} which is not a property";
                     case 13:
-                        return "Automatic analysis of property {0} failed. Place TrackedPropertyAttribute on field containing tracked object.";
+                        return "TrackedObjectAttribute: automatic analysis of property {0} failed. Place TrackedPropertyAttribute on field containing tracked object.";
+                    case 14:
+                        return "NotifyPropertyChangedAttribute: automatic analysis of property {0} failed. Field {1} has open generic type.";
                     default:
                         return null;
                 }

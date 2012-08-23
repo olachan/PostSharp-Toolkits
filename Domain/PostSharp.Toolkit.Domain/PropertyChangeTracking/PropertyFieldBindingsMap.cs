@@ -79,6 +79,11 @@ namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
 
             foreach ( FieldInfo field in fieldList )
             {
+                if (field.FieldType.ContainsGenericParameters)
+                {
+                    DomainMessageSource.Instance.Write(propertyInfo, SeverityType.Error, "INPC014", propertyInfo.Name, field.Name);
+                }
+
                 this.propertyToFieldMapping.AddToListValue( propertyName, new PropertyFieldBinding( propertyName, this.FiledInfos[field.Name], isActive ) );
                 this.fieldToPropertyMapping.AddToListValue( field.Name, propertyName );
             }
