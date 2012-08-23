@@ -6,7 +6,7 @@ using NUnit.Framework;
 namespace PostSharp.Toolkit.Threading.Tests
 {
     [TestFixture]
-    public class ThreadAffinedTests
+    public class ThreadAffinedTests : ThreadingBaseTestFixture
     {
 #if !(DEBUG || DEBUG_THREADING)
         [Test]

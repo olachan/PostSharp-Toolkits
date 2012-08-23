@@ -19,7 +19,7 @@ using PostSharp.Aspects.Advices;
 namespace PostSharp.Toolkit.Threading.Tests
 {
     [TestFixture]
-    public class MemberwiseCloneTests
+    public class MemberwiseCloneTests : ThreadingBaseTestFixture
     {
         // Failing test: known issue of postsharp - implicit aspect shearing after invoking MemberwiseClone
         [Test]

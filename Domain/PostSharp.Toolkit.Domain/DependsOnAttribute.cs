@@ -15,16 +15,16 @@ namespace PostSharp.Toolkit.Domain
     /// <summary>
     /// Custom attribute specifying explicit dependencies of marked property.
     /// </summary>
-    [AttributeUsage( AttributeTargets.Property )]
-    public class DependsOnAttribute : Attribute
-    {
-        public string[] Dependencies { get; private set; }
+    //[AttributeUsage( AttributeTargets.Property )]
+    //public class DependsOnAttribute : Attribute
+    //{
+    //    public string[] Dependencies { get; private set; }
 
-        public DependsOnAttribute( params string[] dependencies )
-        {
-            this.Dependencies = dependencies.ToArray();
-        }
-    }
+    //    public DependsOnAttribute( params string[] dependencies )
+    //    {
+    //        this.Dependencies = dependencies.ToArray();
+    //    }
+    //}
 
     /// <summary>
     /// Class providing functionality of declaring explicit dependencies of properties.

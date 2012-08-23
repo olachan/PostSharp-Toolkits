@@ -21,7 +21,7 @@ using FormsApplication = System.Windows.Forms.Application;
 namespace PostSharp.Toolkit.Threading.Tests
 {
     [TestFixture]
-    public class DispatchTests
+    public class DispatchTests : ThreadingBaseTestFixture
     {
         [Test]
         public void WpfWindowMethods_AreDispatchedCorrectly()

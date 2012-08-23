@@ -74,6 +74,7 @@
   <ItemGroup>
     <Compile Include="Integration\OperationTrackingInpcIntegrationTests.cs" />
     <Compile Include="NotifyPropertyChanged\AutomaticNotifyPropertyChangedAspectTests.cs" />
+    <Compile Include="NotifyPropertyChanged\GenericClassInpcTests.cs" />
     <Compile Include="NotifyPropertyChanged\InpcInhertianceTests.cs" />
     <Compile Include="NotifyPropertyChanged\InpcIntegrationTests.cs" />
     <Compile Include="NotifyPropertyChanged\InpcSerializationTests.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="OperationTracking\MultiThreadingTests.cs" />
     <Compile Include="OperationTracking\GlobalTrackerTests.cs" />
     <Compile Include="OperationTracking\SingleObjectTrackerTests.cs" />
+    <Compile Include="OperationTracking\TrackedCollectionTests.cs" />
     <Compile Include="TestHelpers.cs" />
   </ItemGroup>
   <ItemGroup>

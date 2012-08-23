@@ -23,11 +23,15 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         {
             public UserDto User { get; set; }
 
-            [DependsOn("User.Address.Country")]
             public string UserCountry
             {
                 get
                 {
+                    if (Depends.Guard)
+                    {
+                        Depends.On( User.Address.Country );
+                    }
+
                     if (this.User == null)
                     {
                         return "Unknown";

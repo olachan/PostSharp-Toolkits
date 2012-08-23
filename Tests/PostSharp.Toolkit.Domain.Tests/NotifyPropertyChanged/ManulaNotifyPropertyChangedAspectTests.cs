@@ -192,11 +192,15 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         [NotifyPropertyChangedIgnore]
         public int IgnoredProperty { get; set; }
 
-        [DependsOn("IgnoredProperty")]
         public int DependentProperty
         {
             get
             {
+                if (Depends.Guard)
+                {
+                    Depends.On(IgnoredProperty);
+                }
+
                 return this.IgnoredProperty;
             }
         }
@@ -209,20 +213,28 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
 
         public string Str2;
 
-        [DependsOn("B", "Str1")]
         public string A
         {
             get
             {
+                if (Depends.Guard)
+                {
+                    Depends.On(B, Str1);
+                }
+
                 return this.Str1;
             }
         }
         
-        [DependsOn("A", "Str2")]
         public string B
         {
             get
             {
+                if (Depends.Guard)
+                {
+                    Depends.On(A, Str2);
+                }
+
                 return this.Str2;
             }
         }
@@ -311,11 +323,15 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
     {
         public NotInstrumentedInpc InnerObject;
 
-        [DependsOn("InnerObject.Property")]
         public string StringFromNotInstrumented
         {
             get
             {
+                if (Depends.Guard)
+                {
+                    Depends.On(InnerObject.Property);
+                }
+
                 var io = this.InnerObject;
                 return io.Property;
             }
@@ -343,41 +359,57 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
             this.InnerObject.SetProperty( this.InnerObject2.SuperInnrObject );
         }
 
-        [DependsOn( "InnerObject.StrConcat" )]
         public string ConcatFromInnerObject
         {
             get
             {
+                if (Depends.Guard)
+                {
+                    Depends.On(InnerObject.StrConcat);
+                }
+
                 var io = this.InnerObject;
                 return io.StrConcat;
             }
         }
 
-        [DependsOn( "InnerObject.SuperInnrObject.StrConcat" )]
         public string ConcatFromSuperInnerObject
         {
             get
             {
+                if (Depends.Guard)
+                {
+                    Depends.On(InnerObject.SuperInnrObject.StrConcat);
+                }
+
                 var io = this.InnerObject;
                 return io.SuperInnrObject.StrConcat;
             }
         }
 
-        [DependsOn("InnerObject.SuperInnrObjectNonAuto.StrConcat")]
         public string ConcatFromSuperInnerObjectNonAuto
         {
             get
             {
+                if (Depends.Guard)
+                {
+                    Depends.On(InnerObject.SuperInnrObjectNonAuto.StrConcat);
+                }
+
                 var io = this.InnerObject;
                 return io.SuperInnrObjectNonAuto.StrConcat;
             }
         }
 
-        [DependsOn("InnerObjectProperty.SuperInnrObject.StrConcat")]
         public string ConcatFromSuperInnerObjectViaProperty
         {
             get
             {
+                if (Depends.Guard)
+                {
+                    Depends.On(InnerObjectProperty.SuperInnrObject.StrConcat);
+                }
+
                 var iop = this.InnerObject;
                 if (iop != null && iop.SuperInnrObject != null)
                 {

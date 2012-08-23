@@ -15,7 +15,7 @@ using NUnit.Framework;
 namespace PostSharp.Toolkit.Threading.Tests
 {
     [TestFixture]
-    public class ActorTest
+    public class ActorTest : ThreadingBaseTestFixture
     {
         [Test]
         public void Test()

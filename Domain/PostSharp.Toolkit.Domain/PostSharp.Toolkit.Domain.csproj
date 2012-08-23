@@ -104,6 +104,7 @@
     <Compile Include="OperationTracking\Operation.cs" />
     <Compile Include="OperationTracking\OperationCollection.cs" />
     <Compile Include="OperationTracking\StackTrace.cs" />
+    <Compile Include="OperationTracking\TrackedCollection.cs" />
     <Compile Include="OperationTracking\TrackedObjectAttribute.cs" />
     <Compile Include="OperationTracking\TrackedPropertyAttribute.cs" />
     <Compile Include="OperationTracking\Tracker.cs" />

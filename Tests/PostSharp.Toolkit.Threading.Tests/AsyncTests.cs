@@ -14,7 +14,7 @@ using NUnit.Framework;
 namespace PostSharp.Toolkit.Threading.Tests
 {
     [TestFixture]
-    public class AsyncTests
+    public class AsyncTests : ThreadingBaseTestFixture
     {
         [Test]
         public void WhenAsyncCalledInvokesAsynchronously()

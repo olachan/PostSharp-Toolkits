@@ -242,11 +242,14 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
 
         public ModelAutoInpc Model { get; set; }
 
-        [DependsOn("Model.FullName", "Model.Salary")]
         public string NameAndSalary
         {
             get
             {
+                if (Depends.Guard)
+                {
+                    Depends.On(Model.FullName, Model.Salary);
+                }
                 return string.Format("{0}: {1}", this.Model.FullName, this.Model.Salary);
             }
         }

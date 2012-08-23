@@ -62,17 +62,16 @@ namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
                     p => !p.GetCustomAttributes( typeof(NotifyPropertyChangedIgnoreAttribute), true ).Any() ).ToList();
 
             IEnumerable<PropertyInfo> propertiesForImplicitAnalasis =
-                allProperties.Where( p => !p.GetCustomAttributes( typeof(DependsOnAttribute), false ).Any() );
+                allProperties;
 
-            var propertiesForExplicitAnalasis =
-                allProperties.Select( p => new { Property = p, DependsOnAttributes = p.GetCustomAttributes( typeof(DependsOnAttribute), false ) } ).Where(
-                    p => p.DependsOnAttributes.Any() );
+            //var propertiesForExplicitAnalasis =
+            //    allProperties.Select( p => new { Property = p, DependsOnAttributes = p.GetCustomAttributes( typeof(DependsOnAttribute), false ) } ).Where(
+            //        p => p.DependsOnAttributes.Any() );
 
             // build ExplicitDependencyMap. We need it here to add invocation chains.
-            ExplicitDependencyMap currentTypeExplicitDependencyMap =
-                new ExplicitDependencyMap(
-                    propertiesForExplicitAnalasis.Select(
-                        p => new ExplicitDependency( p.Property.Name, p.DependsOnAttributes.SelectMany( d => ((DependsOnAttribute)d).Dependencies ) ) ) );
+            ExplicitDependencyMap currentTypeExplicitDependencyMap = new ExplicitDependencyMap(); 
+                    //propertiesForExplicitAnalasis.Select(
+                    //    p => new ExplicitDependency( p.Property.Name, p.DependsOnAttributes.SelectMany( d => ((DependsOnAttribute)d).Dependencies ) ) ) );
 
             foreach ( PropertyInfo propertyInfo in propertiesForImplicitAnalasis )
             {
@@ -276,7 +275,7 @@ namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
 
                 string invocationPath;
 
-                // if expression is property invocation chain add explicite dependency and don't analyze this branch.
+                // if expression is property invocation chain add explicate dependency and don't analyze this branch.
                 if ( this.context.Current.IsInCurrentProperty() && this.TryGetPropertyInvocationChain( expression, out invocationPath ) )
                 {
                     this.context.Current.ExplicitDependencyMap.AddDependency( this.context.Current.CurrentProperty.Name, invocationPath );
@@ -332,17 +331,27 @@ namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
                 Stack<string> invocationStack = new Stack<string>();
                 IExpression currentExpression = expression;
 
-                while ( currentExpression is IMethodCallExpression && currentExpression.SyntaxElementKind != SyntaxElementKind.This )
+                while ((currentExpression is IMethodCallExpression && currentExpression.SyntaxElementKind != SyntaxElementKind.This) || 
+                    currentExpression.SyntaxElementKind == SyntaxElementKind.Box)
                 {
-                    IMethodCallExpression methodCallExpression = (IMethodCallExpression)currentExpression;
-                    if ( !(methodCallExpression.Method.IsSpecialName && methodCallExpression.Method.Name.StartsWith( "get_" )) )
+
+                    if (currentExpression.SyntaxElementKind == SyntaxElementKind.Box)
                     {
-                        return false;
+                        currentExpression = (currentExpression as IUnaryExpression).Value;
                     }
+                    else
+                    {
+                        IMethodCallExpression methodCallExpression = (IMethodCallExpression)currentExpression;
 
-                    invocationStack.Push( ((IMethodCallExpression)currentExpression).Method.Name.Substring( 4 ) );
+                        if (!(methodCallExpression.Method.IsSpecialName && methodCallExpression.Method.Name.StartsWith("get_")))
+                        {
+                            return false;
+                        }
 
-                    currentExpression = methodCallExpression.Instance;
+                        invocationStack.Push(((IMethodCallExpression)currentExpression).Method.Name.Substring(4));
+
+                        currentExpression = methodCallExpression.Instance;
+                    }
                 }
 
                 if ( currentExpression == null ||

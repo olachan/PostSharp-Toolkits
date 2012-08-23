@@ -16,7 +16,7 @@ using NUnit.Framework;
 namespace PostSharp.Toolkit.Threading.Tests
 {
     [TestFixture]
-    public class ReaderWriterSynchronizedTests
+    public class ReaderWriterSynchronizedTests : ThreadingBaseTestFixture
     {
         protected void InvokeSimultaneouslyAndWait( Action action1, Action action2 )
         {

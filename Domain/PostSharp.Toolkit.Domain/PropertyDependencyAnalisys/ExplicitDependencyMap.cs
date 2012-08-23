@@ -21,6 +21,11 @@ namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
     {
         private List<ExplicitDependency> dependencies;
 
+        public ExplicitDependencyMap()
+        {
+            this.dependencies = new List<ExplicitDependency>();
+        }
+
         public ExplicitDependencyMap( IEnumerable<ExplicitDependency> dependencies )
         {
             this.dependencies = dependencies.ToList();
