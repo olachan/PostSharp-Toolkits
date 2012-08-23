@@ -13,6 +13,7 @@ using System.Runtime.Serialization;
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 using PostSharp.Extensibility;
+using PostSharp.Reflection;
 using PostSharp.Toolkit.Domain.Tools;
 
 using System.Linq;
@@ -64,11 +65,11 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
             methodAttributes = new Dictionary<string, MethodSnapshotStrategy>();
 
-            foreach (MethodInfo method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
+            foreach (MethodInfo method in type.GetMethods(BindingFlagsSet.PublicInstanceDeclared))
             {
-                if (method.GetCustomAttributes( typeof(DoNotMakeAutomaticOperationAttribute), true ).Any())
+                if (method.GetCustomAttributes(typeof(DoNotMakeAutomaticOperationAttribute), true).Any())
                 {
-                    this.methodAttributes.Add( method.Name, MethodSnapshotStrategy.Never);
+                    this.methodAttributes.Add(method.Name, MethodSnapshotStrategy.Never);
                 }
                 else if (method.GetCustomAttributes(typeof(AlwaysMakeAutomaticOperationAttribute), true).Any())
                 {
@@ -82,12 +83,32 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
             trackedFields = new HashSet<string>();
 
-            foreach (FieldInfo fieldInfo in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            foreach (var propertyInfo in type.GetProperties(BindingFlagsSet.AllInstanceDeclared).Where(f => f.IsDefined(typeof(TrackedPropertyAttribute), false)))
             {
-                if (fieldInfo.IsDefined( typeof(TrackedPropertyAttribute), false ))
+                var propertyInfoClosure = propertyInfo;
+
+                var fields = ReflectionSearch.GetDeclarationsUsedByMethod(propertyInfo.GetGetMethod(true))
+                    .Select( r => r.UsedDeclaration as FieldInfo )
+                    .Where( f => f != null )
+                    .Where(f => propertyInfoClosure.PropertyType.IsAssignableFrom(f.FieldType))
+                    .Where(f => f.DeclaringType.IsAssignableFrom( type ) )
+                    .ToList();
+
+                if (fields.Count() != 1)
                 {
-                    trackedFields.Add( fieldInfo.Name );
+                    DomainMessageSource.Instance.Write( propertyInfo, SeverityType.Error, "INPC013", propertyInfo.Name );
                 }
+                else
+                {
+                    trackedFields.Add(fields.First().Name);
+                }
+            }
+
+            foreach (FieldInfo fieldInfo in type
+                                            .GetFields(BindingFlagsSet.AllInstanceDeclared)
+                                            .Where(f => f.IsDefined(typeof(TrackedPropertyAttribute), false)))
+            {
+                trackedFields.Add(fieldInfo.Name);
             }
 
             base.CompileTimeInitialize(type, aspectInfo);
@@ -109,7 +130,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         {
             TrackedObjectAttribute aspect = (TrackedObjectAttribute)base.CreateInstance(adviceArgs);
 
-            aspect.SetTracker( new SingleObjectTracker((ITrackable)adviceArgs.Instance));
+            aspect.SetTracker(new SingleObjectTracker((ITrackable)adviceArgs.Instance));
 
             return aspect;
         }
@@ -121,7 +142,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             var methodStrategy = methodAttributes[args.Method.Name];
             bool chunkStarted = false;
             ITrackedObject stackPeek = StackTrace.StackPeek() as ITrackedObject;
-            if (methodStrategy == MethodSnapshotStrategy.Always || 
+            if (methodStrategy == MethodSnapshotStrategy.Always ||
                (methodStrategy == MethodSnapshotStrategy.Auto && (stackPeek == null || !ReferenceEquals(stackPeek.Tracker, ThisTracker))))
             {
                 ThisTracker.StartChunk();
@@ -145,7 +166,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         private IEnumerable<MethodBase> SelectMethods(Type type)
         {
             return
-                type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly).Where(
+                type.GetMethods(BindingFlagsSet.PublicInstanceDeclared).Where(
                     m =>
                     m.IsDefined(typeof(AlwaysMakeAutomaticOperationAttribute), true) ||
                     (!m.Name.StartsWith("get_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")));
@@ -165,10 +186,10 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
             object oldValue = args.GetCurrentValue();
 
-            if (oldValue != null && trackedFields.Contains( args.LocationFullName ))
+            if (oldValue != null && trackedFields.Contains(args.LocationFullName))
             {
                 ITrackedObject trackedObject = (ITrackedObject)oldValue;
-                IObjectTracker newTracker = new SingleObjectTracker( trackedObject );
+                IObjectTracker newTracker = new SingleObjectTracker(trackedObject);
                 newTracker.ParentTracker = this.ThisTracker.ParentTracker;
                 trackedObject.SetTracker(newTracker);
             }
@@ -187,7 +208,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
                 trackedObject.SetTracker(ThisTracker);
             }
 
-            ThisTracker.AddOperationToChunk( new FieldOperation( (ITrackable)this.Instance, args.Location.DeclaringType, args.LocationFullName, oldValue, newValue ) );
+            ThisTracker.AddOperationToChunk(new FieldOperation((ITrackable)this.Instance, args.Location.DeclaringType, args.LocationFullName, oldValue, newValue));
 
             if (endChunk)
             {
@@ -199,7 +220,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         private IEnumerable<FieldInfo> SelectFields(Type type)
         {
             // Select only fields that are relevant
-            return type.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly );
+            return type.GetFields(BindingFlagsSet.AllInstanceDeclared);
         }
 
         public void Undo()

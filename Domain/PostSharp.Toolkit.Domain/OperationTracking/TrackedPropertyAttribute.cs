@@ -10,7 +10,7 @@ using System;
 namespace PostSharp.Toolkit.Domain.OperationTracking
 {
     //TODO replace with aspect and add compile time check of property type (it has to be ITrackedObject) applicable on properties(auto)
-    [AttributeUsage(AttributeTargets.Field)]
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
     public class TrackedPropertyAttribute : Attribute
     {
          

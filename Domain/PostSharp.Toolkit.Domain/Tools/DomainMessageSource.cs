@@ -61,6 +61,8 @@ namespace PostSharp.Toolkit.Domain.Tools
                                "Use InstanceScopedProperty attribute to specify that property value depends only on state of current instance or DependsOn attribute to explicitly specify dependencies.";
                     case 12:
                         return "Depends.On method used within {0} which is not a property";
+                    case 13:
+                        return "Automatic analysis of property {0} failed. Place TrackedPropertyAttribute on field containing tracked object.";
                     default:
                         return null;
                 }

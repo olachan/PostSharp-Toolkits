@@ -18,9 +18,9 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
         public void SimpleAggregateTrackerTest()
         {
             AggregateTrackedObject root = new AggregateTrackedObject();
-            
+
             root.DependentTrackedObject = new SimpleTrackedObject();
-            
+
             var to = (ITrackedObject)root;
             root.ChangeValues(1, 2, 3);
 
@@ -30,7 +30,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
             Assert.AreEqual(0, root.P2);
             Assert.AreEqual(0, root.P3);
 
-            root.DependentTrackedObject.ChangeValues( 1, 2, 3 );
+            root.DependentTrackedObject.ChangeValues(1, 2, 3);
 
             to.Undo();
 
@@ -64,12 +64,38 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
             Assert.AreEqual(0, root.DependentTrackedObject.P2);
             Assert.AreEqual(0, root.DependentTrackedObject.P3);
         }
+
+        [Test]
+        public void LargeOperationTest()
+        {
+            AggregateTrackedObject root = new AggregateTrackedObject();
+
+            root.DependentTrackedObject = new SimpleTrackedObject();
+
+            var to = (ITrackedObject)root;
+
+            using (to.Tracker.GetNewChunkToken())
+            {
+                root.ChangeValuesWithDependent(1, 2, 3);
+                root.ChangeValues(3, 4, 5);
+                root.DependentTrackedObject.ChangeValues(6, 7, 8);
+            }
+
+            to.Undo();
+
+            Assert.AreEqual(0, root.P1);
+            Assert.AreEqual(0, root.P2);
+            Assert.AreEqual(0, root.P3);
+
+            Assert.AreEqual(0, root.DependentTrackedObject.P1);
+            Assert.AreEqual(0, root.DependentTrackedObject.P2);
+            Assert.AreEqual(0, root.DependentTrackedObject.P3);
+        }
     }
 
     [TrackedObject]
     public class AggregateTrackedObject
     {
-        [TrackedProperty]
         private SimpleTrackedObject dependentTrackedObject;
 
         public int P1 { get; set; }
@@ -78,6 +104,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
 
         public int P3 { get; set; }
 
+        [TrackedProperty]
         public SimpleTrackedObject DependentTrackedObject
         {
             get
