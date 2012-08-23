@@ -85,10 +85,10 @@ namespace PostSharp.Toolkit.Threading
 
             public static void NoTimeoutAcquire( Action enterWaiting, Func<int, bool> getResult, Action convertWaitingToAcquired, Action exitWaiting )
             {
-                enterWaiting();
-
                 try
                 {
+                    enterWaiting();
+
                     bool result = false;
 
                     int timeout = initialTimeout;
@@ -107,10 +107,9 @@ namespace PostSharp.Toolkit.Threading
 
                     convertWaitingToAcquired();
                 }
-                catch ( Exception )
+                finally
                 {
                     exitWaiting();
-                    throw;
                 }
             }
         }
