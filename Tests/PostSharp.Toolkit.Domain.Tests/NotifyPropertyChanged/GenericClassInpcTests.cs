@@ -11,24 +11,24 @@ using NUnit.Framework;
 
 namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
 {
-    // TODO: resolve issue with generic fields.
+    //// TODO: resolve issue with generic fields.
     //[TestFixture]
     //public class GenericClassInpcTests
     //{
     //    [Test]
-    //     public void GenericClassWithBindings()
+    //    public void GenericClassWithBindings()
     //    {
     //        TestHelpers.DoInpcTest<GenericInpc<int>>(
     //            c =>
-    //                { c.GenericList = new List<int>(); },
+    //                { c.GenericList = 5; },
     //            1,
-    //            "GenericList" );
+    //            "GenericList");
     //    }
     //}
 
     //[NotifyPropertyChanged]
     //public class GenericInpc<T>
     //{
-    //    public List<T> GenericList { get; set; }
+    //    public T GenericList { get; set; }
     //}
 }

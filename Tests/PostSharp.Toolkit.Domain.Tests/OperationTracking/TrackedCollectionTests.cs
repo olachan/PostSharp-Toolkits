@@ -17,7 +17,6 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
     public class TrackedCollectionTests
     {
         [Test]
-        [Ignore]
         public void SimpleTrackedCollectionWithIntsAddTest()
         {
             TrackedCollection<int> tc = new TrackedCollection<int>();
