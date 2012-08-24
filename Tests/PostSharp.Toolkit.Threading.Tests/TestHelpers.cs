@@ -9,6 +9,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,22 +19,29 @@ namespace PostSharp.Toolkit.Threading.Tests
     {
         public static void InvokeSimultaneouslyAndWait( Action action1, Action action2 )
         {
+            Task t1 = new Task(action1);
+            Task t2 = new Task(action2);
+
+            var tasks = new[] { t1, t2 };
+
             try
             {
-                Task t1 = new Task( action1 );
-                Task t2 = new Task( action2 );
+               
                 t1.Start();
                 t2.Start();
-                Task.WaitAll( new[] {t1, t2} );
+                Task.WaitAll( new[] {t1, t2}, 200 );
             }
             catch ( AggregateException aggregateException )
             {
                 Thread.Sleep( 200 ); //Make sure the second running task is over as well
-                if ( aggregateException.InnerExceptions.Count == 1 )
-                {
-                    throw aggregateException.InnerException;
-                }
-                throw;
+                throw aggregateException.InnerException;
+            }
+
+            var ex = tasks.Select(t => t.Exception).FirstOrDefault(e => e != null);
+
+            if (ex != null)
+            {
+                throw ex.InnerException;
             }
         }
 

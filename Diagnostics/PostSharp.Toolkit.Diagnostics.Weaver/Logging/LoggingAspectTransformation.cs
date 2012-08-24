@@ -108,29 +108,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
                 protected override void ImplementOnException(InstructionBlock block, ITypeSignature exceptionType, InstructionWriter writer)
                 {
-                    //MethodDefDeclaration targetMethod = this.transformationInstance.AspectWeaverInstance.TargetElement as MethodDefDeclaration;
-                    //if ( targetMethod == null )
-                    //{
-                    //    return;
-                    //}
-
                     //// TODO: nested types
-                    //string category = targetMethod.DeclaringType.Name;
-                    //ILoggingCategoryBuilder builder = this.backendInstance.GetCategoryBuilder( category );
-                    //InstructionSequence sequence = block.AddInstructionSequence( null, NodePosition.After, null );
-                    //writer.AttachInstructionSequence( sequence );
-
-                    //LocalVariableSymbol exceptionLocal = block.MethodBody.RootInstructionBlock.DefineLocalVariable(
-                    //    exceptionType, DebuggerSpecialNames.GetVariableSpecialName( "ex" ) );
-
-                    //if ( builder.SupportsIsEnabled )
-                    //{
-                    //    builder.EmitGetIsEnabled( writer, this.options.OnExceptionLevel );
-                    //    InstructionSequence branchSequence = block.AddInstructionSequence( null, NodePosition.After, sequence );
-                    //    writer.EmitBranchingInstruction( OpCodeNumber.Brfalse_S, branchSequence );
-                    //}
-
-                    //bool useWrapper = this.ShouldUseWrapper( targetMethod );
 
                     int[] argumentsIndex;
                     string messageFormatString;
@@ -147,10 +125,6 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     }
 
                     this.EmitMessage(block, writer, this.options.OnExceptionLevel, messageFormatString, argumentsIndex, exceptionType);
-
-                    //builder.EmitWrite( writer, "An exception occurred:\n{0}", 1, this.options.OnExceptionLevel,
-                    //                   w => w.EmitInstructionLocalVariable( OpCodeNumber.Stloc, exceptionLocal ),
-                    //                   ( i, w ) => w.EmitInstructionLocalVariable( OpCodeNumber.Ldloc, exceptionLocal ), useWrapper );
 
                     writer.EmitInstruction(OpCodeNumber.Rethrow);
                     writer.DetachInstructionSequence();
