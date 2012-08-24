@@ -49,6 +49,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BaseTestsFixture.cs" />
+    <Compile Include="ExceptionThrowingClass.cs" />
+    <Compile Include="ExceptionLogOptionsTests.cs" />
     <Compile Include="LoggingToolkitTests.cs">
       <SubType>Code</SubType>
     </Compile>
