@@ -84,6 +84,7 @@
     <Compile Include="NotifyPropertyChanged\NotifyPropertyChangedTests.cs" />
     <Compile Include="NotifyPropertyChanged\PropertyChainInvocationTests.cs" />
     <Compile Include="OperationTracking\AggregateTrackerTests.cs" />
+    <Compile Include="OperationTracking\EditableObjectTests.cs" />
     <Compile Include="OperationTracking\TrackedDictionaryTests.cs" />
     <Compile Include="OperationTracking\InheritanceTests.cs" />
     <Compile Include="OperationTracking\MultiThreadingTests.cs" />

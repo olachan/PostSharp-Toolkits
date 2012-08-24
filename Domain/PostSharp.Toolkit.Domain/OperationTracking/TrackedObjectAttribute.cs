@@ -29,13 +29,13 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         [MethodPointcut("SelectMethods")]
         public override void OnMethodInvoke(MethodInterceptionArgs args)
         {
-            base.OnMethodInvoke( args );
+            base.OnMethodInvoke(args);
         }
 
 
         [OnLocationSetValueAdvice]
         [MethodPointcut("SelectFields")]
-        public void OnFieldSet(LocationInterceptionArgs args)
+        public virtual void OnFieldSet(LocationInterceptionArgs args)
         {
             bool endChunk = false;
             if (!ThisTracker.IsChunkActive)
@@ -77,7 +77,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         }
 
-        private IEnumerable<FieldInfo> SelectFields(Type type)
+        protected IEnumerable<FieldInfo> SelectFields(Type type)
         {
             // Select only fields that are relevant
             return type.GetFields(BindingFlagsSet.AllInstanceDeclared);

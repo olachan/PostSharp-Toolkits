@@ -19,5 +19,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         ChunkToken StartNamedChunk();
 
         void EndNamedChunk(ChunkToken token);
+
+        void Clear();
     }
 }

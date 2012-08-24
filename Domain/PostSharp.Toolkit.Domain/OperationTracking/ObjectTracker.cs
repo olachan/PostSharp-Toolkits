@@ -17,6 +17,17 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             this.Target = target;
         }
 
+        public virtual void Clear()
+        {
+            IOperationCollection undoOperations = this.UndoOperations.Clone();
+            IOperationCollection redoOperations = this.RedoOperations.Clone();
+
+            this.AddUndoOperationToParentTracker(new List<IOperation>(), undoOperations, redoOperations);
+
+            this.UndoOperations.Clear();
+            this.RedoOperations.Clear();
+        }
+
         public virtual void SetParentTracker(Tracker tracker)
         {
             this.ParentTracker = tracker;
@@ -109,7 +120,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             this.CurrentChunk.AddOperation(operation);
         }
 
-        protected override void AddUndoOperationToParentTracker(List<IOperation> snapshots, IOperationCollection undoOperations, IOperationCollection redoOperations)
+        protected override void AddUndoOperationToParentTracker(List<IOperation> operations, IOperationCollection undoOperations, IOperationCollection redoOperations)
         {
             if (this.ParentTracker != null)
             {
@@ -118,7 +129,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
                         this,
                         undoOperations,
                         redoOperations,
-                        snapshots.Select(s => (IOperation)(new InvertOperationWrapper(s))).ToList()));
+                        operations.Where( o => o != null ).Select(s => (IOperation)(new InvertOperationWrapper(s))).ToList()));
             }
 
         }

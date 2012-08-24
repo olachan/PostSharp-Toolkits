@@ -85,6 +85,7 @@
     <Compile Include="OperationTracking\AlwaysMakeAutomaticOperationAttribute.cs" />
     <Compile Include="OperationTracking\BatchOperation.cs" />
     <Compile Include="OperationTracking\ChunkManagementAttribute.cs" />
+    <Compile Include="OperationTracking\EditableObjectAttribute.cs" />
     <Compile Include="OperationTracking\TrackedDictionary.cs" />
     <Compile Include="OperationTracking\DelegateOperation.cs" />
     <Compile Include="OperationTracking\DoNotMakeAutomaticOperationAttribute.cs" />

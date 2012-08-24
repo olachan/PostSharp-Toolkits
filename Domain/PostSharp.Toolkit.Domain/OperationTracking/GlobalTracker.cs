@@ -18,7 +18,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             return this;
         }
 
-        protected override void AddUndoOperationToParentTracker( List<IOperation> snapshots, IOperationCollection undoOperations, IOperationCollection redoOperations )
+        protected override void AddUndoOperationToParentTracker( List<IOperation> operations, IOperationCollection undoOperations, IOperationCollection redoOperations )
         {   
         }
     }

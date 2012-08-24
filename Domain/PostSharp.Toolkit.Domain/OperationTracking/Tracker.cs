@@ -43,6 +43,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         public virtual void AddNamedRestorePoint(string name)
         {
+            // TODO what if there is an opened chunk?
             this.UndoOperations.AddNamedRestorePoint(name);
         }
 
@@ -123,7 +124,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             this.DisableCollectingData = false;
         }
 
-        protected abstract void AddUndoOperationToParentTracker(List<IOperation> snapshots, IOperationCollection undoOperations, IOperationCollection redoOperations);
+        protected abstract void AddUndoOperationToParentTracker(List<IOperation> operations, IOperationCollection undoOperations, IOperationCollection redoOperations);
 
         protected virtual void AddUndoOperationToParentTracker(IOperation operation, IOperationCollection undoOperations, IOperationCollection redoOperations)
         {
