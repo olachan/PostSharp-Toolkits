@@ -80,9 +80,23 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             return ((IList)this.innerCollection).Contains(value);
         }
 
-        //TODO undo !!!
         public void Clear()
         {
+            T[] copy = new T[this.innerCollection.Count];
+            ((ICollection<T>)this.innerCollection).CopyTo(copy, 0);
+
+            this.Tracker.AddOperationToChunk(
+               new DelegateOperation<TrackedCollection<T>>(
+               this,
+               d =>
+               {
+                   foreach (T item in copy)
+                   {
+                       d.Add(item);
+                   }
+               },
+               d => d.Clear()));
+
             this.innerCollection.Clear();
         }
 
@@ -106,7 +120,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         public void RemoveAt(int index)
         {
             object value = ((IList)this)[index];
-            this.Tracker.AddOperationToChunk(new DelegateOperation<TrackedCollection<T>>(this, c => ((IList)c).RemoveAt(index), c => ((IList)c).Insert(index, value)));
+            this.Tracker.AddOperationToChunk(new DelegateOperation<TrackedCollection<T>>(this, c => ((IList)c).Insert(index, value), c => ((IList)c).RemoveAt(index)));
             ((IList)this.innerCollection).RemoveAt(index);
         }
 
@@ -161,6 +175,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         public bool Remove(T item)
         {
+            this.Tracker.AddOperationToChunk(new DelegateOperation<TrackedCollection<T>>(this, c => c.Add(item), c => c.Remove(item)));
             return innerCollection.Remove(item);
         }
 
