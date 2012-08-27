@@ -44,7 +44,7 @@ namespace PostSharp.Toolkit.Integration.Tests
                         {
                             window.ThrowException();
                         }
-                        catch (Exception e)
+                        catch
                         {
                         }
 

@@ -25,7 +25,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         [MethodPointcut("SelectMethods")]
         [ProvideAspectRole("OT_ChunkManagement")]
         [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.After, "OT_EditableObjectImplementation")]
-        public override void OnMethodInvoke(MethodInterceptionArgs args)
+        public new void OnMethodInvoke(MethodInterceptionArgs args)
         {
             base.OnMethodInvoke(args);
         }
@@ -109,7 +109,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
 
         [OnLocationSetValueAdvice]
         [MethodPointcut("SelectFields")]
-        public override void OnFieldSet(LocationInterceptionArgs args)
+        public new void OnFieldSet(LocationInterceptionArgs args)
         {
             base.OnFieldSet(args);
         }

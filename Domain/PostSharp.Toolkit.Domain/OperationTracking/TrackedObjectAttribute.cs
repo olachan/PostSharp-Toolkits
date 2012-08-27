@@ -11,6 +11,7 @@ using System.Reflection;
 
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
+using PostSharp.Aspects.Dependencies;
 using PostSharp.Extensibility;
 using PostSharp.Toolkit.Domain.Tools;
 
@@ -26,16 +27,19 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
     public class TrackedObjectAttribute : TrackedObjectAttributeBase
     {
         [OnMethodInvokeAdvice]
+        [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.After, "INPC_EventHook")]
+        [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.After, "INPC_EventRaise")]
         [MethodPointcut("SelectMethods")]
-        public override void OnMethodInvoke(MethodInterceptionArgs args)
+        public void OnMethodInvoke(MethodInterceptionArgs args)
         {
-            base.OnMethodInvoke(args);
+            this.OnMethodInvokeBase(args);
         }
 
 
         [OnLocationSetValueAdvice]
+        [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.After, "INPC_FieldTracking")]
         [MethodPointcut("SelectFields")]
-        public virtual void OnFieldSet(LocationInterceptionArgs args)
+        public void OnFieldSet(LocationInterceptionArgs args)
         {
             bool endChunk = false;
             if (!ThisTracker.IsChunkActive)

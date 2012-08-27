@@ -52,9 +52,6 @@
     <Compile Include="..\PostSharp.Toolkit.Tests\MethodArgumentsTests.cs">
       <Link>MethodArgumentsTests.cs</Link>
     </Compile>
-    <Compile Include="..\PostSharp.Toolkit.Tests\MethodInterception.cs">
-      <Link>MethodInterception.cs</Link>
-    </Compile>
     <Compile Include="..\PostSharp.Toolkit.Tests\MethodInterceptionTest.cs">
       <Link>MethodInterceptionTest.cs</Link>
     </Compile>

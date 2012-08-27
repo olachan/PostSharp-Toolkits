@@ -110,7 +110,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             return aspect;
         }
 
-        public virtual void OnMethodInvoke(MethodInterceptionArgs args)
+        public void OnMethodInvokeBase(MethodInterceptionArgs args)
         {
             var methodStrategy = this.MethodAttributes[args.Method.Name];
             bool chunkStarted = false;
@@ -136,7 +136,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             }
         }
 
-        protected virtual IEnumerable<MethodBase> SelectMethods(Type type)
+        protected IEnumerable<MethodBase> SelectMethods(Type type)
         {
             return
                 type.GetMethods(BindingFlagsSet.PublicInstanceDeclared).Where(

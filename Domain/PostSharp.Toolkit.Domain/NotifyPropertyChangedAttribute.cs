@@ -83,6 +83,7 @@ namespace PostSharp.Toolkit.Domain
         }
 
         [OnLocationSetValueAdvice]
+        [ProvideAspectRole("INPC_FieldTracking")]
         [MethodPointcut( "SelectFields" )]
         public void OnFieldSet( LocationInterceptionArgs args )
         {
@@ -93,6 +94,7 @@ namespace PostSharp.Toolkit.Domain
             }
 
             args.ProceedSetValue();
+
 
             this.childPropertyChangedProcessor.HandleFieldChange( args );
 
@@ -118,7 +120,7 @@ namespace PostSharp.Toolkit.Domain
         {
             args.ProceedGetValue();
 
-            this.childPropertyChangedProcessor.HandleGetProperty( args );
+            this.childPropertyChangedProcessor.HandleGetProperty(args);
         }
 
         private IEnumerable<PropertyInfo> SelectProperties( Type type )

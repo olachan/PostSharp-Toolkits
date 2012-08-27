@@ -13,9 +13,9 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
     {
         [OnMethodInvokeAdvice]
         [MethodPointcut("SelectMethods")]
-        public override void OnMethodInvoke(MethodInterceptionArgs args)
+        public void OnMethodInvoke(MethodInterceptionArgs args)
         {
-            base.OnMethodInvoke(args);
+            base.OnMethodInvokeBase(args);
         }
     }
 }

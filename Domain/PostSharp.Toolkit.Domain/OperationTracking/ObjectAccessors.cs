@@ -21,7 +21,7 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         public ObjectAccessors(Type type)
         {
             FieldAccessors = new Dictionary<string, FieldInfoWithCompiledAccessors>();
-            int index = 0;
+
             FieldInfo[] fields = type.GetFields( BindingFlagsSet.AllInstance );
 
             foreach ( FieldInfo fieldInfo in fields )

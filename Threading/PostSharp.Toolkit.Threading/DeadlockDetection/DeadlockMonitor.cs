@@ -337,7 +337,7 @@ namespace PostSharp.Toolkit.Threading.DeadlockDetection
                     }
 #pragma warning disable 612,618
                     thread.Resume();
-#pragma warning disable 612,618
+#pragma warning restore 612,618
                 }
             }
         }
