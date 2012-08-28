@@ -6,8 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using NUnit.Framework;
-
-using PostSharp.Toolkit.Domain.OperationTracking;
+using PostSharp.Toolkit.Domain.ChangeTracking;
 using PostSharp.Toolkit.Threading;
 
 namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
@@ -19,31 +18,33 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
         [ExpectedException(typeof(ThreadUnsafeException))]
         public void SimpleMultiThreadTestTrackerTest()
         {
-            GlobalTracker globalTracker = new GlobalTracker();
-            SlowSimpleTrackedObject sto1 = new SlowSimpleTrackedObject();
-            SlowSimpleTrackedObject sto2 = new SlowSimpleTrackedObject();
+            Assert.Fail("Need to write this test conforming to new API - TargetedDelegatedOperation should not be public (or even not exist)");
 
-            globalTracker
-                .Track( (ITrackedObject)sto1 )
-                .Track( (ITrackedObject)sto2 );
+            //GlobalTracker globalTracker = new GlobalTracker();
+            //SlowSimpleTrackedObject sto1 = new SlowSimpleTrackedObject();
+            //SlowSimpleTrackedObject sto2 = new SlowSimpleTrackedObject();
 
-            globalTracker.AddOperation(new DelegateOperation<SlowSimpleTrackedObject>(sto1, o => {Thread.Sleep(100);
-                                                                                                  Thread.Yield();
-                                                                                                  Thread.Sleep( 100 );}, 
-                                                                                            o => {Thread.Sleep(100);
-                                                                                                  Thread.Yield();
-                                                                                                  Thread.Sleep( 100 );}));
+            //globalTracker
+            //    .Track( (ITrackedObject)sto1 )
+            //    .Track( (ITrackedObject)sto2 );
 
-            Task.Factory.StartNew( () =>
-                { 
-                    globalTracker.Undo();
-                    globalTracker.Undo();
-                    globalTracker.Undo();
-                });
+            //globalTracker.AddOperation(new TargetedDelegateOperation<SlowSimpleTrackedObject>(sto1, o => {Thread.Sleep(100);
+            //                                                                                      Thread.Yield();
+            //                                                                                      Thread.Sleep( 100 );}, 
+            //                                                                                o => {Thread.Sleep(100);
+            //                                                                                      Thread.Yield();
+            //                                                                                      Thread.Sleep( 100 );}));
 
-            sto1.ChangeValues(1, 2, 3);
+            //Task.Factory.StartNew( () =>
+            //    { 
+            //        globalTracker.Undo();
+            //        globalTracker.Undo();
+            //        globalTracker.Undo();
+            //    });
 
-            sto2.ChangeValues( 2,3,4 );
+            //sto1.ChangeValues(1, 2, 3);
+
+            //sto2.ChangeValues( 2,3,4 );
         }
     }
 

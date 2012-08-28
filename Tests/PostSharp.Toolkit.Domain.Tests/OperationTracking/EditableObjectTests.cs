@@ -3,8 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 
 using NUnit.Framework;
-
-using PostSharp.Toolkit.Domain.OperationTracking;
+using PostSharp.Toolkit.Domain.ChangeTracking;
 
 namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
 {

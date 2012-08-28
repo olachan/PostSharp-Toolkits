@@ -4,8 +4,7 @@ using System.Linq;
 using System.Text;
 
 using NUnit.Framework;
-
-using PostSharp.Toolkit.Domain.OperationTracking;
+using PostSharp.Toolkit.Domain.ChangeTracking;
 using PostSharp.Toolkit.Domain.Tests.OperationTracking;
 
 namespace PostSharp.Toolkit.Domain.Tests.Integration
