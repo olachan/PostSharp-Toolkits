@@ -6,6 +6,8 @@
 #endregion
 
 using System.ComponentModel;
+using System.Globalization;
+using System.Linq;
 using System.Text;
 
 using NUnit.Framework;
@@ -103,8 +105,6 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
                 return stringBuilder.ToString();
             }
         }
-
-
     }
 
 
@@ -114,7 +114,7 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
 
     }
 
-    class Customer : Entity
+    class Customer : Entity, IDataErrorInfo
     {
         private string _lastName;
         private Address _address;
@@ -148,7 +148,17 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
             this._address = null;
         }
 
+        [NotifyPropertyChangedIgnore] //TODO: Ignore indexers, so that this attribute is not needed anymore
+        public string this[ string columnName ]
+        {
+            get
+            {
+                //Just random piece of non-analyzable code
+                return Enumerable.Empty<string>().Count().ToString( CultureInfo.InvariantCulture );
+            }
+        }
 
+        public string Error { get; private set; }
     }
 
     class Address : Entity

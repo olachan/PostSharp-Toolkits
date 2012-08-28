@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Diagnostics.Weaver", "Diagnostics\PostSharp.Toolkit.Diagnostics.Weaver\PostSharp.Toolkit.Diagnostics.Weaver.csproj", "{BD4BCA33-49D2-48AB-BC5A-E50A07C90576}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Tests", "Tests\PostSharp.Toolkit.Tests\PostSharp.Toolkit.Tests.csproj", "{6A747DDC-F969-4BF7-8925-10A7E9CA3FFF}"
@@ -56,6 +56,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Integrati
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{8AE825E4-6BFC-4D4C-95BD-0D5401A2AF85}"
 	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
 		.nuget\packages.config = .nuget\packages.config
 	EndProjectSection
 EndProject
