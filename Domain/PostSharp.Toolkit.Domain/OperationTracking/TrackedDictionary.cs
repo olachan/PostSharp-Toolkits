@@ -79,12 +79,23 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             }
             set
             {
-                object oldValue = ((IDictionary)this.innerCollection)[key];
+                object oldValue = null;
+                bool revertOldValue = false;
+
+                if (((IDictionary)this.innerCollection).Contains(key))
+                {
+                    revertOldValue = true;
+                    oldValue = ((IDictionary)this.innerCollection)[key];
+                }
 
                 this.Tracker.AddOperationToChunk(
                     new DelegateOperation<TrackedDictionary<TKey, TValue>>(
                     this,
-                    d => ((IDictionary)d)[key] = oldValue,
+                    d =>
+                    {
+                        if (revertOldValue) ((IDictionary)d)[key] = oldValue;
+                        else ((IDictionary)d).Remove(key);
+                    },
                     d => ((IDictionary)d)[key] = value));
 
                 ((IDictionary)this.innerCollection)[key] = value;
@@ -128,9 +139,23 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             return ((IDictionary)this.innerCollection).Contains(key);
         }
 
-        // TODO: undo
         public void Clear()
         {
+            KeyValuePair<TKey, TValue>[] copy = new KeyValuePair<TKey, TValue>[this.innerCollection.Count];
+            ((ICollection<KeyValuePair<TKey, TValue>>)this.innerCollection).CopyTo(copy, 0);
+
+            this.Tracker.AddOperationToChunk(
+               new DelegateOperation<TrackedDictionary<TKey, TValue>>(
+               this,
+               d =>
+                   {
+                       foreach (KeyValuePair<TKey, TValue> pair in copy)
+                       {
+                           d.Add(pair.Key, pair.Value);
+                       }
+                   },
+               d => d.Clear()));
+
             this.innerCollection.Clear();
         }
 
@@ -242,10 +267,10 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             TValue oldValue = this.innerCollection[key];
 
             this.Tracker.AddOperationToChunk(
-              new DelegateOperation<TrackedDictionary<TKey, TValue>>(
-              this,
-              d => d.Add(key, oldValue),
-              d => d.Remove(key)));
+                new DelegateOperation<TrackedDictionary<TKey, TValue>>(
+                this,
+                d => d.Add(key, oldValue),
+                d => d.Remove(key)));
 
             return this.innerCollection.Remove(key);
         }
@@ -263,12 +288,23 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
             }
             set
             {
-                TValue oldValue = this.innerCollection[key];
+                TValue oldValue = default(TValue);
+                bool revertOldValue = false;
+
+                if (this.innerCollection.ContainsKey(key))
+                {
+                    revertOldValue = true;
+                    oldValue = this.innerCollection[key];
+                }
 
                 this.Tracker.AddOperationToChunk(
                     new DelegateOperation<TrackedDictionary<TKey, TValue>>(
                     this,
-                    d => d[key] = oldValue,
+                    d =>
+                    {
+                        if (revertOldValue) d[key] = oldValue;
+                        else d.Remove(key);
+                    },
                     d => d[key] = value));
 
                 this.innerCollection[key] = value;
@@ -333,7 +369,5 @@ namespace PostSharp.Toolkit.Domain.OperationTracking
         {
             this.Tracker.RestoreNamedRestorePoint(name);
         }
-
-
     }
 }
