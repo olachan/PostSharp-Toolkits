@@ -8,7 +8,7 @@
 using NUnit.Framework;
 using PostSharp.Toolkit.Domain.ChangeTracking;
 
-namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
+namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 {
     [TestFixture]
     public class SingleObjectTrackerTests
@@ -106,7 +106,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
 
             to.ChangeValues(1, 2, 3);
 
-            sot.AddNamedRestorePoint("s1");
+            sot.AddRestorePoint("s1");
 
             to.ChangeValues(4, 5, 6);
 
@@ -114,7 +114,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
 
             to.ChangeValues(10, 11, 12);
 
-            sot.RestoreNamedRestorePoint("s1");
+            sot.UndoToRestorePoint("s1");
 
             Assert.AreEqual(1, to.P1);
             Assert.AreEqual(2, to.P2);
@@ -141,7 +141,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
 
             to.ChangeValues(1, 2, 3);
 
-            sot.AddNamedRestorePoint("s1");
+            sot.AddRestorePoint("s1");
 
             to.ChangeValues(4, 5, 6);
 
@@ -149,7 +149,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
 
             to.ChangeValues(10, 11, 12);
 
-            sot.RestoreNamedRestorePoint("s1");
+            sot.UndoToRestorePoint("s1");
 
             Assert.AreEqual(1, to.P1);
             Assert.AreEqual(2, to.P2);
@@ -167,7 +167,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
             Assert.AreEqual(8, to.P2);
             Assert.AreEqual(9, to.P3);
 
-            sot.RestoreNamedRestorePoint("s1");
+            sot.UndoToRestorePoint("s1");
 
             Assert.AreEqual(1, to.P1);
             Assert.AreEqual(2, to.P2);
@@ -182,25 +182,25 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
 
             to.ChangeValues(1, 2, 3);
 
-            sot.AddNamedRestorePoint("s1");
+            sot.AddRestorePoint("s1");
 
             to.ChangeValues(4, 5, 6);
 
             to.ChangeValues(7, 8, 9);
 
-            sot.AddNamedRestorePoint("s1");
+            sot.AddRestorePoint("s1");
 
             to.ChangeValues(10, 11, 12);
 
             to.ChangeValues(1, 2, 3);
 
-            sot.RestoreNamedRestorePoint("s1");
+            sot.UndoToRestorePoint("s1");
 
             Assert.AreEqual(7, to.P1);
             Assert.AreEqual(8, to.P2);
             Assert.AreEqual(9, to.P3);
 
-            sot.RestoreNamedRestorePoint("s1");
+            sot.UndoToRestorePoint("s1");
 
             Assert.AreEqual(1, to.P1);
             Assert.AreEqual(2, to.P2);
@@ -257,7 +257,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
             SimpleTrackedObject to = new SimpleTrackedObject();
             var sot = (ITrackedObject)to;
 
-            using ( sot.Tracker.GetNewChunkToken() )
+            using ( sot.Tracker.StartAtomicOperation() )
             {
                 to.ChangeValues(4, 5, 6);
                 to.ChangeValues(7, 8, 9);
@@ -315,7 +315,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
 
         public int P2 { get; set; }
 
-        public int P3 { get; [AlwaysMakeAutomaticOperation]set; }
+        public int P3 { get; [ForceChangeTrackingOperation]set; }
 
         public void ChangeValuesTracked(int? p1 = null, int? p2 = null, int? p3 = null)
         {
@@ -335,7 +335,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
             }
         }
 
-        [DoNotMakeAutomaticOperation]
+        [NoAutomaticChangeTrackingOperation]
         public void ChangeValuesNotTracked(int? p1 = null, int? p2 = null, int? p3 = null)
         {
             this.ChangeValuesTracked( p1, p2, p3 );

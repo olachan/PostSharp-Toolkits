@@ -13,7 +13,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     {
         public GlobalTracker Track(ITrackedObject target)
         {
-            target.Tracker.ParentTracker = this;
+            target.Tracker.AssociateWithParent(this);
             return this;
         }
 

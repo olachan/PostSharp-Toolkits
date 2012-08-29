@@ -26,8 +26,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         public override void Undo()
         {
             ObjectTracker sot = this.Target as ObjectTracker;
-            bool previusDisableCollectingData = sot.DisableCollectingData; //TODO: Make exception safe! using (tracker.DisableTracking) { ... }?
-            sot.DisableCollectingData = true;
+            bool previusDisableCollectingData = sot.IsTrackingDisabled; //TODO: Make exception safe! using (tracker.DisableTracking) { ... }?
+            sot.IsTrackingDisabled = true;
 
             foreach (IOperation correntOperation in this.CurrentOperations)
             {
@@ -35,14 +35,14 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
 
             sot.SetOperationCollections(this.UndoOperations, this.RedoOperations);
-            sot.DisableCollectingData = previusDisableCollectingData;
+            sot.IsTrackingDisabled = previusDisableCollectingData;
         }
 
         public override void Redo()
         {
             ObjectTracker sot = this.Target as ObjectTracker;
-            bool prevoiusDisableCollectingData = sot.DisableCollectingData; //TODO: Make exception safe! using (tracker.DisableTracking) { ... }?
-            sot.DisableCollectingData = true;
+            bool prevoiusDisableCollectingData = sot.IsTrackingDisabled; //TODO: Make exception safe! using (tracker.DisableTracking) { ... }?
+            sot.IsTrackingDisabled = true;
             
             //TODO: Optimize
             this.CurrentOperations.Reverse();
@@ -53,7 +53,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.CurrentOperations.Reverse();
 
             sot.SetOperationCollections(this.RedoOperations, this.UndoOperations);
-            sot.DisableCollectingData = prevoiusDisableCollectingData;
+            sot.IsTrackingDisabled = prevoiusDisableCollectingData;
         }
     }
 }

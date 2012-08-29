@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using PostSharp.Toolkit.Domain.ChangeTracking;
 
-namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
+namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 {
     [TestFixture]
     public class GlobalTrackerTests
@@ -82,7 +77,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
 
             sto1.ChangeValues(1, 2, 3);
 
-            ((ITrackedObject)sto1).AddNamedRestorePoint( "r1" );
+            ((ITrackedObject)sto1).AddRestorePoint( "r1" );
 
             sto1.ChangeValues(4, 5, 6);
 
@@ -91,7 +86,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
 
             sto2.ChangeValues(2, 3, 4);
 
-            ((ITrackedObject)sto1).RestoreNamedRestorePoint( "r1" );
+            ((ITrackedObject)sto1).UndoToRestorePoint( "r1" );
 
             Assert.AreEqual(1, sto1.P1);
             Assert.AreEqual(2, sto1.P2);

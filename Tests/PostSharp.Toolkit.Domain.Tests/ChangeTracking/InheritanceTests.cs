@@ -8,7 +8,7 @@
 using NUnit.Framework;
 using PostSharp.Toolkit.Domain.ChangeTracking;
 
-namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
+namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 {
     [TestFixture]
     public class InheritanceTests

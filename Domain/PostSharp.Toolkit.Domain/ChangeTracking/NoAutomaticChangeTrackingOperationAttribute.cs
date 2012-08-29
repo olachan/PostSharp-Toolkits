@@ -9,7 +9,7 @@ using System;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    public class AlwaysMakeAutomaticOperationAttribute : Attribute
+    public class NoAutomaticChangeTrackingOperationAttribute : Attribute
     {
          
     }

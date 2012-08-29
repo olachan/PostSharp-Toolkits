@@ -346,7 +346,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             get
             {
-                return this.Tracker.OperationCount;
+                return this.Tracker.OperationsCount;
             }
         }
 
@@ -360,12 +360,12 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.Tracker.Redo();
         }
 
-        public void AddNamedRestorePoint(string name)
+        public void AddRestorePoint(string name)
         {
             this.Tracker.AddNamedRestorePoint(name);
         }
 
-        public void RestoreNamedRestorePoint(string name)
+        public void UndoToRestorePoint(string name)
         {
             this.Tracker.RestoreNamedRestorePoint(name);
         }

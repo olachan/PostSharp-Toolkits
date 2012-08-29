@@ -245,9 +245,11 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             get
             {
-                return this.Tracker.OperationCount;
+                return this.Tracker.OperationsCount;
             }
         }
+
+        //TODO: Get rid of the methods below, it may not be obvious that they do not operate on collection only! Same thing goes for TrackedDictionary
 
         public void Undo()
         {
@@ -259,12 +261,12 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.Tracker.Redo();
         }
 
-        public void AddNamedRestorePoint(string name)
+        public void AddRestorePoint(string name)
         {
             this.Tracker.AddNamedRestorePoint(name);
         }
 
-        public void RestoreNamedRestorePoint(string name)
+        public void UndoToRestorePoint(string name)
         {
             this.Tracker.RestoreNamedRestorePoint(name);
         }

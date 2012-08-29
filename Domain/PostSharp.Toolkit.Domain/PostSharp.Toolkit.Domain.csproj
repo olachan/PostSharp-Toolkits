@@ -82,7 +82,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ChangeTracking\AlwaysMakeAutomaticOperationAttribute.cs" />
+    <Compile Include="ChangeTracking\ForceChangeTrackingOperationAttribute.cs" />
     <Compile Include="ChangeTracking\RestorePoint.cs" />
     <Compile Include="ChangeTracking\ComplexOperation.cs" />
     <Compile Include="ChangeTracking\ChunkManagementAttribute.cs" />
@@ -90,7 +90,7 @@
     <Compile Include="ChangeTracking\OperationExtensions.cs" />
     <Compile Include="ChangeTracking\TrackedDictionary.cs" />
     <Compile Include="ChangeTracking\TargetedDelegateOperation.cs" />
-    <Compile Include="ChangeTracking\DoNotMakeAutomaticOperationAttribute.cs" />
+    <Compile Include="ChangeTracking\NoAutomaticChangeTrackingOperationAttribute.cs" />
     <Compile Include="ChangeTracking\FieldValueChange.cs" />
     <Compile Include="ChangeTracking\GlobalTracker.cs" />
     <Compile Include="ChangeTracking\InvertOperationWrapper.cs" />
@@ -104,14 +104,14 @@
     <Compile Include="ChangeTracking\ObjectAccessorsMap.cs" />
     <Compile Include="ChangeTracking\ObjectTracker.cs" />
     <Compile Include="ChangeTracking\ObjectTrackerOperation.cs" />
-    <Compile Include="ChangeTracking\ObjectTrackingChunkToken.cs" />
+    <Compile Include="ChangeTracking\AtomicOperationToken.cs" />
     <Compile Include="ChangeTracking\TargetedOperation.cs" />
     <Compile Include="ChangeTracking\OperationCollection.cs" />
     <Compile Include="ChangeTracking\StackTrace.cs" />
     <Compile Include="ChangeTracking\TrackedCollection.cs" />
     <Compile Include="ChangeTracking\TrackedObjectAttribute.cs" />
     <Compile Include="ChangeTracking\TrackedObjectAttributeBase.cs" />
-    <Compile Include="ChangeTracking\TrackedPropertyAttribute.cs" />
+    <Compile Include="ChangeTracking\ChangeTrackedAttribute.cs" />
     <Compile Include="ChangeTracking\Tracker.cs" />
     <Compile Include="ChangeTracking\WeakReference.cs" />
     <Compile Include="Tools\BindingFlagsSet.cs" />

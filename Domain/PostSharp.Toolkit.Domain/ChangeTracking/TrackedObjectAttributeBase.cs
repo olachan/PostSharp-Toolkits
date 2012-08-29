@@ -47,15 +47,16 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 ObjectAccessorsMap.Map.Add(type, new ObjectAccessors(type));
             }
 
+            //TODO: What about overloads?!?
             this.MethodAttributes = new Dictionary<string, MethodSnapshotStrategy>();
 
             foreach (MethodInfo method in type.GetMethods(BindingFlagsSet.PublicInstanceDeclared))
             {
-                if (method.GetCustomAttributes(typeof(DoNotMakeAutomaticOperationAttribute), true).Any())
+                if (method.GetCustomAttributes(typeof(NoAutomaticChangeTrackingOperationAttribute), true).Any())
                 {
                     this.MethodAttributes.Add(method.Name, MethodSnapshotStrategy.Never);
                 }
-                else if (method.GetCustomAttributes(typeof(AlwaysMakeAutomaticOperationAttribute), true).Any())
+                else if (method.GetCustomAttributes(typeof(ForceChangeTrackingOperationAttribute), true).Any())
                 {
                     this.MethodAttributes.Add(method.Name, MethodSnapshotStrategy.Always);
                 }
@@ -67,7 +68,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             this.TrackedFields = new HashSet<string>();
 
-            foreach (var propertyInfo in type.GetProperties(BindingFlagsSet.AllInstanceDeclared).Where(f => f.IsDefined(typeof(TrackedPropertyAttribute), false)))
+            foreach (var propertyInfo in type.GetProperties(BindingFlagsSet.AllInstanceDeclared).Where(f => f.IsDefined(typeof(ChangeTrackedAttribute), false)))
             {
                 var propertyInfoClosure = propertyInfo;
 
@@ -90,7 +91,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             foreach (FieldInfo fieldInfo in type
                 .GetFields(BindingFlagsSet.AllInstanceDeclared)
-                .Where(f => f.IsDefined(typeof(TrackedPropertyAttribute), false)))
+                .Where(f => f.IsDefined(typeof(ChangeTrackedAttribute), false)))
             {
                 this.TrackedFields.Add(fieldInfo.Name);
             }
@@ -117,7 +118,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             if (methodStrategy == MethodSnapshotStrategy.Always ||
                 (methodStrategy == MethodSnapshotStrategy.Auto && (stackPeek == null || !ReferenceEquals(stackPeek.Tracker, this.ThisTracker))))
             {
-                this.ThisTracker.StartChunk();
+                this.ThisTracker.StartImplicitOperation();
                 chunkStarted = true;
             }
             try
@@ -130,7 +131,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 StackTrace.PopFromStack();
                 if (chunkStarted)
                 {
-                    this.ThisTracker.EndChunk();
+                    this.ThisTracker.EndImplicitOperation();
                 }
             }
         }
@@ -140,8 +141,11 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             return
                 type.GetMethods(BindingFlagsSet.PublicInstanceDeclared).Where(
                     m =>
-                    m.IsDefined(typeof(AlwaysMakeAutomaticOperationAttribute), true) ||
+                    m.IsDefined(typeof(ForceChangeTrackingOperationAttribute), true) ||
                     (!m.Name.StartsWith("get_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")));
+            
+            //TODO: Why are property getters ignored? They may make modifications as well...
+
             // .Where( m => !m.IsDefined( typeof(DoNotMakeAutomaticSnapshotAttribute), true ) );
         }
 
@@ -155,12 +159,12 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.ThisTracker.Redo();
         }
 
-        public void AddNamedRestorePoint(string name)
+        public void AddRestorePoint(string name)
         {
             this.ThisTracker.AddNamedRestorePoint(name);
         }
 
-        public void RestoreNamedRestorePoint(string name)
+        public void UndoToRestorePoint(string name)
         {
             this.ThisTracker.RestoreNamedRestorePoint(name);
         }

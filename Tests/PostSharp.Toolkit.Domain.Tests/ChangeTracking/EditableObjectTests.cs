@@ -1,11 +1,9 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Diagnostics;
-
 using NUnit.Framework;
 using PostSharp.Toolkit.Domain.ChangeTracking;
 
-namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
+namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 {
     // ReSharper disable InconsistentNaming
 
@@ -187,8 +185,8 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
 
         public void Edit(int i, string s)
         {
-            IntP = i;
-            StringP = s;
+            this.IntP = i;
+            this.StringP = s;
         }
 
         public void BeginEdit()

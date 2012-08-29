@@ -83,14 +83,14 @@
     <Compile Include="NotifyPropertyChanged\NotifyPropertyChangedLoadTests.cs" />
     <Compile Include="NotifyPropertyChanged\NotifyPropertyChangedTests.cs" />
     <Compile Include="NotifyPropertyChanged\PropertyChainInvocationTests.cs" />
-    <Compile Include="OperationTracking\AggregateTrackerTests.cs" />
-    <Compile Include="OperationTracking\EditableObjectTests.cs" />
-    <Compile Include="OperationTracking\TrackedDictionaryTests.cs" />
-    <Compile Include="OperationTracking\InheritanceTests.cs" />
-    <Compile Include="OperationTracking\MultiThreadingTests.cs" />
-    <Compile Include="OperationTracking\GlobalTrackerTests.cs" />
-    <Compile Include="OperationTracking\SingleObjectTrackerTests.cs" />
-    <Compile Include="OperationTracking\TrackedCollectionTests.cs" />
+    <Compile Include="ChangeTracking\AggregateTrackerTests.cs" />
+    <Compile Include="ChangeTracking\EditableObjectTests.cs" />
+    <Compile Include="ChangeTracking\TrackedDictionaryTests.cs" />
+    <Compile Include="ChangeTracking\InheritanceTests.cs" />
+    <Compile Include="ChangeTracking\MultiThreadingTests.cs" />
+    <Compile Include="ChangeTracking\GlobalTrackerTests.cs" />
+    <Compile Include="ChangeTracking\SingleObjectTrackerTests.cs" />
+    <Compile Include="ChangeTracking\TrackedCollectionTests.cs" />
     <Compile Include="TestHelpers.cs" />
   </ItemGroup>
   <ItemGroup>

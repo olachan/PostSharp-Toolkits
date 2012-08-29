@@ -6,6 +6,7 @@
 #endregion
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
+    //TODO: What does it really mean? It's implemented by both trackers and tracked objects...
     public interface ITrackable
     {
         //[DoNotMakeAutomaticSnapshot]

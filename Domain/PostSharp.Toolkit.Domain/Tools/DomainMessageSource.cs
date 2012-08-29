@@ -18,7 +18,7 @@ namespace PostSharp.Toolkit.Domain.Tools
         private class InpcMessageDispenser : MessageDispenser
         {
             public InpcMessageDispenser()
-                : base( "INPC" )
+                : base( "INPC" ) //TODO: Change prefix to "DOM" or sth similar or create separate message soruces for INPC and change tracking
             {
             }
 
@@ -62,7 +62,7 @@ namespace PostSharp.Toolkit.Domain.Tools
                     case 12:
                         return "Depends.On method used within {0} which is not a property";
                     case 13:
-                        return "TrackedObjectAttribute: automatic analysis of property {0} failed. Place TrackedPropertyAttribute on field containing tracked object.";
+                        return "TrackedObjectAttribute: automatic analysis of property {0} failed. Place ChangeTrackedAttribute on field containing tracked object.";
                     case 14:
                         return "NotifyPropertyChangedAttribute: automatic analysis of property {0} failed. Field {1} has open generic type.";
                     default:

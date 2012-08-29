@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-
+﻿using System.Threading;
 using NUnit.Framework;
 using PostSharp.Toolkit.Domain.ChangeTracking;
 using PostSharp.Toolkit.Threading;
 
-namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
+namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 {
     [TestFixture]
     public class MultiThreadingTests

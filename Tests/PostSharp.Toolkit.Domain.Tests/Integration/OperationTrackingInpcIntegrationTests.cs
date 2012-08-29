@@ -5,7 +5,6 @@ using System.Text;
 
 using NUnit.Framework;
 using PostSharp.Toolkit.Domain.ChangeTracking;
-using PostSharp.Toolkit.Domain.Tests.OperationTracking;
 
 namespace PostSharp.Toolkit.Domain.Tests.Integration
 {
@@ -44,7 +43,7 @@ namespace PostSharp.Toolkit.Domain.Tests.Integration
     [NotifyPropertyChanged]
     public class InpcAggregateTrackedObject
     {
-        [TrackedProperty]
+        [ChangeTracked]
         private InpcSimpleTrackedObject dependentTrackedObject;
 
         public int P1 { get; set; }

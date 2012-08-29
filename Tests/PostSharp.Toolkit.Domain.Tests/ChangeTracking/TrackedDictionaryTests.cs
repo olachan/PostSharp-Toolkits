@@ -6,11 +6,10 @@
 #endregion
 
 using System.Linq;
-
 using NUnit.Framework;
 using PostSharp.Toolkit.Domain.ChangeTracking;
 
-namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
+namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 {
     [TestFixture]
     public class TrackedDictionaryTests
@@ -27,7 +26,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
             tc.Add(4, "4");
             tc.Add(5, "5");
 
-            tc.AddNamedRestorePoint("After 5");
+            tc.AddRestorePoint("After 5");
 
             tc.Add(6, "6");
             tc.Add(7, "7");
@@ -35,7 +34,7 @@ namespace PostSharp.Toolkit.Domain.Tests.OperationTracking
             tc.Add(9, "9");
             tc.Add(10, "10");
 
-            tc.RestoreNamedRestorePoint("After 5");
+            tc.UndoToRestorePoint("After 5");
 
             Assert.AreEqual( 5, tc.Last().Key );
 

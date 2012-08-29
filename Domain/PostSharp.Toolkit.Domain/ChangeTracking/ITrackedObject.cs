@@ -1,24 +1,29 @@
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
+    //TODO: Need to hide / change this interface; Undo/Redo are going to operate on the tracker and some object, not necessarily this one!
     public interface ITrackedObject : ITrackable
     {
         IObjectTracker Tracker { get; } // TODO make set internal
 
-        [DoNotMakeAutomaticOperation]
+        [NoAutomaticChangeTrackingOperation]
         void SetTracker(IObjectTracker tracker);
+
+        //TODO: All operations below should definitly be removed from this interface; SetTracker as well, if possible
+        //(Other option: get rid of the interface, introduce field, compile field getter / setter)
+
 
         int OperationCount { get; }
 
-        [DoNotMakeAutomaticOperation]
+        [NoAutomaticChangeTrackingOperation]
         void Undo();
 
-        [DoNotMakeAutomaticOperation]
+        [NoAutomaticChangeTrackingOperation]
         void Redo();
 
-        [DoNotMakeAutomaticOperation]
-        void AddNamedRestorePoint(string name);
+        [NoAutomaticChangeTrackingOperation]
+        void AddRestorePoint(string name);
 
-        [DoNotMakeAutomaticOperation]
-        void RestoreNamedRestorePoint( string name );
+        [NoAutomaticChangeTrackingOperation]
+        void UndoToRestorePoint( string name );
     }
 }

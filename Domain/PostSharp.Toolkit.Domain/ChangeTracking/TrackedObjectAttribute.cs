@@ -41,20 +41,22 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         public void OnFieldSet(LocationInterceptionArgs args)
         {
             bool endChunk = false;
-            if (!this.ThisTracker.IsChunkActive)
+            if (!this.ThisTracker.IsOperationOpen)
             {
                 endChunk = true;
-                this.ThisTracker.StartChunk();
+                this.ThisTracker.StartImplicitOperation();
             }
 
-            object oldValue = args.GetCurrentValue();
+            object oldValue = args.GetCurrentValue(); //TODO: Somewhat risky but probably have to stick to it
 
             if (oldValue != null && this.TrackedFields.Contains(args.LocationFullName))
             {
                 ITrackedObject trackedObject = (ITrackedObject)oldValue;
                 IObjectTracker newTracker = new ObjectTracker(trackedObject);
-                newTracker.ParentTracker = this.ThisTracker.ParentTracker;
+                newTracker.AssociateWithParent( this.ThisTracker.ParentTracker );
                 trackedObject.SetTracker(newTracker);
+
+                //TODO: What about undo? Will it restore the tracker?
             }
 
             args.ProceedSetValue();
@@ -63,7 +65,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             if (newValue != null && this.TrackedFields.Contains(args.LocationName))
             {
                 ITrackedObject trackedObject = (ITrackedObject)newValue;
-                if (trackedObject.Tracker == null || trackedObject.Tracker.OperationCount != 0)
+                if (trackedObject.Tracker == null || trackedObject.Tracker.OperationsCount != 0)
                 {
                     throw new ArgumentException("attaching modified object to aggregate is not supported");
                 }
@@ -73,9 +75,10 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             this.ThisTracker.AddToCurrentOperation(new FieldValueChange((ITrackable)this.Instance, args.Location.DeclaringType, args.LocationFullName, oldValue, newValue));
 
+            //TODO: Exception-safety, refactor to using statement with smart support for nesting
             if (endChunk)
             {
-                this.ThisTracker.EndChunk();
+                this.ThisTracker.EndImplicitOperation();
             }
 
         }

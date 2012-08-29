@@ -9,11 +9,13 @@ using PostSharp.Aspects.Dependencies;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
+    //TODO: Need to make sure this IEditable is not part of an aggregate; it it is, we should throw or use a separate tracker
+    //TODO: Consider introducing the interfaces separately
+
     [Serializable]
     [IntroduceInterface(typeof(ITrackedObject), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
     [IntroduceInterface(typeof(IEditableObject), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
     [IntroduceInterface(typeof(IChangeTracking), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
-
     public class EditableObjectAttribute : TrackedObjectAttribute, IEditableObject, IChangeTracking
     {
         private Guid restorePointName;
@@ -122,7 +124,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             this.restorePointName = Guid.NewGuid();
             this.ThisTracker.AddNamedRestorePoint(this.restorePointName.ToString());
-            //chunkToken = this.ThisTracker.GetNewChunkToken();
+            //chunkToken = this.ThisTracker.StartAtomicOperation();
         }
 
         public void EndEdit()
@@ -142,7 +144,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 throw new InvalidOperationException("BeginEdit must be colled prior to EndEdit.");
             }
 
-            this.RestoreNamedRestorePoint(this.restorePointName.ToString());
+            this.UndoToRestorePoint(this.restorePointName.ToString());
             this.restorePointName = Guid.Empty;
         }
 
@@ -155,7 +157,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             get
             {
-                return this.ThisTracker.OperationCount != 0;
+                return this.ThisTracker.OperationsCount != 0;
             }
         }
     }

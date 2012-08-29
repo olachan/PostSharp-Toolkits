@@ -18,15 +18,15 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         protected IOperationCollection RedoOperations;
 
-        public ITracker ParentTracker { get; set; }
+        public ITracker ParentTracker { get; protected set; }
 
-        public bool DisableCollectingData { get; set; }
+        public bool IsTrackingDisabled { get; set; }
 
         protected Tracker()
         {
             this.UndoOperations = new OperationCollection();
             this.RedoOperations = new OperationCollection();
-            this.DisableCollectingData = false;
+            this.IsTrackingDisabled = false;
         }
 
         public virtual void AddOperation(IOperation operation, bool addToParent = true)
@@ -48,7 +48,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public virtual void Undo(bool addToParent = true)
         {
-            this.DisableCollectingData = true;
+            this.IsTrackingDisabled = true;
             
             IOperationCollection undoOperations = this.UndoOperations.Clone();
             IOperationCollection redoOperations = this.RedoOperations.Clone();
@@ -71,13 +71,13 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                     this.Undo();
                 }
             }
-            this.DisableCollectingData = false;
+            this.IsTrackingDisabled = false;
 
         }
 
         public virtual void Redo(bool addToParent = true)
         {
-            this.DisableCollectingData = true;
+            this.IsTrackingDisabled = true;
 
             IOperationCollection undoOperations = this.UndoOperations.Clone();
             IOperationCollection redoOperations = this.RedoOperations.Clone();
@@ -99,13 +99,13 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                     this.Redo();
                 }
             }
-            this.DisableCollectingData = false;
+            this.IsTrackingDisabled = false;
 
         }
 
         public virtual void RestoreNamedRestorePoint(string name)
         {
-            this.DisableCollectingData = true;
+            this.IsTrackingDisabled = true;
 
             IOperationCollection undoOperations = this.UndoOperations.Clone();
             IOperationCollection redoOperations = this.RedoOperations.Clone();
@@ -124,7 +124,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 operation.Undo();
                 this.RedoOperations.Push(operation);
             }
-            this.DisableCollectingData = false;
+            this.IsTrackingDisabled = false;
         }
 
         protected abstract void AddUndoOperationToParentTracker(List<IOperation> operations, IOperationCollection undoOperations, IOperationCollection redoOperations);
