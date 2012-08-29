@@ -14,7 +14,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         {
             Assert.Fail("Need to write this test conforming to new API - TargetedDelegatedOperation should not be public (or even not exist)");
 
-            //GlobalTracker globalTracker = new GlobalTracker();
+            //HistoryTracker globalTracker = new HistoryTracker();
             //SlowSimpleTrackedObject sto1 = new SlowSimpleTrackedObject();
             //SlowSimpleTrackedObject sto2 = new SlowSimpleTrackedObject();
 

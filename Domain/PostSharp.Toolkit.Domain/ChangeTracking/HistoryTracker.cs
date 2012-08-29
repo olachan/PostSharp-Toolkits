@@ -9,9 +9,9 @@ using System.Collections.Generic;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    public class GlobalTracker : Tracker
+    public class HistoryTracker : Tracker
     {
-        public GlobalTracker Track(ITrackedObject target)
+        public HistoryTracker Track(ITrackedObject target)
         {
             target.Tracker.AssociateWithParent(this);
             return this;

@@ -1,5 +1,7 @@
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
+    //TODO: Need a way to quickly identify tracked aggregate roots
+
     //TODO: Need to hide / change this interface; Undo/Redo are going to operate on the tracker and some object, not necessarily this one!
     public interface ITrackedObject : ITrackable
     {

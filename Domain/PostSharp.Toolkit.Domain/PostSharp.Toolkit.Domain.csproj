@@ -92,7 +92,7 @@
     <Compile Include="ChangeTracking\TargetedDelegateOperation.cs" />
     <Compile Include="ChangeTracking\NoAutomaticChangeTrackingOperationAttribute.cs" />
     <Compile Include="ChangeTracking\FieldValueChange.cs" />
-    <Compile Include="ChangeTracking\GlobalTracker.cs" />
+    <Compile Include="ChangeTracking\HistoryTracker.cs" />
     <Compile Include="ChangeTracking\InvertOperationWrapper.cs" />
     <Compile Include="ChangeTracking\IObjectTracker.cs" />
     <Compile Include="ChangeTracking\ITrackable.cs" />

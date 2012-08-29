@@ -9,17 +9,17 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         [Test]
         public void SimpleGlobalTrackerTest()
         {
-            GlobalTracker globalTracker = new GlobalTracker();
+            HistoryTracker historyTracker = new HistoryTracker();
             SimpleTrackedObject sto1 = new SimpleTrackedObject();
             SimpleTrackedObject sto2 = new SimpleTrackedObject();
 
-            globalTracker.Track( (ITrackedObject)sto1 ).Track( (ITrackedObject)sto2 );
+            historyTracker.Track( (ITrackedObject)sto1 ).Track( (ITrackedObject)sto2 );
 
             sto1.ChangeValues(1, 2, 3);
 
             sto2.ChangeValues( 2,3,4 );
 
-            globalTracker.Undo();
+            historyTracker.Undo();
 
             Assert.AreEqual(1, sto1.P1);
             Assert.AreEqual(2, sto1.P2);
@@ -33,11 +33,11 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         [Test]
         public void SimpleGlobalTrackerMixedWithLocalTrackerTest()
         {
-            GlobalTracker globalTracker = new GlobalTracker();
+            HistoryTracker historyTracker = new HistoryTracker();
             SimpleTrackedObject sto1 = new SimpleTrackedObject();
             SimpleTrackedObject sto2 = new SimpleTrackedObject();
 
-            globalTracker.Track((ITrackedObject)sto1).Track((ITrackedObject)sto2);
+            historyTracker.Track((ITrackedObject)sto1).Track((ITrackedObject)sto2);
 
             sto1.ChangeValues(1, 2, 3);
 
@@ -49,7 +49,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             Assert.AreEqual(0, sto1.P2);
             Assert.AreEqual(0, sto1.P3);
 
-            globalTracker.Undo();
+            historyTracker.Undo();
 
             Assert.AreEqual(1, sto1.P1);
             Assert.AreEqual(2, sto1.P2);
@@ -59,7 +59,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             Assert.AreEqual(3, sto2.P2);
             Assert.AreEqual(4, sto2.P3);
 
-            globalTracker.Undo();
+            historyTracker.Undo();
 
             Assert.AreEqual(0, sto2.P1);
             Assert.AreEqual(0, sto2.P2);
@@ -69,11 +69,11 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         [Test]
         public void GlobalTrackerUndo_RestoresLocalTrackerHistory()
         {
-            GlobalTracker globalTracker = new GlobalTracker();
+            HistoryTracker historyTracker = new HistoryTracker();
             SimpleTrackedObject sto1 = new SimpleTrackedObject();
             SimpleTrackedObject sto2 = new SimpleTrackedObject();
 
-            globalTracker.Track((ITrackedObject)sto1).Track((ITrackedObject)sto2);
+            historyTracker.Track((ITrackedObject)sto1).Track((ITrackedObject)sto2);
 
             sto1.ChangeValues(1, 2, 3);
 
@@ -92,7 +92,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             Assert.AreEqual(2, sto1.P2);
             Assert.AreEqual(3, sto1.P3);
 
-            globalTracker.Undo();
+            historyTracker.Undo();
 
             Assert.AreEqual(7, sto1.P1);
             Assert.AreEqual(8, sto1.P2);
