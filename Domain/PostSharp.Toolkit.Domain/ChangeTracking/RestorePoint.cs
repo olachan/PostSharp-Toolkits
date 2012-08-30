@@ -8,6 +8,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     {
         public string Name { get; private set; }
 
+        public RestorePointToken Token { get; private set; }
+
         public void Undo()
         {
             //Do nothing
@@ -21,6 +23,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         public RestorePoint(string name)
         {
             this.Name = name;
+            this.Token = new RestorePointToken();
         }
     }
 }

@@ -123,7 +123,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
 
             this.restorePointName = Guid.NewGuid();
-            this.ThisTracker.AddNamedRestorePoint(this.restorePointName.ToString());
+            this.ThisTracker.AddRestorePoint(this.restorePointName.ToString());
             //chunkToken = this.ThisTracker.StartAtomicOperation();
         }
 

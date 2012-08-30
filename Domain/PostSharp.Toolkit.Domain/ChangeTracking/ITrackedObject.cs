@@ -29,6 +29,6 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         //void AddRestorePoint(string name);
 
         //[NoAutomaticChangeTrackingOperation]
-        //void UndoToRestorePoint( string name );
+        //void UndoTo( string name );
     }
 }

@@ -23,7 +23,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             var to = (ITrackedObject)root;
             root.ChangeValues(1, 2, 3);
 
-            ChangeTrackingController.Undo(to);
+            to.Tracker.Undo();
 
             Assert.AreEqual(0, root.P1);
             Assert.AreEqual(0, root.P2);
@@ -31,7 +31,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             root.DependentTrackedObject.ChangeValues(1, 2, 3);
 
-            ChangeTrackingController.Undo(to);
+            to.Tracker.Undo();
 
             Assert.AreEqual(0, root.P1);
             Assert.AreEqual(0, root.P2);
@@ -53,7 +53,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             root.ChangeValuesWithDependent(1, 2, 3);
 
-            ChangeTrackingController.Undo(to);
+            to.Tracker.Undo();
 
             Assert.AreEqual(0, root.P1);
             Assert.AreEqual(0, root.P2);
@@ -80,7 +80,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
                 root.DependentTrackedObject.ChangeValues(6, 7, 8);
             }
 
-            ChangeTrackingController.Undo(to);
+            to.Tracker.Undo();
 
             Assert.AreEqual(0, root.P1);
             Assert.AreEqual(0, root.P2);
@@ -94,7 +94,25 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         [Test]
         public void ReattachDependentObject_IfObjectIsUnchanged_RestoresAggregateTracker()
         {
-            
+            AggregateTrackedObject root = new AggregateTrackedObject();
+
+            var dependentObject = new SimpleTrackedObject();
+            root.DependentTrackedObject = dependentObject;
+
+            dependentObject.ChangeValues(1, 2, 3);
+
+            root.DependentTrackedObject = null;
+
+            dependentObject.ChangeValues(4, 5, 6);
+
+            ((ITrackedObject)dependentObject).Tracker.Undo();
+
+            ((ITrackedObject)root).Tracker.Undo();
+            ((ITrackedObject)root).Tracker.Undo();
+
+            Assert.AreEqual(0, root.DependentTrackedObject.P1);
+            Assert.AreEqual(0, root.DependentTrackedObject.P2);
+            Assert.AreEqual(0, root.DependentTrackedObject.P3);
         }
     }
 

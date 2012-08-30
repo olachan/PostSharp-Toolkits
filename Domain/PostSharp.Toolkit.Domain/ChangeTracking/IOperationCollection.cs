@@ -2,22 +2,22 @@ using System.Collections.Generic;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    //TODO: Do we need this interface?
-    public interface IOperationCollection
-    {
-        void Push(IOperation operation);
+    ////TODO: Do we need this interface?
+    //public interface IOperationCollection
+    //{
+    //    void Push(IOperation operation);
 
-        IOperation Pop();
+    //    IOperation Pop();
 
-        Stack<IOperation> GetOperationsToRestorePoint(string name);
+    //    Stack<IOperation> GetOperationsToRestorePoint(string name);
 
-        void Clear();
+    //    void Clear();
 
-        void AddNamedRestorePoint(string name);
+    //    void AddRestorePoint(string name);
 
-        IOperationCollection Clone();
+    //    IOperationCollection Clone();
 
-        //IOperation Pop(ITrackable target);
-        int Count { get; }
-    }
+    //    //IOperation Pop(ITrackable target);
+    //    int Count { get; }
+    //}
 }

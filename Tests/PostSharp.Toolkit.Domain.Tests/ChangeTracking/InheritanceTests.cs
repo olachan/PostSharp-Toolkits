@@ -21,13 +21,13 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             to.ChangeValues(1, 2, 3);
 
-            ChangeTrackingController.Undo(sot);
+            sot.Tracker.Undo();
 
             Assert.AreEqual(0, to.P1);
             Assert.AreEqual(0, to.P2);
             Assert.AreEqual(0, to.P3);
 
-            ChangeTrackingController.Redo(sot);
+            sot.Tracker.Redo();
 
             Assert.AreEqual(1, to.P1);
             Assert.AreEqual(2, to.P2);
@@ -37,29 +37,29 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             to.P1 = 3;
             to.P1 = 4;
 
-            ChangeTrackingController.Undo(sot); Assert.AreEqual(3, to.P1);
+            sot.Tracker.Undo(); Assert.AreEqual(3, to.P1);
 
-            ChangeTrackingController.Undo(sot); Assert.AreEqual(2, to.P1);
+            sot.Tracker.Undo(); Assert.AreEqual(2, to.P1);
 
-            ChangeTrackingController.Undo(sot); Assert.AreEqual(1, to.P1);
+            sot.Tracker.Undo(); Assert.AreEqual(1, to.P1);
 
-            ChangeTrackingController.Undo(sot); Assert.AreEqual(0, to.P1);
+            sot.Tracker.Undo(); Assert.AreEqual(0, to.P1);
 
-            ChangeTrackingController.Undo(sot); Assert.AreEqual(0, to.P1); // empty undo collection
+            sot.Tracker.Undo(); Assert.AreEqual(0, to.P1); // empty undo collection
 
-            ChangeTrackingController.Redo(sot); Assert.AreEqual(1, to.P1);
+            sot.Tracker.Redo(); Assert.AreEqual(1, to.P1);
 
-            ChangeTrackingController.Redo(sot); Assert.AreEqual(2, to.P1);
+            sot.Tracker.Redo(); Assert.AreEqual(2, to.P1);
 
-            ChangeTrackingController.Redo(sot); Assert.AreEqual(3, to.P1);
+            sot.Tracker.Redo(); Assert.AreEqual(3, to.P1);
 
-            ChangeTrackingController.Redo(sot); Assert.AreEqual(4, to.P1);
+            sot.Tracker.Redo(); Assert.AreEqual(4, to.P1);
 
-            ChangeTrackingController.Redo(sot); Assert.AreEqual(4, to.P1); // empty redo collection
+            sot.Tracker.Redo(); Assert.AreEqual(4, to.P1); // empty redo collection
 
-            ChangeTrackingController.Undo(sot); Assert.AreEqual(3, to.P1);
+            sot.Tracker.Undo(); Assert.AreEqual(3, to.P1);
 
-            ChangeTrackingController.Redo(sot); Assert.AreEqual(4, to.P1);
+            sot.Tracker.Redo(); Assert.AreEqual(4, to.P1);
         }
 
         [Test]
@@ -73,21 +73,21 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             var sot = (ITrackedObject)to;
 
-            ChangeTrackingController.Undo(sot);
+            sot.Tracker.Undo();
 
             Assert.AreEqual(5, to.P1);
             Assert.AreEqual(6, to.P2);
             Assert.AreEqual(7, to.AP1);
             Assert.AreEqual(8, to.VP1);
 
-            ChangeTrackingController.Undo(sot);
+            sot.Tracker.Undo();
 
             Assert.AreEqual(1, to.P1);
             Assert.AreEqual(2, to.P2);
             Assert.AreEqual(3, to.AP1);
             Assert.AreEqual(4, to.VP1);
 
-            ChangeTrackingController.Redo(sot);
+            sot.Tracker.Redo();
 
             Assert.AreEqual(5, to.P1);
             Assert.AreEqual(6, to.P2);

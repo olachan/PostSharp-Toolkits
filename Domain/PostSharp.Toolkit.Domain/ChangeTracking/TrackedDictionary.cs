@@ -343,7 +343,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
-        public ObjectTracker ObjectTracker { get; private set; }
+        internal ObjectTracker ObjectTracker { get; private set; }
 
         public void SetTracker(IObjectTracker tracker)
         {
@@ -370,12 +370,12 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         //public void AddRestorePoint(string name)
         //{
-        //    this.ObjectTracker.AddNamedRestorePoint(name);
+        //    this.ObjectTracker.AddRestorePoint(name);
         //}
 
-        //public void UndoToRestorePoint(string name)
+        //public void UndoTo(string name)
         //{
-        //    this.ObjectTracker.RestoreNamedRestorePoint(name);
+        //    this.ObjectTracker.UndoTo(name);
         //}
     }
 }

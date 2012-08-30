@@ -9,13 +9,13 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     //TODO: (KW) Debug usages, make sure it works
     internal class ObjectTrackerOperation : TargetedOperation
     {
-        protected readonly IOperationCollection UndoOperations;
+        protected readonly OperationCollection UndoOperations;
 
-        protected readonly IOperationCollection RedoOperations;
+        protected readonly OperationCollection RedoOperations;
 
         protected readonly List<IOperation> CurrentOperations;
 
-        public ObjectTrackerOperation(ObjectTracker target, IOperationCollection undoOperations, IOperationCollection redoOperations, List<IOperation> currentOperations)
+        public ObjectTrackerOperation(ObjectTracker target, OperationCollection undoOperations, OperationCollection redoOperations, List<IOperation> currentOperations)
             : base(target)
         {
             this.UndoOperations = undoOperations;

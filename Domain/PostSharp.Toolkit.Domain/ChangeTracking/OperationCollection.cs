@@ -5,28 +5,24 @@ using System.Linq;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    internal class OperationCollection : IOperationCollection
+    internal class OperationCollection
     {
         //private int currentItemIndex = 0;
         private readonly Stack<IOperation> operations;
 
-        private readonly Dictionary<string, int> namedRestorePoints;
-
         public OperationCollection()
         {
-            this.namedRestorePoints = new Dictionary<string, int>();
             this.operations = new Stack<IOperation>();
         }
 
-        private OperationCollection(Stack<IOperation> operations, Dictionary<string, int> namedRestorePoints)
+        private OperationCollection(Stack<IOperation> operations)
         {
-            this.namedRestorePoints = namedRestorePoints;
             this.operations = operations;
         }
 
-        public IOperationCollection Clone()
+        public OperationCollection Clone()
         {
-            return new OperationCollection(new Stack<IOperation>(this.operations.Reverse()), this.namedRestorePoints.ToDictionary(k => k.Key, v => v.Value));
+            return new OperationCollection(new Stack<IOperation>(this.operations.Reverse()));
         }
 
         public int Count
@@ -46,11 +42,6 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             //this.currentItemIndex++;
             this.operations.Push(operation);
-
-            if (operation.IsRestorePoint())
-            {
-                this.AddNamedRestorePoint(operation);
-            }
         }
 
         public IOperation Pop()
@@ -67,57 +58,43 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 return operation;
             }
 
-            this.DecreaseRestorePointCount(operation.Name);
-
             return operation; //this.operations.Pop();
         }
 
 
-        private void DecreaseRestorePointCount(string name)
+        public RestorePointToken AddRestorePoint(string name = null)
         {
-            this.namedRestorePoints[name] -= 1;
-
-            if (this.namedRestorePoints[name] == 0)
-            {
-                this.namedRestorePoints.Remove(name);
-            }
-        }
-
-        public void AddNamedRestorePoint(string name)
-        {
-            this.Push(new RestorePoint(name));
-        }
-
-        private void AddNamedRestorePoint(IOperation restorePoint)
-        {
-            int namedRestorePointCount;
-
-            if (!this.namedRestorePoints.TryGetValue(restorePoint.Name, out namedRestorePointCount))
-            {
-                namedRestorePointCount = 0;
-            }
-
-            this.namedRestorePoints.AddOrUpdate(restorePoint.Name, namedRestorePointCount + 1);
+            var restorePoint = new RestorePoint(name);
+            this.Push(restorePoint);
+            return restorePoint.Token;
         }
 
         public Stack<IOperation> GetOperationsToRestorePoint(string name)
         {
-            if (!this.namedRestorePoints.ContainsKey(name))
-            {
-                throw new ArgumentException(string.Format("No restore point named {0}", name));
-            }
+            return GetOperationsToRestorePoint(o => o.Name == name);
+        }
 
-            this.DecreaseRestorePointCount(name);
+        public Stack<IOperation> GetOperationsToRestorePoint(RestorePointToken token)
+        {
+            return GetOperationsToRestorePoint(o => (o is RestorePoint) && ReferenceEquals(((RestorePoint)o).Token, token));
+        }
 
+        private Stack<IOperation> GetOperationsToRestorePoint(Predicate<IOperation> predicate)
+        {
             List<IOperation> restoreOperations = new List<IOperation>();
 
             IOperation restorePoint = null;
 
             // TODO performance optimization
-            while (restorePoint == null || restorePoint.Name != name)
+            while (operations.Count > 0 && (restorePoint == null || !predicate(restorePoint)))
             {
                 restorePoint = this.operations.Pop();
                 restoreOperations.Add(restorePoint);
+            }
+
+            if (!predicate(restorePoint))
+            {
+                throw new ArgumentException("Restore point not found");
             }
 
             restoreOperations.Reverse();
@@ -131,8 +108,5 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             //this.namedRestorePoints.Clear();
             //this.currentItemIndex = 0;
         }
-
-        
     }
-
 }

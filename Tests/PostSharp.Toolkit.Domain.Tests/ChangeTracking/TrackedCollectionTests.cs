@@ -34,19 +34,19 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             tc.Add(9);
             tc.Add(10);
 
-            ChangeTrackingController.UndoToRestorePoint(tc, "After 5");
+            ChangeTrackingController.UndoTo(tc, "After 5");
 
             Assert.AreEqual(5, tc.Last());
 
-            ChangeTrackingController.Redo(tc);
+            tc.Tracker.Redo();
 
             Assert.AreEqual(6, tc.Last());
 
-            ChangeTrackingController.Undo(tc);
+            tc.Tracker.Undo();
 
             Assert.AreEqual(5, tc.Last());
 
-            ChangeTrackingController.Undo(tc);
+            tc.Tracker.Undo();
 
             Assert.AreEqual(4, tc.Last());
         }
@@ -66,7 +66,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             Assert.IsFalse(tc.Contains(0));
             Assert.IsFalse(tc.Contains(1));
 
-            ChangeTrackingController.Undo(tc);
+            tc.Tracker.Undo();
 
             Assert.IsTrue(tc.Contains(1));
         }
@@ -85,7 +85,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             Assert.IsFalse(tc.Contains(1));
             Assert.IsTrue(tc[1] == 2);
 
-            ChangeTrackingController.Undo(tc);
+            tc.Tracker.Undo();
 
             Assert.IsTrue(tc[1] == 1);
             Assert.IsTrue(tc.Contains(1));
@@ -104,7 +104,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             Assert.IsTrue(tc.Count == 0);
 
-            ChangeTrackingController.Undo(tc);
+            tc.Tracker.Undo();
 
             Assert.IsTrue(tc.Count == 3);
             Assert.IsTrue(tc[0] == 0);
@@ -125,7 +125,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             Assert.IsTrue(tc[0] == 10);
 
-            ChangeTrackingController.Undo(tc);
+            tc.Tracker.Undo();
 
             Assert.IsTrue(tc[0] == 0);
             Assert.IsFalse(tc.Contains( 10 ));

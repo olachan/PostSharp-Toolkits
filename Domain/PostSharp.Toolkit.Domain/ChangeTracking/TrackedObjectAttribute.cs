@@ -44,14 +44,12 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             {
                 object oldValue = args.GetCurrentValue(); //TODO: Somewhat risky but probably have to stick to it
 
-                if (oldValue != null && this.TrackedFields.Contains(args.LocationFullName))
+                if (oldValue != null && this.TrackedFields.Contains(args.LocationName))
                 {
                     ITrackedObject trackedObject = (ITrackedObject)oldValue;
                     ObjectTracker newTracker = new ObjectTracker(trackedObject);
                     newTracker.AssociateWithParent(this.ThisTracker.ParentTracker);
                     trackedObject.SetTracker(newTracker);
-
-                    //TODO: What about undo? Will it restore the tracker?
                 }
 
                 args.ProceedSetValue();

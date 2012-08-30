@@ -161,12 +161,12 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public void AddRestorePoint(string name)
         {
-            this.ThisTracker.AddNamedRestorePoint(name);
+            this.ThisTracker.AddRestorePoint(name);
         }
 
         public void UndoToRestorePoint(string name)
         {
-            this.ThisTracker.RestoreNamedRestorePoint(name);
+            this.ThisTracker.UndoTo(name);
         }
 
         public IObjectTracker Tracker
@@ -184,7 +184,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public int OperationCount { get; private set; }
 
-        public ObjectTracker ThisTracker
+        internal ObjectTracker ThisTracker
         {
             get
             {

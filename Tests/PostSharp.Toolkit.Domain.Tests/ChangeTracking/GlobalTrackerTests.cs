@@ -43,7 +43,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             sto2.ChangeValues(2, 3, 4);
 
-            ChangeTrackingController.Undo((ITrackedObject)sto1);
+            ((ITrackedObject)sto1).Tracker.Undo();
 
             Assert.AreEqual(0, sto1.P1);
             Assert.AreEqual(0, sto1.P2);
@@ -87,7 +87,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             sto2.ChangeValues(2, 3, 4);
 
 
-            ChangeTrackingController.UndoToRestorePoint((ITrackedObject)sto1, "r1");
+            ChangeTrackingController.UndoTo((ITrackedObject)sto1, "r1");
 
             Assert.AreEqual(1, sto1.P1);
             Assert.AreEqual(2, sto1.P2);
@@ -103,7 +103,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             Assert.AreEqual(3, sto2.P2);
             Assert.AreEqual(4, sto2.P3);
 
-            ChangeTrackingController.Undo((ITrackedObject)sto1);
+            ((ITrackedObject)sto1).Tracker.Undo();
 
             Assert.AreEqual(4, sto1.P1);
             Assert.AreEqual(5, sto1.P2);

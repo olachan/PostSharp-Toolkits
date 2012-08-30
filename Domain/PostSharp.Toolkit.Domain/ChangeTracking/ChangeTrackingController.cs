@@ -11,29 +11,34 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     public static class ChangeTrackingController
     {
-        public static void Undo(ITrackedObject trackedObject)
+        public static RestorePointToken AddRestorePoint(object trackedObject, string name = null)
         {
-            ((ObjectTracker)trackedObject.Tracker).Undo();
+            return((ObjectTracker)((ITrackedObject)trackedObject).Tracker).AddRestorePoint(name);
         }
 
-        public static void Redo(ITrackedObject trackedObject)
+        public static void UndoTo(object trackedObject, string name)
         {
-            ((ObjectTracker)trackedObject.Tracker).Redo();
+            ((ObjectTracker)((ITrackedObject)trackedObject).Tracker).UndoTo(name);
         }
 
-        public static void AddRestorePoint(ITrackedObject trackedObject, string name)
+        public static void RedoTo(object trackedObject, string name)
         {
-            ((ObjectTracker)trackedObject.Tracker).AddNamedRestorePoint(name);
+            ((ObjectTracker)((ITrackedObject)trackedObject).Tracker).RedoTo(name);
         }
 
-        public static void UndoToRestorePoint(ITrackedObject trackedObject, string name)
+        public static void UndoTo(object trackedObject, RestorePointToken token)
         {
-            ((ObjectTracker)trackedObject.Tracker).RestoreNamedRestorePoint(name);
+            ((ObjectTracker)((ITrackedObject)trackedObject).Tracker).UndoTo(token);
         }
 
-        public static IDisposable StartAtomicOperation(ITrackedObject trackedObject)
+        public static void RedoTo(object trackedObject, RestorePointToken token)
         {
-            return ((ObjectTracker)trackedObject.Tracker).StartAtomicOperation();
+            ((ObjectTracker)((ITrackedObject)trackedObject).Tracker).RedoTo(token);
+        }
+
+        public static IDisposable StartAtomicOperation(object trackedObject)
+        {
+            return ((ObjectTracker)((ITrackedObject)trackedObject).Tracker).StartAtomicOperation();
         }
     }
 }

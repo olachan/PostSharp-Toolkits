@@ -88,6 +88,7 @@
     <Compile Include="ChangeTracking\ImplicitOperationManagementAttribute.cs" />
     <Compile Include="ChangeTracking\EditableObjectAttribute.cs" />
     <Compile Include="ChangeTracking\OperationExtensions.cs" />
+    <Compile Include="ChangeTracking\RestorePointToken.cs" />
     <Compile Include="ChangeTracking\TrackedDictionary.cs" />
     <Compile Include="ChangeTracking\TargetedDelegateOperation.cs" />
     <Compile Include="ChangeTracking\NoAutomaticChangeTrackingOperationAttribute.cs" />
