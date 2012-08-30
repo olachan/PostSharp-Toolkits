@@ -2,7 +2,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     public interface ITracker
     {
-        void AddOperation(IOperation operation, bool addToParent = true);
+        // void AddOperation(IOperation operation, bool addToParent = true);
 
         void AddNamedRestorePoint(string name);
 

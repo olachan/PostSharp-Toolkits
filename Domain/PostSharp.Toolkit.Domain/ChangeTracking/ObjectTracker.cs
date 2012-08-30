@@ -194,7 +194,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             if (this.ParentTracker != null)
             {
-                this.ParentTracker.AddOperation(
+                ((Tracker)this.ParentTracker).AddOperation(
                     new ObjectTrackerOperation(
                         this,
                         undoOperations,

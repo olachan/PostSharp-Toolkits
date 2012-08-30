@@ -90,6 +90,12 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             Assert.AreEqual(0, root.DependentTrackedObject.P2);
             Assert.AreEqual(0, root.DependentTrackedObject.P3);
         }
+
+        [Test]
+        public void ReattachDependentObject_IfObjectIsUnchanged_RestoresAggregateTracker()
+        {
+            
+        }
     }
 
     [TrackedObject]

@@ -56,7 +56,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             if (addToParent && this.ParentTracker != null)
             {
-                this.ParentTracker.AddOperation(new TargetedDelegateOperation<Tracker>(this, t => t.Undo(false), t => t.Redo(false)));
+                ((Tracker)this.ParentTracker).AddOperation(new TargetedDelegateOperation<Tracker>(this, t => t.Undo(false), t => t.Redo(false)));
             }
 
             this.UndoOperations.Push(operation);
