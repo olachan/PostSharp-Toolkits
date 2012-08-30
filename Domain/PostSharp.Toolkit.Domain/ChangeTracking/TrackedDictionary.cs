@@ -18,7 +18,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         private void Initialize()
         {
-            this.Tracker = new ObjectTracker(this);
+            this.ObjectTracker = new ObjectTracker(this);
         }
 
         public TrackedDictionary()
@@ -62,7 +62,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         void IDictionary.Remove(object key)
         {
             object oldValue = ((IDictionary)this.innerCollection)[key];
-            this.Tracker.AddToCurrentOperation(
+            this.ObjectTracker.AddToCurrentOperation(
                 new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
                 this,
                 d => ((IDictionary)d).Add(key, oldValue),
@@ -88,7 +88,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                     oldValue = ((IDictionary)this.innerCollection)[key];
                 }
 
-                this.Tracker.AddToCurrentOperation(
+                this.ObjectTracker.AddToCurrentOperation(
                     new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
                     this,
                     d =>
@@ -114,7 +114,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         void IDictionary.Add(object key, object value)
         {
-            this.Tracker.AddToCurrentOperation(
+            this.ObjectTracker.AddToCurrentOperation(
                 new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
                 this,
                 d => ((IDictionary)d).Remove(key),
@@ -125,7 +125,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> item)
         {
-            this.Tracker.AddToCurrentOperation(
+            this.ObjectTracker.AddToCurrentOperation(
               new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
               this,
               d => ((ICollection<KeyValuePair<TKey, TValue>>)d).Remove(item),
@@ -144,7 +144,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             KeyValuePair<TKey, TValue>[] copy = new KeyValuePair<TKey, TValue>[this.innerCollection.Count];
             ((ICollection<KeyValuePair<TKey, TValue>>)this.innerCollection).CopyTo(copy, 0);
 
-            this.Tracker.AddToCurrentOperation(
+            this.ObjectTracker.AddToCurrentOperation(
                new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
                this,
                d =>
@@ -176,7 +176,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item)
         {
-            this.Tracker.AddToCurrentOperation(
+            this.ObjectTracker.AddToCurrentOperation(
              new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
              this,
              d => ((ICollection<KeyValuePair<TKey, TValue>>)d).Add(item),
@@ -253,7 +253,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public void Add(TKey key, TValue value)
         {
-            this.Tracker.AddToCurrentOperation(
+            this.ObjectTracker.AddToCurrentOperation(
               new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
               this,
               d => d.Remove(key),
@@ -266,7 +266,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             TValue oldValue = this.innerCollection[key];
 
-            this.Tracker.AddToCurrentOperation(
+            this.ObjectTracker.AddToCurrentOperation(
                 new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
                 this,
                 d => d.Add(key, oldValue),
@@ -297,7 +297,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                     oldValue = this.innerCollection[key];
                 }
 
-                this.Tracker.AddToCurrentOperation(
+                this.ObjectTracker.AddToCurrentOperation(
                     new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
                     this,
                     d =>
@@ -335,39 +335,47 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
-        public IObjectTracker Tracker { get; private set; }
+        public IObjectTracker Tracker
+        {
+            get
+            {
+                return this.ObjectTracker;
+            }
+        }
+
+        public ObjectTracker ObjectTracker { get; private set; }
 
         public void SetTracker(IObjectTracker tracker)
         {
-            this.Tracker = tracker;
+            this.ObjectTracker = (ObjectTracker)tracker;
         }
 
         public int OperationCount
         {
             get
             {
-                return this.Tracker.OperationsCount;
+                return this.ObjectTracker.OperationsCount;
             }
         }
 
-        public void Undo()
-        {
-            this.Tracker.Undo();
-        }
+        //public void Undo()
+        //{
+        //    this.ObjectTracker.Undo();
+        //}
 
-        public void Redo()
-        {
-            this.Tracker.Redo();
-        }
+        //public void Redo()
+        //{
+        //    this.ObjectTracker.Redo();
+        //}
 
-        public void AddRestorePoint(string name)
-        {
-            this.Tracker.AddNamedRestorePoint(name);
-        }
+        //public void AddRestorePoint(string name)
+        //{
+        //    this.ObjectTracker.AddNamedRestorePoint(name);
+        //}
 
-        public void UndoToRestorePoint(string name)
-        {
-            this.Tracker.RestoreNamedRestorePoint(name);
-        }
+        //public void UndoToRestorePoint(string name)
+        //{
+        //    this.ObjectTracker.RestoreNamedRestorePoint(name);
+        //}
     }
 }

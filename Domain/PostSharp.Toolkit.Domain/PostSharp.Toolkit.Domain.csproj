@@ -112,6 +112,7 @@
     <Compile Include="ChangeTracking\TrackedObjectAttribute.cs" />
     <Compile Include="ChangeTracking\TrackedObjectAttributeBase.cs" />
     <Compile Include="ChangeTracking\ChangeTrackedAttribute.cs" />
+    <Compile Include="ChangeTracking\ChangeTrackingController.cs" />
     <Compile Include="ChangeTracking\Tracker.cs" />
     <Compile Include="Tools\BindingFlagsSet.cs" />
     <Compile Include="PropertyChangeTracking\NotifyPropertyChangedAccessor.cs" />

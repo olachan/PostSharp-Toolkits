@@ -184,11 +184,11 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public int OperationCount { get; private set; }
 
-        public IObjectTracker ThisTracker
+        public ObjectTracker ThisTracker
         {
             get
             {
-                return ((ITrackedObject)this.Instance).Tracker;
+                return (ObjectTracker)((ITrackedObject)this.Instance).Tracker;
             }
         }
 

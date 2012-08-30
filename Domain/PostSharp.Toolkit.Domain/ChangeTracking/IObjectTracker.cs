@@ -6,28 +6,28 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     //TODO: We should stick to static class as the public API for object tracking. Consider removing this interface totally or making it a marker only
     public interface IObjectTracker : ITracker
     {
-        ITracker ParentTracker { get; }
+        //ITracker ParentTracker { get; }
 
-        //void StartChunk();
+        ////void StartChunk();
 
-        //void EndChunk();
+        ////void EndChunk();
 
-        void AddToCurrentOperation( ISubOperation operation );
+        //void AddToCurrentOperation( ISubOperation operation );
 
-        bool IsOperationOpen { get; }
+        //bool IsOperationOpen { get; }
 
-        int OperationsCount { get; }
+        //int OperationsCount { get; }
 
-        IDisposable StartAtomicOperation();
+        //IDisposable StartAtomicOperation();
 
-        //ChunkToken StartNamedChunk();
+        ////ChunkToken StartNamedChunk();
 
-        //void EndNamedChunk(ChunkToken token);
+        ////void EndNamedChunk(ChunkToken token);
 
-        void Clear();
+        //void Clear();
 
-        void AssociateWithParent( ITracker globalTracker );
-        IDisposable StartImplicitOperation();
-        // void EndImplicitOperation();
+        //void AssociateWithParent( ITracker globalTracker );
+        //IDisposable StartImplicitOperation();
+        //// void EndImplicitOperation();
     }
 }

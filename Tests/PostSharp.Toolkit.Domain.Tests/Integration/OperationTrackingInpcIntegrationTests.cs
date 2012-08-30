@@ -23,7 +23,7 @@ namespace PostSharp.Toolkit.Domain.Tests.Integration
 
                         root.ChangeValuesWithDependent( 1, 2, 3 );
 
-                        to.Undo();
+                        ChangeTrackingController.Undo(to);
 
                         Assert.AreEqual( 0, root.P1 );
                         Assert.AreEqual( 0, root.P2 );

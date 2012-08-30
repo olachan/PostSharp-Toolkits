@@ -23,7 +23,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             var to = (ITrackedObject)root;
             root.ChangeValues(1, 2, 3);
 
-            to.Undo();
+            ChangeTrackingController.Undo(to);
 
             Assert.AreEqual(0, root.P1);
             Assert.AreEqual(0, root.P2);
@@ -31,7 +31,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             root.DependentTrackedObject.ChangeValues(1, 2, 3);
 
-            to.Undo();
+            ChangeTrackingController.Undo(to);
 
             Assert.AreEqual(0, root.P1);
             Assert.AreEqual(0, root.P2);
@@ -53,7 +53,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             root.ChangeValuesWithDependent(1, 2, 3);
 
-            to.Undo();
+            ChangeTrackingController.Undo(to);
 
             Assert.AreEqual(0, root.P1);
             Assert.AreEqual(0, root.P2);
@@ -73,14 +73,14 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             var to = (ITrackedObject)root;
 
-            using (to.Tracker.StartAtomicOperation())
+            using (ChangeTrackingController.StartAtomicOperation(to))
             {
                 root.ChangeValuesWithDependent(1, 2, 3);
                 root.ChangeValues(3, 4, 5);
                 root.DependentTrackedObject.ChangeValues(6, 7, 8);
             }
 
-            to.Undo();
+            ChangeTrackingController.Undo(to);
 
             Assert.AreEqual(0, root.P1);
             Assert.AreEqual(0, root.P2);

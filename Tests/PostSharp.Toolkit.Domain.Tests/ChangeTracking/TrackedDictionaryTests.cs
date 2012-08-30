@@ -26,7 +26,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             tc.Add(4, "4");
             tc.Add(5, "5");
 
-            tc.AddRestorePoint("After 5");
+            ChangeTrackingController.AddRestorePoint(tc, "After 5");
 
             tc.Add(6, "6");
             tc.Add(7, "7");
@@ -34,26 +34,26 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             tc.Add(9, "9");
             tc.Add(10, "10");
 
-            tc.UndoToRestorePoint("After 5");
+            ChangeTrackingController.UndoToRestorePoint(tc, "After 5");
 
             Assert.AreEqual( 5, tc.Last().Key );
 
-            tc.Redo();
+            ChangeTrackingController.Redo(tc);
 
             Assert.AreEqual(6, tc.Last().Key);
 
-            tc.Undo();
+            ChangeTrackingController.Undo(tc);
 
             Assert.AreEqual(5, tc.Last().Key);
 
-            tc.Undo();
+            ChangeTrackingController.Undo(tc);
 
             Assert.AreEqual(4, tc.Last().Key);
 
             tc.Remove( 1 );
             Assert.IsFalse( tc.ContainsKey( 1 ) );
 
-            tc.Undo();
+            ChangeTrackingController.Undo(tc);
 
             Assert.AreEqual( "1", tc[1] );
         }

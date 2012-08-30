@@ -38,7 +38,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             editable.IntP = 5;
             editable.StringP = "a";
 
-            ((ITrackedObject)editable).Undo();
+            ChangeTrackingController.Undo((ITrackedObject)editable);
 
             editable.Edit(1, "b");
 
@@ -58,7 +58,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             editable.IntP = 5;
             editable.StringP = "a";
 
-            ((ITrackedObject)editable).Undo();
+            ChangeTrackingController.Undo((ITrackedObject)editable);
 
             editable.Edit(1, "b");
 
@@ -67,7 +67,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             Assert.AreEqual(1, editable.IntP);
             Assert.AreEqual("b", editable.StringP);
 
-            ((ITrackedObject)editable).Undo();
+            ChangeTrackingController.Undo((ITrackedObject)editable);
 
             Assert.AreEqual(5, editable.IntP);
             Assert.IsNull(editable.StringP);
@@ -168,7 +168,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             Assert.IsFalse(editable.IsChanged);
 
-            ((ITrackedObject)editable).Undo();
+            ChangeTrackingController.Undo((ITrackedObject)editable);
 
             Assert.AreEqual(1, editable.IntP);
             Assert.AreEqual("b", editable.StringP);

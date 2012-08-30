@@ -26,7 +26,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             tc.Add(4);
             tc.Add(5);
 
-            tc.AddRestorePoint("After 5");
+            ChangeTrackingController.AddRestorePoint(tc, "After 5");
 
             tc.Add(6);
             tc.Add(7);
@@ -34,19 +34,19 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             tc.Add(9);
             tc.Add(10);
 
-            tc.UndoToRestorePoint("After 5");
+            ChangeTrackingController.UndoToRestorePoint(tc, "After 5");
 
             Assert.AreEqual(5, tc.Last());
 
-            tc.Redo();
+            ChangeTrackingController.Redo(tc);
 
             Assert.AreEqual(6, tc.Last());
 
-            tc.Undo();
+            ChangeTrackingController.Undo(tc);
 
             Assert.AreEqual(5, tc.Last());
 
-            tc.Undo();
+            ChangeTrackingController.Undo(tc);
 
             Assert.AreEqual(4, tc.Last());
         }
@@ -66,7 +66,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             Assert.IsFalse(tc.Contains(0));
             Assert.IsFalse(tc.Contains(1));
 
-            tc.Undo();
+            ChangeTrackingController.Undo(tc);
 
             Assert.IsTrue(tc.Contains(1));
         }
@@ -85,7 +85,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             Assert.IsFalse(tc.Contains(1));
             Assert.IsTrue(tc[1] == 2);
 
-            tc.Undo();
+            ChangeTrackingController.Undo(tc);
 
             Assert.IsTrue(tc[1] == 1);
             Assert.IsTrue(tc.Contains(1));
@@ -104,7 +104,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             Assert.IsTrue(tc.Count == 0);
 
-            tc.Undo();
+            ChangeTrackingController.Undo(tc);
 
             Assert.IsTrue(tc.Count == 3);
             Assert.IsTrue(tc[0] == 0);
@@ -125,7 +125,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             Assert.IsTrue(tc[0] == 10);
 
-            tc.Undo();
+            ChangeTrackingController.Undo(tc);
 
             Assert.IsTrue(tc[0] == 0);
             Assert.IsFalse(tc.Contains( 10 ));
