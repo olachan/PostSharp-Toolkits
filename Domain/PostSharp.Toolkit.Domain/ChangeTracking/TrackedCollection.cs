@@ -65,13 +65,13 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public void Add(T item)
         {
-            this.ObjectTracker.AddToCurrentOperation(new TargetedDelegateOperation<TrackedCollection<T>>(this, c => c.Remove(item), c => c.Add(item)));
+            this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => this.Remove(item), () => this.Add(item)));
             this.innerCollection.Add(item);
         }
 
         int IList.Add(object value)
         {
-            this.ObjectTracker.AddToCurrentOperation(new TargetedDelegateOperation<TrackedCollection<T>>(this, c => ((IList)c).Remove(value), c => ((IList)c).Add(value)));
+            this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).Remove(value), () => ((IList)this).Add(value)));
             return ((IList)this.innerCollection).Add(value);
         }
 
@@ -86,16 +86,15 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             ((ICollection<T>)this.innerCollection).CopyTo(copy, 0);
 
             this.ObjectTracker.AddToCurrentOperation(
-               new TargetedDelegateOperation<TrackedCollection<T>>(
-               this,
-               d =>
+               new DelegateOperation(
+               () =>
                {
                    foreach (T item in copy)
                    {
-                       d.Add(item);
+                       this.Add(item);
                    }
                },
-               d => d.Clear()));
+               () => this.Clear()));
 
             this.innerCollection.Clear();
         }
@@ -107,20 +106,20 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         void IList.Insert(int index, object value)
         {
-            this.ObjectTracker.AddToCurrentOperation(new TargetedDelegateOperation<TrackedCollection<T>>(this, c => ((IList)c).RemoveAt(index), c => ((IList)c).Insert(index, value)));
+            this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).RemoveAt(index), () => ((IList)this).Insert(index, value)));
             ((IList)this.innerCollection).Insert(index, value);
         }
 
         void IList.Remove(object value)
         {
-            this.ObjectTracker.AddToCurrentOperation(new TargetedDelegateOperation<TrackedCollection<T>>(this, c => ((IList)c).Add(value), c => ((IList)c).Remove(value)));
+            this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).Add(value), () => ((IList)this).Remove(value)));
             ((IList)this.innerCollection).Remove(value);
         }
 
         public void RemoveAt(int index)
         {
             object value = ((IList)this)[index];
-            this.ObjectTracker.AddToCurrentOperation(new TargetedDelegateOperation<TrackedCollection<T>>(this, c => ((IList)c).Insert(index, value), c => ((IList)c).RemoveAt(index)));
+            this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).Insert(index, value), () => ((IList)this).RemoveAt(index)));
             ((IList)this.innerCollection).RemoveAt(index);
         }
 
@@ -134,7 +133,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             {
                 object newValue = value;
                 object oldValue = ((IList)this.innerCollection)[index];
-                this.ObjectTracker.AddToCurrentOperation(new TargetedDelegateOperation<TrackedCollection<T>>(this, c => ((IList)c)[index] = oldValue, c => ((IList)c)[index] = newValue));
+                this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this)[index] = oldValue, () => ((IList)this)[index] = newValue));
                 ((IList)this.innerCollection)[index] = value;
             }
         }
@@ -175,7 +174,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public bool Remove(T item)
         {
-            this.ObjectTracker.AddToCurrentOperation(new TargetedDelegateOperation<TrackedCollection<T>>(this, c => c.Add(item), c => c.Remove(item)));
+            this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => this.Add(item), () => this.Remove(item)));
             return this.innerCollection.Remove(item);
         }
 
@@ -215,7 +214,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public void Insert(int index, T item)
         {
-            this.ObjectTracker.AddToCurrentOperation(new TargetedDelegateOperation<TrackedCollection<T>>(this, c => c.RemoveAt(index), c => c.Insert(index, item)));
+            this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => this.RemoveAt(index), () => this.Insert(index, item)));
             this.innerCollection.Insert(index, item);
         }
 
@@ -229,7 +228,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             {
                 T newValue = value;
                 T oldValue = this.innerCollection[index];
-                this.ObjectTracker.AddToCurrentOperation(new TargetedDelegateOperation<TrackedCollection<T>>(this, c => c[index] = oldValue, c => c[index] = newValue));
+                this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => this[index] = oldValue, () => this[index] = newValue));
                 this.innerCollection[index] = value;
             }
         }
@@ -249,6 +248,14 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.ObjectTracker = (ObjectTracker)tracker;
         }
 
+        public bool IsAggregateRoot
+        {
+            get
+            {
+                return ReferenceEquals(this.ObjectTracker.AggregateRoot, this);
+            }
+        }
+
         public int OperationCount
         {
             get
@@ -256,27 +263,5 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 return this.ObjectTracker.OperationsCount;
             }
         }
-
-        //TODO: Get rid of the methods below, it may not be obvious that they do not operate on collection only! Same thing goes for TrackedDictionary
-
-        //public void Undo()
-        //{
-        //    this.ObjectTracker.Undo();
-        //}
-
-        //public void Redo()
-        //{
-        //    this.ObjectTracker.Redo();
-        //}
-
-        //public void AddRestorePoint(string name)
-        //{
-        //    this.ObjectTracker.AddRestorePoint(name);
-        //}
-
-        //public void UndoTo(string name)
-        //{
-        //    this.ObjectTracker.UndoTo(name);
-        //}
     }
 }

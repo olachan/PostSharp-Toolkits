@@ -7,7 +7,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     /// (undo, redo, redo to snapshot etc.)
     /// </summary>
     //TODO: (KW) Debug usages, make sure it works
-    internal class ObjectTrackerOperation : TargetedOperation
+    internal class ObjectTrackerOperation : IOperation
     {
         protected readonly OperationCollection UndoOperations;
 
@@ -15,17 +15,21 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         protected readonly List<IOperation> CurrentOperations;
 
+        private ObjectTracker target;
+
         public ObjectTrackerOperation(ObjectTracker target, OperationCollection undoOperations, OperationCollection redoOperations, List<IOperation> currentOperations)
-            : base(target)
         {
+            this.target = target;
             this.UndoOperations = undoOperations;
             this.RedoOperations = redoOperations;
             this.CurrentOperations = currentOperations;
         }
 
-        public override void Undo()
+        public string Name { get; private set; }
+
+        public void Undo()
         {
-            ObjectTracker sot = this.Target as ObjectTracker;
+            ObjectTracker sot = this.target as ObjectTracker;
 
             using (sot.StartDisabledTrackingScope())
             {
@@ -38,9 +42,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
-        public override void Redo()
+        public void Redo()
         {
-            ObjectTracker sot = this.Target as ObjectTracker;
+            ObjectTracker sot = this.target as ObjectTracker;
             using (sot.StartDisabledTrackingScope())
             {
                 //TODO: Optimize

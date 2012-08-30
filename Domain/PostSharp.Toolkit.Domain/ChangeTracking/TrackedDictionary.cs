@@ -63,10 +63,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             object oldValue = ((IDictionary)this.innerCollection)[key];
             this.ObjectTracker.AddToCurrentOperation(
-                new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
-                this,
-                d => ((IDictionary)d).Add(key, oldValue),
-                d => ((IDictionary)d).Remove(key)));
+                new DelegateOperation(
+                () => ((IDictionary)this).Add(key, oldValue),
+                () => ((IDictionary)this).Remove(key)));
 
             ((IDictionary)this.innerCollection).Remove(key);
         }
@@ -89,14 +88,13 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 }
 
                 this.ObjectTracker.AddToCurrentOperation(
-                    new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
-                    this,
-                    d =>
+                    new DelegateOperation(
+                    () =>
                     {
-                        if (revertOldValue) ((IDictionary)d)[key] = oldValue;
-                        else ((IDictionary)d).Remove(key);
+                        if (revertOldValue) ((IDictionary)this)[key] = oldValue;
+                        else ((IDictionary)this).Remove(key);
                     },
-                    d => ((IDictionary)d)[key] = value));
+                    () => ((IDictionary)this)[key] = value));
 
                 ((IDictionary)this.innerCollection)[key] = value;
             }
@@ -115,10 +113,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         void IDictionary.Add(object key, object value)
         {
             this.ObjectTracker.AddToCurrentOperation(
-                new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
-                this,
-                d => ((IDictionary)d).Remove(key),
-                d => ((IDictionary)d).Add(key, value)));
+                new DelegateOperation(
+                () => ((IDictionary)this).Remove(key),
+                () => ((IDictionary)this).Add(key, value)));
 
             ((IDictionary)this.innerCollection).Add(key, value);
         }
@@ -126,10 +123,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> item)
         {
             this.ObjectTracker.AddToCurrentOperation(
-              new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
-              this,
-              d => ((ICollection<KeyValuePair<TKey, TValue>>)d).Remove(item),
-              d => ((ICollection<KeyValuePair<TKey, TValue>>)d).Add(item)));
+              new DelegateOperation(
+              () => ((ICollection<KeyValuePair<TKey, TValue>>)this).Remove(item),
+              () => ((ICollection<KeyValuePair<TKey, TValue>>)this).Add(item)));
 
             ((ICollection<KeyValuePair<TKey, TValue>>)this.innerCollection).Add(item);
         }
@@ -145,16 +141,15 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             ((ICollection<KeyValuePair<TKey, TValue>>)this.innerCollection).CopyTo(copy, 0);
 
             this.ObjectTracker.AddToCurrentOperation(
-               new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
-               this,
-               d =>
+               new DelegateOperation(
+               () =>
+               {
+                   foreach (KeyValuePair<TKey, TValue> pair in copy)
                    {
-                       foreach (KeyValuePair<TKey, TValue> pair in copy)
-                       {
-                           d.Add(pair.Key, pair.Value);
-                       }
-                   },
-               d => d.Clear()));
+                       this.Add(pair.Key, pair.Value);
+                   }
+               },
+               () => this.Clear()));
 
             this.innerCollection.Clear();
         }
@@ -177,10 +172,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item)
         {
             this.ObjectTracker.AddToCurrentOperation(
-             new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
-             this,
-             d => ((ICollection<KeyValuePair<TKey, TValue>>)d).Add(item),
-             d => ((ICollection<KeyValuePair<TKey, TValue>>)d).Remove(item)));
+             new DelegateOperation(
+             () => ((ICollection<KeyValuePair<TKey, TValue>>)this).Add(item),
+             () => ((ICollection<KeyValuePair<TKey, TValue>>)this).Remove(item)));
 
             return ((ICollection<KeyValuePair<TKey, TValue>>)this.innerCollection).Remove(item);
         }
@@ -254,10 +248,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         public void Add(TKey key, TValue value)
         {
             this.ObjectTracker.AddToCurrentOperation(
-              new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
-              this,
-              d => d.Remove(key),
-              d => d.Add(key, value)));
+              new DelegateOperation(
+              () => this.Remove(key),
+              () => this.Add(key, value)));
 
             this.innerCollection.Add(key, value);
         }
@@ -267,10 +260,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             TValue oldValue = this.innerCollection[key];
 
             this.ObjectTracker.AddToCurrentOperation(
-                new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
-                this,
-                d => d.Add(key, oldValue),
-                d => d.Remove(key)));
+                new DelegateOperation(
+                () => this.Add(key, oldValue),
+                () => this.Remove(key)));
 
             return this.innerCollection.Remove(key);
         }
@@ -298,14 +290,13 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 }
 
                 this.ObjectTracker.AddToCurrentOperation(
-                    new TargetedDelegateOperation<TrackedDictionary<TKey, TValue>>(
-                    this,
-                    d =>
+                    new DelegateOperation(
+                    () =>
                     {
-                        if (revertOldValue) d[key] = oldValue;
-                        else d.Remove(key);
+                        if (revertOldValue) this[key] = oldValue;
+                        else this.Remove(key);
                     },
-                    d => d[key] = value));
+                    () => this[key] = value));
 
                 this.innerCollection[key] = value;
             }
@@ -350,6 +341,14 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.ObjectTracker = (ObjectTracker)tracker;
         }
 
+        public bool IsAggregateRoot
+        {
+            get
+            {
+                return ReferenceEquals(this.ObjectTracker.AggregateRoot, this);
+            }
+        }
+
         public int OperationCount
         {
             get
@@ -357,25 +356,5 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 return this.ObjectTracker.OperationsCount;
             }
         }
-
-        //public void Undo()
-        //{
-        //    this.ObjectTracker.Undo();
-        //}
-
-        //public void Redo()
-        //{
-        //    this.ObjectTracker.Redo();
-        //}
-
-        //public void AddRestorePoint(string name)
-        //{
-        //    this.ObjectTracker.AddRestorePoint(name);
-        //}
-
-        //public void UndoTo(string name)
-        //{
-        //    this.ObjectTracker.UndoTo(name);
-        //}
     }
 }

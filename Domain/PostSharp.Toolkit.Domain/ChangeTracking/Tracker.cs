@@ -13,7 +13,7 @@ using PostSharp.Toolkit.Threading;
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     [ThreadUnsafeObject]
-    public abstract class Tracker : ITracker, ITrackable
+    public abstract class Tracker : ITracker
     {
         protected class TrackingDisabledToken : IDisposable
         {
@@ -56,7 +56,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             if (addToParent && this.ParentTracker != null)
             {
-                ((Tracker)this.ParentTracker).AddOperation(new TargetedDelegateOperation<Tracker>(this, t => t.Undo(false), t => t.Redo(false)));
+                ((Tracker)this.ParentTracker).AddOperation(new DelegateOperation(() => this.Undo(false), () => this.Redo(false)));
             }
 
             this.UndoOperations.Push(operation);

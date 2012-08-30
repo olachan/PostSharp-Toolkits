@@ -105,7 +105,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             TrackedObjectAttributeBase aspect = (TrackedObjectAttributeBase)base.CreateInstance(adviceArgs);
 
-            aspect.SetTracker(new ObjectTracker((ITrackable)adviceArgs.Instance));
+            aspect.SetTracker(new ObjectTracker(adviceArgs.Instance));
 
             return aspect;
         }
@@ -142,7 +142,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 type.GetMethods(BindingFlagsSet.PublicInstanceDeclared).Where(
                     m =>
                     m.IsDefined(typeof(ForceChangeTrackingOperationAttribute), true) ||
-                    (!m.Name.StartsWith("get_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")));
+                    (!m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")));
             
             //TODO: Why are property getters ignored? They may make modifications as well...
 
@@ -180,6 +180,14 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         public void SetTracker(IObjectTracker tracker)
         {
             this.tracker = tracker;
+        }
+
+        public bool IsAggregateRoot 
+        { 
+            get
+            {
+                return ReferenceEquals(this.ThisTracker.AggregateRoot, this.Instance);
+            }
         }
 
         public int OperationCount { get; private set; }

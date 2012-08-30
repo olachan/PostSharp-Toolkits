@@ -90,15 +90,13 @@
     <Compile Include="ChangeTracking\OperationExtensions.cs" />
     <Compile Include="ChangeTracking\RestorePointToken.cs" />
     <Compile Include="ChangeTracking\TrackedDictionary.cs" />
-    <Compile Include="ChangeTracking\TargetedDelegateOperation.cs" />
+    <Compile Include="ChangeTracking\DelegateOperation.cs" />
     <Compile Include="ChangeTracking\NoAutomaticChangeTrackingOperationAttribute.cs" />
     <Compile Include="ChangeTracking\FieldValueChange.cs" />
     <Compile Include="ChangeTracking\HistoryTracker.cs" />
     <Compile Include="ChangeTracking\InvertOperationWrapper.cs" />
     <Compile Include="ChangeTracking\IObjectTracker.cs" />
-    <Compile Include="ChangeTracking\ITrackable.cs" />
     <Compile Include="ChangeTracking\IOperation.cs" />
-    <Compile Include="ChangeTracking\IOperationCollection.cs" />
     <Compile Include="ChangeTracking\ITrackedObject.cs" />
     <Compile Include="ChangeTracking\ITracker.cs" />
     <Compile Include="ChangeTracking\ObjectAccessors.cs" />
@@ -106,7 +104,6 @@
     <Compile Include="ChangeTracking\ObjectTracker.cs" />
     <Compile Include="ChangeTracking\ObjectTrackerOperation.cs" />
     <Compile Include="ChangeTracking\AtomicOperationToken.cs" />
-    <Compile Include="ChangeTracking\TargetedOperation.cs" />
     <Compile Include="ChangeTracking\OperationCollection.cs" />
     <Compile Include="ChangeTracking\StackTrace.cs" />
     <Compile Include="ChangeTracking\TrackedCollection.cs" />

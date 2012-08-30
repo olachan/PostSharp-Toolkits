@@ -66,7 +66,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                     trackedObject.SetTracker(this.ThisTracker);
                 }
 
-                this.ThisTracker.AddToCurrentOperation(new FieldValueChange((ITrackable)this.Instance, args.Location.DeclaringType, args.LocationFullName, oldValue, newValue));
+                this.ThisTracker.AddToCurrentOperation(new FieldValueChange(this.Instance, args.Location.DeclaringType, args.LocationFullName, oldValue, newValue));
             }
 
 

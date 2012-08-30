@@ -13,7 +13,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     public class FieldValueChange : ISubOperation
     {
-        private readonly ITrackable target;
+        private readonly object target;
 
         private readonly object oldValue;
 
@@ -21,7 +21,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         private readonly FieldInfoWithCompiledAccessors fieldAccessor;
 
-        public FieldValueChange( ITrackable target, Type implementingType, string fieldFullName, object oldValue, object newValue )
+        public FieldValueChange(object target, Type implementingType, string fieldFullName, object oldValue, object newValue)
         {
             this.target = target;
             this.oldValue = oldValue;

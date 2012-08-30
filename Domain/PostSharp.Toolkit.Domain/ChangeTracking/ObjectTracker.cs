@@ -46,10 +46,13 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         private int implicitOperationNestingCounter;
 
-        public ObjectTracker(ITrackable target)
+        public ObjectTracker(object aggregateRoot)
         {
+            this.AggregateRoot = aggregateRoot;
             this.implicitOperationNestingCounter = 0;
         }
+
+        public object AggregateRoot { get; private set; }
 
         public void Clear()
         {
@@ -179,11 +182,14 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public void AddToCurrentOperation(ISubOperation operation)
         {
-            //TODO: what if there is no operation open?
-
             if (this.IsTrackingDisabled)
             {
                 return;
+            }
+
+            if (this.currentOperation == null)
+            {
+                throw new InvalidOperationException("Can not add to current operation. There is no operation opened");
             }
 
             this.currentOperation.AddOperation(operation);
