@@ -142,7 +142,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 type.GetMethods(BindingFlagsSet.PublicInstanceDeclared).Where(
                     m =>
                     m.IsDefined(typeof(ForceChangeTrackingOperationAttribute), true) ||
-                    (!m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")));
+                    (!m.Name.StartsWith("get_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")));
             
             //TODO: Why are property getters ignored? They may make modifications as well...
 
