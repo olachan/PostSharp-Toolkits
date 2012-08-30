@@ -13,7 +13,7 @@ using System.Collections.Specialized;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    [ChunkManagement]
+    [ImplicitOperationManagement]
     public class TrackedCollection<T> : INotifyCollectionChanged, IList<T>, IList, ITrackedObject
     {
         private readonly ObservableCollection<T> innerCollection;

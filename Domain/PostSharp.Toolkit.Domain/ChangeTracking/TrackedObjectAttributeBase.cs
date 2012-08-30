@@ -113,13 +113,13 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         public void OnMethodInvokeBase(MethodInterceptionArgs args)
         {
             var methodStrategy = this.MethodAttributes[args.Method.Name];
-            bool chunkStarted = false;
+            IDisposable implicitOpertaion = null;
             ITrackedObject stackPeek = StackTrace.StackPeek() as ITrackedObject;
             if (methodStrategy == MethodSnapshotStrategy.Always ||
                 (methodStrategy == MethodSnapshotStrategy.Auto && (stackPeek == null || !ReferenceEquals(stackPeek.Tracker, this.ThisTracker))))
+
             {
-                this.ThisTracker.StartImplicitOperation();
-                chunkStarted = true;
+                implicitOpertaion = this.ThisTracker.StartImplicitOperation();
             }
             try
             {
@@ -129,9 +129,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             finally
             {
                 StackTrace.PopFromStack();
-                if (chunkStarted)
+                if (implicitOpertaion != null)
                 {
-                    this.ThisTracker.EndImplicitOperation();
+                    implicitOpertaion.Dispose();
                 }
             }
         }

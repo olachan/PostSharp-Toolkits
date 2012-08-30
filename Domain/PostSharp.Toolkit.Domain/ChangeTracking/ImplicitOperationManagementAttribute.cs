@@ -8,7 +8,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     [Serializable]
     [IntroduceInterface( typeof(ITrackedObject), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore )]
     [MulticastAttributeUsage( MulticastTargets.Class, Inheritance = MulticastInheritance.Strict )]
-    internal class ChunkManagementAttribute : TrackedObjectAttributeBase
+    internal class ImplicitOperationManagementAttribute : TrackedObjectAttributeBase
     {
         [OnMethodInvokeAdvice]
         [MethodPointcut("SelectMethods")]

@@ -22,6 +22,32 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
+        private class ImplicitOperationToken : IDisposable
+        {
+            private readonly ObjectTracker objectTracker;
+
+            private readonly bool endOperationOnDispose;
+
+            internal ImplicitOperationToken(ObjectTracker objectTracker)
+            {
+                this.objectTracker = objectTracker;
+
+                if ( !this.objectTracker.IsOperationOpen )
+                {
+                    this.endOperationOnDispose = true;
+                    this.objectTracker.StartImplicitOperationInternal();
+                }
+            }
+
+            public void Dispose()
+            {
+                if (endOperationOnDispose)
+                {
+                    this.objectTracker.EndImplicitOperation();
+                }
+            }
+        }
+
         private ITrackable target;
 
         private ComplexOperation currentOperation;
@@ -49,11 +75,6 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.ParentTracker = globalTracker;
         }
 
-        public void SetParentTracker(Tracker tracker)
-        {
-            this.ParentTracker = tracker;
-        }
-
         public IDisposable StartAtomicOperation()
         {
             return new AtomicOperationToken( this );
@@ -77,26 +98,6 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.currentOperationToken = token;
         }
 
-        private void StartOperation()
-        {
-            if ( this.currentOperation != null )
-            {
-                this.EndOperation();
-            }
-
-            this.currentOperation = new ComplexOperation();
-        }
-
-        public void StartImplicitOperation()
-        {
-            if (this.IsTrackingDisabled || this.currentOperationToken != null)
-            {
-                return;
-            }
-
-            this.StartOperation();
-        }
-
         private void EndExplicitOperation(AtomicOperationToken token)
         {
             if (this.currentOperationToken != token)
@@ -115,7 +116,22 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.currentOperationToken = null;
         }
 
-        public void EndImplicitOperation()
+        public IDisposable StartImplicitOperation()
+        {
+            return new ImplicitOperationToken(this);
+        }
+
+        private void StartImplicitOperationInternal()
+        {
+            if (this.IsTrackingDisabled || this.currentOperationToken != null)
+            {
+                return;
+            }
+
+            this.StartOperation();
+        }
+
+        private void EndImplicitOperation()
         {
             if (this.IsTrackingDisabled || this.currentOperationToken != null)
             {
@@ -123,6 +139,17 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
 
             this.EndOperation();
+        }
+        
+
+        private void StartOperation()
+        {
+            if ( this.currentOperation != null )
+            {
+                this.EndOperation();
+            }
+
+            this.currentOperation = new ComplexOperation();
         }
 
         private void EndOperation()
@@ -172,9 +199,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                         this,
                         undoOperations,
                         redoOperations,
-                        operations.Where( o => o != null ).Select(s => (IOperation)(new InvertOperationWrapper(s))).ToList()));
+                        operations.Where( o => o != null ).Select(InvertOperationWrapper.InvertOperation).ToList()));
             }
-
         }
 
         internal void SetOperationCollections(IOperationCollection undoOperations, IOperationCollection redoOperations)

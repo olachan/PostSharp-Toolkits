@@ -2,16 +2,16 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     internal class InvertOperationWrapper : IOperation
     {
-        private readonly IOperation wrapedOperation;
+        private readonly IOperation wrappedOperation;
 
-        public InvertOperationWrapper(IOperation wrapedOperation)
+        private InvertOperationWrapper(IOperation wrappedOperation)
         {
-            this.wrapedOperation = wrapedOperation;
+            this.wrappedOperation = wrappedOperation;
         }
 
         public void Undo()
         {
-            this.wrapedOperation.Redo();
+            this.wrappedOperation.Redo();
         }
         
         public string Name
@@ -19,15 +19,22 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             get
             {
                 //TODO: Mechanism for generating the reverted operation name
-                return this.wrapedOperation.Name;
+                return this.wrappedOperation.Name;
             }
         }
 
         public void Redo()
         {
-            this.wrapedOperation.Undo();
+            this.wrappedOperation.Undo();
         }
+        
+        public static IOperation InvertOperation(IOperation operation)
+        {
+            InvertOperationWrapper invertOperation;
 
-        //TODO: Factory method to avoid creating multiple layers of wrappers (constructor should be private)
+            return (invertOperation = operation as InvertOperationWrapper) != null ? 
+                invertOperation.wrappedOperation : 
+                new InvertOperationWrapper( operation );
+        }
     }
 }

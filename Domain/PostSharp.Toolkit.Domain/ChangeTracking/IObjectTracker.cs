@@ -27,7 +27,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         void Clear();
 
         void AssociateWithParent( ITracker globalTracker );
-        void StartImplicitOperation();
-        void EndImplicitOperation();
+        IDisposable StartImplicitOperation();
+        // void EndImplicitOperation();
     }
 }

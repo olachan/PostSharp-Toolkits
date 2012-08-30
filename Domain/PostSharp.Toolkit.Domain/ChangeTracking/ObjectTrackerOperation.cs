@@ -26,34 +26,33 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         public override void Undo()
         {
             ObjectTracker sot = this.Target as ObjectTracker;
-            bool previusDisableCollectingData = sot.IsTrackingDisabled; //TODO: Make exception safe! using (tracker.DisableTracking) { ... }?
-            sot.IsTrackingDisabled = true;
 
-            foreach (IOperation correntOperation in this.CurrentOperations)
+            using (sot.StartDisabledTrackingScope())
             {
-                correntOperation.Undo();
-            }
+                foreach (IOperation correntOperation in this.CurrentOperations)
+                {
+                    correntOperation.Undo();
+                }
 
-            sot.SetOperationCollections(this.UndoOperations, this.RedoOperations);
-            sot.IsTrackingDisabled = previusDisableCollectingData;
+                sot.SetOperationCollections(this.UndoOperations, this.RedoOperations);
+            }
         }
 
         public override void Redo()
         {
             ObjectTracker sot = this.Target as ObjectTracker;
-            bool prevoiusDisableCollectingData = sot.IsTrackingDisabled; //TODO: Make exception safe! using (tracker.DisableTracking) { ... }?
-            sot.IsTrackingDisabled = true;
-            
-            //TODO: Optimize
-            this.CurrentOperations.Reverse();
-            foreach (IOperation currentOperation in this.CurrentOperations)
+            using (sot.StartDisabledTrackingScope())
             {
-                currentOperation.Redo();
-            }
-            this.CurrentOperations.Reverse();
+                //TODO: Optimize
+                this.CurrentOperations.Reverse();
+                foreach ( IOperation currentOperation in this.CurrentOperations )
+                {
+                    currentOperation.Redo();
+                }
+                this.CurrentOperations.Reverse();
 
-            sot.SetOperationCollections(this.RedoOperations, this.UndoOperations);
-            sot.IsTrackingDisabled = prevoiusDisableCollectingData;
+                sot.SetOperationCollections( this.RedoOperations, this.UndoOperations );
+            }
         }
     }
 }

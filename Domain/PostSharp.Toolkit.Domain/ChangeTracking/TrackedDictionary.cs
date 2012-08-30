@@ -11,7 +11,7 @@ using System.Collections.Generic;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    [ChunkManagement]
+    [ImplicitOperationManagement]
     public class TrackedDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IDictionary, ITrackedObject
     {
         private readonly Dictionary<TKey, TValue> innerCollection;

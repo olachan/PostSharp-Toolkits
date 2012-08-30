@@ -31,13 +31,10 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public void Undo()
         {
-            //TODO: optimize
-            this.subOperations.Reverse();
-            foreach (ISubOperation oper in this.subOperations)
+            for (int i = this.subOperations.Count - 1; i >= 0; i--)
             {
-                oper.Undo();
+                this.subOperations[i].Undo();
             }
-            this.subOperations.Reverse();
         }
 
         public void Redo()

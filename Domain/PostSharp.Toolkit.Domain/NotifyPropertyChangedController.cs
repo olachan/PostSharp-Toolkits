@@ -52,10 +52,10 @@ namespace PostSharp.Toolkit.Domain
                 {
                     memberExpression = unaryExpression.Operand as MemberExpression;
                     if (memberExpression == null)
-                        throw new NotImplementedException();
+                        throw new NotSupportedException();
                 }
                 else
-                    throw new NotImplementedException();
+                    throw new NotSupportedException();
             }
 
             RaisePropertyChanged(instance, memberExpression.Member.Name);

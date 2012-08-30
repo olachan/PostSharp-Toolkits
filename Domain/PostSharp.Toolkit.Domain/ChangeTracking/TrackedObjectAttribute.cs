@@ -40,46 +40,37 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         [MethodPointcut("SelectFields")]
         public void OnFieldSet(LocationInterceptionArgs args)
         {
-            bool endChunk = false;
-            if (!this.ThisTracker.IsOperationOpen)
+            using (this.ThisTracker.StartImplicitOperation())
             {
-                endChunk = true;
-                this.ThisTracker.StartImplicitOperation();
-            }
+                object oldValue = args.GetCurrentValue(); //TODO: Somewhat risky but probably have to stick to it
 
-            object oldValue = args.GetCurrentValue(); //TODO: Somewhat risky but probably have to stick to it
-
-            if (oldValue != null && this.TrackedFields.Contains(args.LocationFullName))
-            {
-                ITrackedObject trackedObject = (ITrackedObject)oldValue;
-                IObjectTracker newTracker = new ObjectTracker(trackedObject);
-                newTracker.AssociateWithParent( this.ThisTracker.ParentTracker );
-                trackedObject.SetTracker(newTracker);
-
-                //TODO: What about undo? Will it restore the tracker?
-            }
-
-            args.ProceedSetValue();
-            object newValue = args.Value;
-
-            if (newValue != null && this.TrackedFields.Contains(args.LocationName))
-            {
-                ITrackedObject trackedObject = (ITrackedObject)newValue;
-                if (trackedObject.Tracker == null || trackedObject.Tracker.OperationsCount != 0)
+                if (oldValue != null && this.TrackedFields.Contains(args.LocationFullName))
                 {
-                    throw new ArgumentException("attaching modified object to aggregate is not supported");
+                    ITrackedObject trackedObject = (ITrackedObject)oldValue;
+                    IObjectTracker newTracker = new ObjectTracker(trackedObject);
+                    newTracker.AssociateWithParent(this.ThisTracker.ParentTracker);
+                    trackedObject.SetTracker(newTracker);
+
+                    //TODO: What about undo? Will it restore the tracker?
                 }
 
-                trackedObject.SetTracker(this.ThisTracker);
+                args.ProceedSetValue();
+                object newValue = args.Value;
+
+                if (newValue != null && this.TrackedFields.Contains(args.LocationName))
+                {
+                    ITrackedObject trackedObject = (ITrackedObject)newValue;
+                    if (trackedObject.Tracker == null || trackedObject.Tracker.OperationsCount != 0)
+                    {
+                        throw new ArgumentException("attaching modified object to aggregate is not supported");
+                    }
+
+                    trackedObject.SetTracker(this.ThisTracker);
+                }
+
+                this.ThisTracker.AddToCurrentOperation(new FieldValueChange((ITrackable)this.Instance, args.Location.DeclaringType, args.LocationFullName, oldValue, newValue));
             }
 
-            this.ThisTracker.AddToCurrentOperation(new FieldValueChange((ITrackable)this.Instance, args.Location.DeclaringType, args.LocationFullName, oldValue, newValue));
-
-            //TODO: Exception-safety, refactor to using statement with smart support for nesting
-            if (endChunk)
-            {
-                this.ThisTracker.EndImplicitOperation();
-            }
 
         }
 
