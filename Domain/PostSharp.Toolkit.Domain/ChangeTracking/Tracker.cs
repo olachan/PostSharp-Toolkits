@@ -24,15 +24,15 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             public TrackingDisabledToken(Tracker tracker)
             {
                 this.tracker = tracker;
-                this.enableTrackingOnDispose = !tracker.IsTrackingDisabled;
-                tracker.DisableTracking();
+                this.enableTrackingOnDispose = tracker.IsTrackingEnabled;
+                tracker.DisableTrackingInternal();
             }
 
             public void Dispose()
             {
                 if (enableTrackingOnDispose)
                 {
-                    tracker.EnableTracking();
+                    tracker.EnableTrackingInternal();
                 }
             }
         }
@@ -41,22 +41,35 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         internal OperationCollection RedoOperations;
 
-        public ITracker ParentTracker { get; protected set; }
+        public Tracker ParentTracker { get; protected set; }
 
-        protected bool IsTrackingDisabled { get; private set; }
+        protected bool IsTrackingEnabled
+        {
+            get
+            {
+                return this.IsTracking && this.IsTrackingInternal;
+            }
+        }
+
+        // internal field used to temporary disable tracking (eg during performing undo/redo operations)
+        protected bool IsTrackingInternal;
+
+        // public property used to permanently disable tracking
+        public bool IsTracking { get; private set; }
 
         protected Tracker()
         {
             this.UndoOperations = new OperationCollection();
             this.RedoOperations = new OperationCollection();
-            this.IsTrackingDisabled = false;
+            this.IsTrackingInternal = true;
+            this.IsTracking = true;
         }
 
         public virtual void AddOperation(IOperation operation, bool addToParent = true)
         {
             if (addToParent && this.ParentTracker != null)
             {
-                ((Tracker)this.ParentTracker).AddOperation(new DelegateOperation(() => this.Undo(false), () => this.Redo(false)));
+                ((Tracker)this.ParentTracker).AddOperation(new TrackerDelegateOperation(this, () => this.Undo(false), () => this.Redo(false)));
             }
 
             this.UndoOperations.Push(operation);
@@ -75,26 +88,26 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 OperationCollection undoOperations = null;
                 OperationCollection redoOperations = null;
 
-                if ( addToParent )
+                if (addToParent)
                 {
                     undoOperations = this.UndoOperations.Clone();
                     redoOperations = this.RedoOperations.Clone();
                 }
 
                 var operation = this.UndoOperations.Pop();
-                if ( operation != null )
+                if (operation != null)
                 {
-                    if ( addToParent )
+                    if (addToParent)
                     {
-                        this.AddUndoOperationToParentTracker( operation, undoOperations, redoOperations );
+                        this.AddUndoOperationToParentTracker(operation, undoOperations, redoOperations);
                     }
 
                     operation.Undo();
-                    this.RedoOperations.Push( operation );
+                    this.RedoOperations.Push(operation);
 
-                    if ( operation.IsRestorePoint() )
+                    if (operation.IsRestorePoint())
                     {
-                        this.Undo( addToParent );
+                        this.Undo(addToParent);
                     }
                 }
             }
@@ -107,26 +120,26 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 OperationCollection undoOperations = null;
                 OperationCollection redoOperations = null;
 
-                if ( addToParent )
+                if (addToParent)
                 {
                     undoOperations = this.UndoOperations.Clone();
                     redoOperations = this.RedoOperations.Clone();
                 }
 
                 var operation = this.RedoOperations.Pop();
-                if ( operation != null )
+                if (operation != null)
                 {
-                    if ( addToParent )
+                    if (addToParent)
                     {
-                        this.AddUndoOperationToParentTracker( operation, undoOperations, redoOperations );
+                        this.AddUndoOperationToParentTracker(operation, undoOperations, redoOperations);
                     }
 
                     operation.Redo();
-                    this.UndoOperations.Push( operation );
+                    this.UndoOperations.Push(operation);
 
-                    if ( operation.IsRestorePoint() )
+                    if (operation.IsRestorePoint())
                     {
-                        this.Redo( addToParent );
+                        this.Redo(addToParent);
                     }
                 }
             }
@@ -154,14 +167,14 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 var snapshotsForParent = snapshotsToResore.ToList();
                 snapshotsForParent.Reverse();
 
-                this.AddUndoOperationToParentTracker( snapshotsForParent, undoOperations, redoOperations );
+                this.AddUndoOperationToParentTracker(snapshotsForParent, undoOperations, redoOperations);
 
-                while ( snapshotsToResore.Count > 0 )
+                while (snapshotsToResore.Count > 0)
                 {
                     // TODO consider optimization
                     IOperation operation = snapshotsToResore.Pop();
                     operation.Undo();
-                    pushToRedoAction( operation );
+                    pushToRedoAction(operation);
                 }
             }
         }
@@ -178,17 +191,17 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public IDisposable StartDisabledTrackingScope()
         {
-            return new TrackingDisabledToken( this );
+            return new TrackingDisabledToken(this);
         }
 
-        protected void DisableTracking()
+        protected void DisableTrackingInternal()
         {
-            this.IsTrackingDisabled = true;
+            this.IsTrackingInternal = false;
         }
 
-        protected void EnableTracking()
+        protected void EnableTrackingInternal()
         {
-            this.IsTrackingDisabled = false;
+            this.IsTrackingInternal = true;
         }
 
         internal abstract void AddUndoOperationToParentTracker(List<IOperation> operations, OperationCollection undoOperations, OperationCollection redoOperations);
@@ -198,5 +211,35 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.AddUndoOperationToParentTracker(new List<IOperation>() { operation }, undoOperations, redoOperations);
         }
 
+        internal bool ContainsReferenceTo(Tracker tracker)
+        {
+            return this.UndoOperations.ContainsReferenceTo(tracker) || this.RedoOperations.ContainsReferenceTo(tracker);
+        }
+
+        public virtual void Track()
+        {
+            this.IsTracking = true;
+        }
+
+        public virtual void StopTracking()
+        {
+            if (this.ParentTracker != null)
+            {
+                if (this.ParentTracker.ContainsReferenceTo(this))
+                {
+                    throw new InvalidOperationException("Can not stop tracking because parent tracker contains reference to operations in this tracker");
+                }
+            }
+
+            this.IsTracking = false;
+
+            this.UndoOperations.Clear();
+            this.RedoOperations.Clear();
+        }
+
+        public virtual bool CanStopTracking()
+        {
+            return this.ParentTracker == null || !this.ParentTracker.ContainsReferenceTo( this );
+        }
     }
 }

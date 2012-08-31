@@ -2,7 +2,7 @@ using System;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    public class DelegateOperation: IOperation
+    public class DelegateOperation : IOperation
     {
         public Action UndoAction { get; set; }
 
@@ -23,12 +23,12 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public void Undo()
         {
-                this.UndoAction();
+            this.UndoAction();
         }
 
         public void Redo()
         {
-                this.RedoAction();
+            this.RedoAction();
         }
 
         public string Name { get; private set; }

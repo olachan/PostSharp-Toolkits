@@ -102,6 +102,12 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             return new Stack<IOperation>(restoreOperations);
         }
 
+        public bool ContainsReferenceTo(Tracker tracker)
+        {
+            return operations.OfType<TrackerDelegateOperation>().Any(o => ReferenceEquals(tracker, o.Tracker)) || 
+                   operations.OfType<ObjectTrackerOperation>().Any(o => ReferenceEquals(tracker, o.Tracker));
+        }
+
         public void Clear()
         {
             this.operations.Clear();

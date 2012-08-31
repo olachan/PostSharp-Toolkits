@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     /// <summary>
-    /// Represents operation created by ObjectTracker and representing an operation performed by it
+    /// Represents operation created by AggregateTracker and representing an operation performed by it
     /// (undo, redo, redo to snapshot etc.)
     /// </summary>
     //TODO: (KW) Debug usages, make sure it works
@@ -15,11 +15,11 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         protected readonly List<IOperation> CurrentOperations;
 
-        private ObjectTracker target;
+        public AggregateTracker Tracker { get; private set; }
 
-        public ObjectTrackerOperation(ObjectTracker target, OperationCollection undoOperations, OperationCollection redoOperations, List<IOperation> currentOperations)
+        public ObjectTrackerOperation(AggregateTracker tracker, OperationCollection undoOperations, OperationCollection redoOperations, List<IOperation> currentOperations)
         {
-            this.target = target;
+            this.Tracker = tracker;
             this.UndoOperations = undoOperations;
             this.RedoOperations = redoOperations;
             this.CurrentOperations = currentOperations;
@@ -29,7 +29,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public void Undo()
         {
-            ObjectTracker sot = this.target as ObjectTracker;
+            AggregateTracker sot = this.Tracker as AggregateTracker;
 
             using (sot.StartDisabledTrackingScope())
             {
@@ -44,16 +44,13 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public void Redo()
         {
-            ObjectTracker sot = this.target as ObjectTracker;
+            AggregateTracker sot = this.Tracker as AggregateTracker;
             using (sot.StartDisabledTrackingScope())
             {
-                //TODO: Optimize
-                this.CurrentOperations.Reverse();
-                foreach ( IOperation currentOperation in this.CurrentOperations )
+                for (int i = this.CurrentOperations.Count - 1; i >= 0; i--)
                 {
-                    currentOperation.Redo();
+                    this.CurrentOperations[i].Redo();
                 }
-                this.CurrentOperations.Reverse();
 
                 sot.SetOperationCollections( this.RedoOperations, this.UndoOperations );
             }

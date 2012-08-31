@@ -105,7 +105,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             TrackedObjectAttributeBase aspect = (TrackedObjectAttributeBase)base.CreateInstance(adviceArgs);
 
-            aspect.SetTracker(new ObjectTracker(adviceArgs.Instance));
+            aspect.SetTracker(new AggregateTracker(adviceArgs.Instance));
 
             return aspect;
         }
@@ -190,13 +190,15 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
+        public bool IsTracked { get; private set; }
+
         public int OperationCount { get; private set; }
 
-        internal ObjectTracker ThisTracker
+        internal AggregateTracker ThisTracker
         {
             get
             {
-                return (ObjectTracker)((ITrackedObject)this.Instance).Tracker;
+                return (AggregateTracker)((ITrackedObject)this.Instance).Tracker;
             }
         }
 

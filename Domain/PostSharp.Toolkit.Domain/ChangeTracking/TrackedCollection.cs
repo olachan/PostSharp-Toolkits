@@ -20,7 +20,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         private void Initialize()
         {
-            this.ObjectTracker = new ObjectTracker(this);
+            this.AggregateTracker = new AggregateTracker(this);
         }
 
         public TrackedCollection()
@@ -65,13 +65,13 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public void Add(T item)
         {
-            this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => this.Remove(item), () => this.Add(item)));
+            this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => this.Remove(item), () => this.Add(item)));
             this.innerCollection.Add(item);
         }
 
         int IList.Add(object value)
         {
-            this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).Remove(value), () => ((IList)this).Add(value)));
+            this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).Remove(value), () => ((IList)this).Add(value)));
             return ((IList)this.innerCollection).Add(value);
         }
 
@@ -85,7 +85,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             T[] copy = new T[this.innerCollection.Count];
             ((ICollection<T>)this.innerCollection).CopyTo(copy, 0);
 
-            this.ObjectTracker.AddToCurrentOperation(
+            this.AggregateTracker.AddToCurrentOperation(
                new DelegateOperation(
                () =>
                {
@@ -106,20 +106,20 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         void IList.Insert(int index, object value)
         {
-            this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).RemoveAt(index), () => ((IList)this).Insert(index, value)));
+            this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).RemoveAt(index), () => ((IList)this).Insert(index, value)));
             ((IList)this.innerCollection).Insert(index, value);
         }
 
         void IList.Remove(object value)
         {
-            this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).Add(value), () => ((IList)this).Remove(value)));
+            this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).Add(value), () => ((IList)this).Remove(value)));
             ((IList)this.innerCollection).Remove(value);
         }
 
         public void RemoveAt(int index)
         {
             object value = ((IList)this)[index];
-            this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).Insert(index, value), () => ((IList)this).RemoveAt(index)));
+            this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).Insert(index, value), () => ((IList)this).RemoveAt(index)));
             ((IList)this.innerCollection).RemoveAt(index);
         }
 
@@ -133,7 +133,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             {
                 object newValue = value;
                 object oldValue = ((IList)this.innerCollection)[index];
-                this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this)[index] = oldValue, () => ((IList)this)[index] = newValue));
+                this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this)[index] = oldValue, () => ((IList)this)[index] = newValue));
                 ((IList)this.innerCollection)[index] = value;
             }
         }
@@ -174,7 +174,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public bool Remove(T item)
         {
-            this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => this.Add(item), () => this.Remove(item)));
+            this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => this.Add(item), () => this.Remove(item)));
             return this.innerCollection.Remove(item);
         }
 
@@ -214,7 +214,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public void Insert(int index, T item)
         {
-            this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => this.RemoveAt(index), () => this.Insert(index, item)));
+            this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => this.RemoveAt(index), () => this.Insert(index, item)));
             this.innerCollection.Insert(index, item);
         }
 
@@ -228,7 +228,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             {
                 T newValue = value;
                 T oldValue = this.innerCollection[index];
-                this.ObjectTracker.AddToCurrentOperation(new DelegateOperation(() => this[index] = oldValue, () => this[index] = newValue));
+                this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => this[index] = oldValue, () => this[index] = newValue));
                 this.innerCollection[index] = value;
             }
         }
@@ -237,22 +237,30 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             get
             {
-                return this.ObjectTracker;
+                return this.AggregateTracker;
             }
         }
 
-        internal ObjectTracker ObjectTracker { get; private set; }
+        internal AggregateTracker AggregateTracker { get; private set; }
 
         public void SetTracker(IObjectTracker tracker)
         {
-            this.ObjectTracker = (ObjectTracker)tracker;
+            this.AggregateTracker = (AggregateTracker)tracker;
         }
 
         public bool IsAggregateRoot
         {
             get
             {
-                return ReferenceEquals(this.ObjectTracker.AggregateRoot, this);
+                return ReferenceEquals(this.AggregateTracker.AggregateRoot, this);
+            }
+        }
+
+        public bool IsTracked
+        {
+            get
+            {
+                return this.AggregateTracker.IsTracking;
             }
         }
 
@@ -260,7 +268,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             get
             {
-                return this.ObjectTracker.OperationsCount;
+                return this.AggregateTracker.OperationsCount;
             }
         }
     }

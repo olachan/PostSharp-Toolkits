@@ -13,7 +13,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     {
         public HistoryTracker Track(ITrackedObject target)
         {
-            ((ObjectTracker)target.Tracker).AssociateWithParent(this);
+            ((AggregateTracker)target.Tracker).AssociateWithParent(this);
             return this;
         }
 

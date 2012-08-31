@@ -101,7 +101,7 @@
     <Compile Include="ChangeTracking\ITracker.cs" />
     <Compile Include="ChangeTracking\ObjectAccessors.cs" />
     <Compile Include="ChangeTracking\ObjectAccessorsMap.cs" />
-    <Compile Include="ChangeTracking\ObjectTracker.cs" />
+    <Compile Include="ChangeTracking\AggregateTracker.cs" />
     <Compile Include="ChangeTracking\ObjectTrackerOperation.cs" />
     <Compile Include="ChangeTracking\AtomicOperationToken.cs" />
     <Compile Include="ChangeTracking\OperationCollection.cs" />
@@ -110,8 +110,9 @@
     <Compile Include="ChangeTracking\TrackedObjectAttribute.cs" />
     <Compile Include="ChangeTracking\TrackedObjectAttributeBase.cs" />
     <Compile Include="ChangeTracking\ChangeTrackedAttribute.cs" />
-    <Compile Include="ChangeTracking\ChangeTrackingController.cs" />
+    <Compile Include="ChangeTracking\ObjectTracker.cs" />
     <Compile Include="ChangeTracking\Tracker.cs" />
+    <Compile Include="ChangeTracking\TrackerDelegateOperation.cs" />
     <Compile Include="Tools\BindingFlagsSet.cs" />
     <Compile Include="PropertyChangeTracking\NotifyPropertyChangedAccessor.cs" />
     <Compile Include="Tools\FieldInfoWithCompiledAccessors.cs" />

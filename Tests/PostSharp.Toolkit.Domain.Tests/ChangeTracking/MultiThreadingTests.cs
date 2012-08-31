@@ -1,4 +1,6 @@
 ﻿using System.Threading;
+using System.Threading.Tasks;
+
 using NUnit.Framework;
 using PostSharp.Toolkit.Domain.ChangeTracking;
 using PostSharp.Toolkit.Threading;
@@ -12,33 +14,40 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         [ExpectedException(typeof(ThreadUnsafeException))]
         public void SimpleMultiThreadTestTrackerTest()
         {
-            Assert.Fail("Need to write this test conforming to new API - TargetedDelegatedOperation should not be public (or even not exist)");
+            // Assert.Fail("Need to write this test conforming to new API - TargetedDelegatedOperation should not be public (or even not exist)");
 
-            //HistoryTracker globalTracker = new HistoryTracker();
-            //SlowSimpleTrackedObject sto1 = new SlowSimpleTrackedObject();
-            //SlowSimpleTrackedObject sto2 = new SlowSimpleTrackedObject();
+            HistoryTracker globalTracker = new HistoryTracker();
+            SlowSimpleTrackedObject sto1 = new SlowSimpleTrackedObject();
+            SlowSimpleTrackedObject sto2 = new SlowSimpleTrackedObject();
 
-            //globalTracker
-            //    .Track( (ITrackedObject)sto1 )
-            //    .Track( (ITrackedObject)sto2 );
+            globalTracker
+                .Track((ITrackedObject)sto1)
+                .Track((ITrackedObject)sto2);
 
-            //globalTracker.AddOperation(new TargetedDelegateOperation<SlowSimpleTrackedObject>(sto1, o => {Thread.Sleep(100);
-            //                                                                                      Thread.Yield();
-            //                                                                                      Thread.Sleep( 100 );}, 
-            //                                                                                o => {Thread.Sleep(100);
-            //                                                                                      Thread.Yield();
-            //                                                                                      Thread.Sleep( 100 );}));
+            globalTracker.AddOperation(new DelegateOperation(
+                                                                () =>
+                                                                {
+                                                                    Thread.Sleep(100);
+                                                                    Thread.Yield();
+                                                                    Thread.Sleep(100);
+                                                                },
+                                                                () =>
+                                                                {
+                                                                    Thread.Sleep(100);
+                                                                    Thread.Yield();
+                                                                    Thread.Sleep(100);
+                                                                }));
 
-            //Task.Factory.StartNew( () =>
-            //    { 
-            //        globalTracker.Undo();
-            //        globalTracker.Undo();
-            //        globalTracker.Undo();
-            //    });
+            Task.Factory.StartNew(
+                () =>
+                {
+                    globalTracker.Undo();
+                    globalTracker.Undo();
+                    globalTracker.Undo();
+                });
 
-            //sto1.ChangeValues(1, 2, 3);
-
-            //sto2.ChangeValues( 2,3,4 );
+            sto1.ChangeValues(1, 2, 3);
+            sto2.ChangeValues(2, 3, 4);
         }
     }
 

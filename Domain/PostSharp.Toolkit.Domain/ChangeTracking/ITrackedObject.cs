@@ -11,5 +11,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         void SetTracker(IObjectTracker tracker);
 
         bool IsAggregateRoot { get; }
+
+        bool IsTracked { get; }
     }
 }

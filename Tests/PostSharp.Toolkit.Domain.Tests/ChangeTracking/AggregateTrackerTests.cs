@@ -73,7 +73,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             var to = (ITrackedObject)root;
 
-            using (ChangeTrackingController.StartAtomicOperation(to))
+            using (ObjectTracker.StartAtomicOperation(to))
             {
                 root.ChangeValuesWithDependent(1, 2, 3);
                 root.ChangeValues(3, 4, 5);

@@ -47,7 +47,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 if (oldValue != null && this.TrackedFields.Contains(args.LocationName))
                 {
                     ITrackedObject trackedObject = (ITrackedObject)oldValue;
-                    ObjectTracker newTracker = new ObjectTracker(trackedObject);
+                    AggregateTracker newTracker = new AggregateTracker(trackedObject);
                     newTracker.AssociateWithParent(this.ThisTracker.ParentTracker);
                     trackedObject.SetTracker(newTracker);
                 }
@@ -58,7 +58,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 if (newValue != null && this.TrackedFields.Contains(args.LocationName))
                 {
                     ITrackedObject trackedObject = (ITrackedObject)newValue;
-                    if (trackedObject.Tracker == null || ((ObjectTracker)trackedObject.Tracker).OperationsCount != 0)
+                    if (trackedObject.Tracker == null || ((AggregateTracker)trackedObject.Tracker).OperationsCount != 0)
                     {
                         throw new ArgumentException("attaching modified object to aggregate is not supported");
                     }

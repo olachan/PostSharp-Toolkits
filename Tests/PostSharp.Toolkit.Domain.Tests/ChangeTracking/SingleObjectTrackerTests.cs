@@ -18,11 +18,11 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         {
             SimpleTrackedObject to = new SimpleTrackedObject();
 
-            var token = ChangeTrackingController.AddRestorePoint( to );
+            var token = ObjectTracker.AddRestorePoint( to );
 
             to.ChangeValues(1, 2, 3);
 
-            ChangeTrackingController.UndoTo(to, token);
+            ObjectTracker.UndoTo(to, token);
 
             Assert.AreEqual(0, to.P1);
             Assert.AreEqual(0, to.P2);
@@ -108,7 +108,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             to.ChangeValues(1, 2, 3);
 
-            ChangeTrackingController.AddRestorePoint(sot, "s1");
+            ObjectTracker.AddRestorePoint(sot, "s1");
 
             to.ChangeValues(4, 5, 6);
 
@@ -116,7 +116,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             to.ChangeValues(10, 11, 12);
 
-            ChangeTrackingController.UndoTo(sot, "s1");
+            ObjectTracker.UndoTo(sot, "s1");
 
             Assert.AreEqual(1, to.P1);
             Assert.AreEqual(2, to.P2);
@@ -143,7 +143,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             to.ChangeValues(1, 2, 3);
 
-            ChangeTrackingController.AddRestorePoint(sot, "s1");
+            ObjectTracker.AddRestorePoint(sot, "s1");
 
             to.ChangeValues(4, 5, 6);
 
@@ -151,7 +151,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             to.ChangeValues(10, 11, 12);
 
-            ChangeTrackingController.UndoTo(sot, "s1");
+            ObjectTracker.UndoTo(sot, "s1");
 
             Assert.AreEqual(1, to.P1);
             Assert.AreEqual(2, to.P2);
@@ -169,7 +169,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             Assert.AreEqual(8, to.P2);
             Assert.AreEqual(9, to.P3);
 
-            ChangeTrackingController.UndoTo(sot, "s1");
+            ObjectTracker.UndoTo(sot, "s1");
 
             Assert.AreEqual(1, to.P1);
             Assert.AreEqual(2, to.P2);
@@ -184,25 +184,25 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             to.ChangeValues(1, 2, 3);
 
-            ChangeTrackingController.AddRestorePoint(sot, "s1");
+            ObjectTracker.AddRestorePoint(sot, "s1");
 
             to.ChangeValues(4, 5, 6);
 
             to.ChangeValues(7, 8, 9);
 
-            ChangeTrackingController.AddRestorePoint(sot, "s1");
+            ObjectTracker.AddRestorePoint(sot, "s1");
 
             to.ChangeValues(10, 11, 12);
 
             to.ChangeValues(1, 2, 3);
 
-            ChangeTrackingController.UndoTo(sot, "s1");
+            ObjectTracker.UndoTo(sot, "s1");
 
             Assert.AreEqual(7, to.P1);
             Assert.AreEqual(8, to.P2);
             Assert.AreEqual(9, to.P3);
 
-            ChangeTrackingController.UndoTo(sot, "s1");
+            ObjectTracker.UndoTo(sot, "s1");
 
             Assert.AreEqual(1, to.P1);
             Assert.AreEqual(2, to.P2);
@@ -259,7 +259,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             SimpleTrackedObject to = new SimpleTrackedObject();
             var sot = (ITrackedObject)to;
 
-            using (ChangeTrackingController.StartAtomicOperation(sot))
+            using (ObjectTracker.StartAtomicOperation(sot))
             {
                 to.ChangeValues(4, 5, 6);
                 to.ChangeValues(7, 8, 9);

@@ -11,7 +11,7 @@
 
   <Target Name="QuickBuild">
     <MSBuild Projects="PostSharp.Toolkits.sln" Properties="Configuration=Debug;Platform=Any CPU" />
-    <MSBuild Projects="PostSharp.Toolkits.sln" Properties="Configuration=Release;Platform=Any CPU" />
+    <!--<MSBuild Projects="PostSharp.Toolkits.sln" Properties="Configuration=Release;Platform=Any CPU" />-->
   </Target>
 
   <PropertyGroup>

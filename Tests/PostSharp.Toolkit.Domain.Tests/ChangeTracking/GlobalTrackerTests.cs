@@ -77,7 +77,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             sto1.ChangeValues(1, 2, 3);
 
-            ChangeTrackingController.AddRestorePoint((ITrackedObject)sto1, "r1");
+            ObjectTracker.AddRestorePoint((ITrackedObject)sto1, "r1");
 
             sto1.ChangeValues(4, 5, 6);
 
@@ -87,7 +87,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             sto2.ChangeValues(2, 3, 4);
 
 
-            ChangeTrackingController.UndoTo((ITrackedObject)sto1, "r1");
+            ObjectTracker.UndoTo((ITrackedObject)sto1, "r1");
 
             Assert.AreEqual(1, sto1.P1);
             Assert.AreEqual(2, sto1.P2);

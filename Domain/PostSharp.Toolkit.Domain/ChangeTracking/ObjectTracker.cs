@@ -1,250 +1,92 @@
+﻿#region Copyright (c) 2012 by SharpCrafters s.r.o.
+
+// Copyright (c) 2012, SharpCrafters s.r.o.
+// All rights reserved.
+// 
+// For licensing terms, see file License.txt
+
+#endregion
+
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    internal sealed class ObjectTracker : Tracker, IObjectTracker
+    public static class ObjectTracker
     {
-        private class AtomicOperationToken : IDisposable
+        public static RestorePointToken AddRestorePoint( object trackedObject, string name = null )
         {
-            private readonly ObjectTracker objectTracker;
-
-            internal AtomicOperationToken(ObjectTracker objectTracker)
-            {
-                this.objectTracker = objectTracker;
-                this.objectTracker.StartExplicitOperation(this);
-            }
-
-            public void Dispose()
-            {
-                this.objectTracker.EndExplicitOperation(this);
-            }
+            ITrackedObject to = CheckObject( trackedObject );
+            return ((AggregateTracker)to.Tracker).AddRestorePoint( name );
         }
 
-        private class ImplicitOperationToken : IDisposable
+        public static void UndoTo( object trackedObject, string name )
         {
-            public int Level { get; set; }
-
-            private readonly ObjectTracker objectTracker;
-
-            internal ImplicitOperationToken(ObjectTracker objectTracker)
-            {
-                this.objectTracker = objectTracker;
-                this.objectTracker.StartImplicitOperationInternal(this);
-            }
-
-            public void Dispose()
-            {
-                this.objectTracker.EndImplicitOperation(this);
-            }
+            ITrackedObject to = CheckObject( trackedObject );
+            ((AggregateTracker)to.Tracker).UndoTo( name );
         }
 
-        private ComplexOperation currentOperation;
-
-        private AtomicOperationToken currentAtomicOperationToken;
-
-        private int implicitOperationNestingCounter;
-
-        public ObjectTracker(object aggregateRoot)
+        public static void RedoTo( object trackedObject, string name )
         {
-            this.AggregateRoot = aggregateRoot;
-            this.implicitOperationNestingCounter = 0;
+            ITrackedObject to = CheckObject( trackedObject );
+            ((AggregateTracker)to.Tracker).RedoTo( name );
         }
 
-        public object AggregateRoot { get; private set; }
-
-        public void Clear()
+        public static void UndoTo( object trackedObject, RestorePointToken token )
         {
-            OperationCollection undoOperations = this.UndoOperations.Clone();
-            OperationCollection redoOperations = this.RedoOperations.Clone();
-
-            this.AddUndoOperationToParentTracker(new List<IOperation>(), undoOperations, redoOperations);
-
-            this.UndoOperations.Clear();
-            this.RedoOperations.Clear();
+            ITrackedObject to = CheckObject( trackedObject );
+            ((AggregateTracker)to.Tracker).UndoTo( token );
         }
 
-        public void AssociateWithParent(ITracker globalTracker)
+        public static void RedoTo( object trackedObject, RestorePointToken token )
         {
-            this.ParentTracker = globalTracker;
+            ITrackedObject to = CheckObject( trackedObject );
+            ((AggregateTracker)to.Tracker).RedoTo( token );
         }
 
-        public IDisposable StartAtomicOperation()
+        public static IDisposable StartAtomicOperation( object trackedObject )
         {
-            return new AtomicOperationToken(this);
+            ITrackedObject to = CheckObject( trackedObject );
+            return ((AggregateTracker)to.Tracker).StartAtomicOperation();
         }
 
-        private void StartExplicitOperation(AtomicOperationToken token)
+        public static object GetAggregateRoot( object trackedObject )
         {
-            if (this.currentAtomicOperationToken != null)
-            {
-                //TODO: Some support for multiple operations?
-                throw new NotSupportedException("Operation already started");
-            }
-
-            if (this.IsTrackingDisabled)
-            {
-                throw new NotSupportedException("Cannot start explicit operation while tracking is disabled");
-            }
-
-            StartOperation();
-
-            this.currentAtomicOperationToken = token;
+            ITrackedObject to = CheckObject( trackedObject );
+            return ((AggregateTracker)to.Tracker).AggregateRoot;
         }
 
-        private void EndExplicitOperation(AtomicOperationToken token)
+        public static void Track( object trackedObject )
         {
-            if (this.currentAtomicOperationToken != token)
-            {
-                //TODO: Some support for multiple operations?
-                throw new NotSupportedException("Invalid state! Nested operations are not currently supported");
-            }
-
-            if (this.IsTrackingDisabled)
-            {
-                throw new NotSupportedException("Cannot end explicit operation while tracking is disabled");
-            }
-
-            EndOperation();
-
-            this.currentAtomicOperationToken = null;
-
-            // restore implicit operation if it was opened before starting atomic operation
-            if (this.implicitOperationNestingCounter > 0)
-            {
-                this.StartOperation();
-            }
+            ITrackedObject to = CheckObject( trackedObject );
+            ((AggregateTracker)to.Tracker).Track();
         }
 
-        public IDisposable StartImplicitOperation()
+        public static void StopTracking( object trackedObject )
         {
-            return new ImplicitOperationToken(this);
+            ITrackedObject to = CheckObject( trackedObject );
+            ((AggregateTracker)to.Tracker).StopTracking();
         }
 
-        private void StartImplicitOperationInternal(ImplicitOperationToken token)
+        public static bool CanStopTracking(object trackedObject)
         {
-            if (this.IsTrackingDisabled || this.currentAtomicOperationToken != null)
-            {
-                return;
-            }
-
-            token.Level = this.implicitOperationNestingCounter;
-
-            if (this.implicitOperationNestingCounter == 0)
-            {
-                this.StartOperation();
-            }
-
-            this.implicitOperationNestingCounter++;
+            ITrackedObject to = CheckObject(trackedObject);
+            return ((AggregateTracker)to.Tracker).CanStopTracking();
         }
 
-        private void EndImplicitOperation(ImplicitOperationToken token)
+        private static ITrackedObject CheckObject( object trackedObject )
         {
-            if (this.IsTrackingDisabled || this.currentAtomicOperationToken != null)
+            ITrackedObject to;
+            if ( (to = trackedObject as ITrackedObject) == null )
             {
-                return;
+                throw new ArgumentException( "Passed object is not instrumented by TrackedObject attribute" );
             }
 
-            this.implicitOperationNestingCounter--;
-
-            if (token.Level != this.implicitOperationNestingCounter)
+            if ( !to.IsAggregateRoot )
             {
-                throw new ArgumentException("Implicit operations closed in wrong order");
+                throw new ArgumentException( "Passed object is not aggregate root" );
             }
 
-            if (this.implicitOperationNestingCounter == 0)
-            {
-                this.EndOperation();
-            }
-        }
-
-
-        private void StartOperation()
-        {
-            if (this.currentOperation != null)
-            {
-                this.EndOperation();
-            }
-
-            this.currentOperation = new ComplexOperation();
-        }
-
-        private void EndOperation()
-        {
-            if (this.currentOperation != null && this.currentOperation.OperationCount > 0)
-            {
-                this.AddOperation(this.currentOperation);
-            }
-
-            this.currentOperation = null;
-        }
-
-        public void AddToCurrentOperation(ISubOperation operation)
-        {
-            if (this.IsTrackingDisabled)
-            {
-                return;
-            }
-
-            if (this.currentOperation == null)
-            {
-                throw new InvalidOperationException("Can not add to current operation. There is no operation opened");
-            }
-
-            this.currentOperation.AddOperation(operation);
-        }
-
-        public bool IsOperationOpen
-        {
-            get
-            {
-                return this.currentOperation != null;
-            }
-        }
-
-        public int OperationsCount
-        {
-            get
-            {
-                return this.UndoOperations.Count;
-            }
-        }
-
-        public override RestorePointToken AddRestorePoint(string name = null)
-        {
-            if (this.currentAtomicOperationToken != null)
-            {
-                throw new NotSupportedException("Adding restore point inside atomic operation is not supported");
-            }
-
-            // if there is open implicit operation end it and after adding restore point start new one.
-            this.EndOperation();
-
-            var restorePoint = this.UndoOperations.AddRestorePoint(name);
-            
-            this.StartOperation();
-
-            return restorePoint;
-        }
-
-        internal override void AddUndoOperationToParentTracker(List<IOperation> operations, OperationCollection undoOperations, OperationCollection redoOperations)
-        {
-            if (this.ParentTracker != null)
-            {
-                ((Tracker)this.ParentTracker).AddOperation(
-                    new ObjectTrackerOperation(
-                        this,
-                        undoOperations,
-                        redoOperations,
-                        operations.Where(o => o != null).Select(InvertOperationWrapper.InvertOperation).ToList()));
-            }
-        }
-
-        internal void SetOperationCollections(OperationCollection undoOperations, OperationCollection redoOperations)
-        {
-            this.UndoOperations = undoOperations;
-            this.RedoOperations = redoOperations;
+            return to;
         }
     }
 }

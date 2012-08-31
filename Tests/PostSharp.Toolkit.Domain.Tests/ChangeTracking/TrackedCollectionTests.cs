@@ -26,7 +26,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             tc.Add(4);
             tc.Add(5);
 
-            ChangeTrackingController.AddRestorePoint(tc, "After 5");
+            ObjectTracker.AddRestorePoint(tc, "After 5");
 
             tc.Add(6);
             tc.Add(7);
@@ -34,7 +34,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             tc.Add(9);
             tc.Add(10);
 
-            ChangeTrackingController.UndoTo(tc, "After 5");
+            ObjectTracker.UndoTo(tc, "After 5");
 
             Assert.AreEqual(5, tc.Last());
 
