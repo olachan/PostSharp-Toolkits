@@ -15,5 +15,13 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         void RedoTo(string name);
 
         void RedoTo(RestorePointToken token);
+
+        void Track();
+
+        void StopTracking();
+
+        bool CanStopTracking();
+
+        int MaximalOperationsCount { get; set; }
     }
 }

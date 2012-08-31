@@ -73,6 +73,36 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.currentOperation.AddOperation(operation);
         }
 
+        protected override bool AddOperationEnabledCheck()
+        {
+            if (!this.IsTrackingEnabled)
+            {
+                throw new InvalidOperationException("Can not add operation to disabled tracker");
+            }
+
+            return true;
+        }
+
+        protected override bool AddRestorePointEnabledCheck()
+        {
+            if (!this.IsTrackingEnabled)
+            {
+                throw new InvalidOperationException("Can not add restore point to disabled tracker");
+            }
+
+            return true;
+        }
+
+        protected override bool UndoRedoOperationEnabledCheck()
+        {
+            if (!this.IsTrackingEnabled)
+            {
+                throw new InvalidOperationException("Can not perform operations on disabled tracker");
+            }
+
+            return true;
+        }
+
         public override RestorePointToken AddRestorePoint(string name = null)
         {
             if (this.currentAtomicOperationToken != null)
@@ -211,6 +241,14 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                         redoOperations,
                         operations.Where(o => o != null).Select(InvertOperationWrapper.InvertOperation).ToList()));
             }
+        }
+
+        public override void StopTracking()
+        {
+            base.StopTracking();
+
+            this.currentOperation = null;
+            this.currentAtomicOperationToken = null;
         }
 
         private class AtomicOperationToken : IDisposable

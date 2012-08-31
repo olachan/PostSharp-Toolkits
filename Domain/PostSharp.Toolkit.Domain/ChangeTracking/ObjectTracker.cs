@@ -73,7 +73,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             return ((AggregateTracker)to.Tracker).CanStopTracking();
         }
 
-        private static ITrackedObject CheckObject( object trackedObject )
+        internal static ITrackedObject CheckObject( object trackedObject )
         {
             ITrackedObject to;
             if ( (to = trackedObject as ITrackedObject) == null )

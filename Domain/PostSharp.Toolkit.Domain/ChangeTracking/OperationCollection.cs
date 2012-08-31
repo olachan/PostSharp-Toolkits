@@ -7,22 +7,25 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     internal class OperationCollection
     {
-        //private int currentItemIndex = 0;
-        private readonly Stack<IOperation> operations;
+        private readonly LinkedList<IOperation> operations;
+
+        private int maximalOperationsCount;
 
         public OperationCollection()
         {
-            this.operations = new Stack<IOperation>();
+            this.operations = new LinkedList<IOperation>();
+            this.maximalOperationsCount = int.MaxValue;
         }
 
-        private OperationCollection(Stack<IOperation> operations)
+        private OperationCollection(LinkedList<IOperation> operations)
         {
             this.operations = operations;
+            this.maximalOperationsCount = int.MaxValue;
         }
 
         public OperationCollection Clone()
         {
-            return new OperationCollection(new Stack<IOperation>(this.operations.Reverse()));
+            return new OperationCollection(new LinkedList<IOperation>(this.operations));
         }
 
         public int Count
@@ -40,8 +43,17 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 return;
             }
 
-            //this.currentItemIndex++;
-            this.operations.Push(operation);
+            this.operations.AddLast(operation);
+
+            this.Trim();
+        }
+
+        private void Trim()
+        {
+            while ( this.operations.Count > this.MaximalOperationsCount )
+            {
+                this.operations.RemoveFirst();
+            }
         }
 
         public IOperation Pop()
@@ -51,14 +63,15 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 return null;
             }
 
-            IOperation operation = this.operations.Pop();
+            IOperation operation = this.operations.Last.Value;
+            this.operations.RemoveLast();
 
             if (!operation.IsRestorePoint())
             {
                 return operation;
             }
 
-            return operation; //this.operations.Pop();
+            return operation; 
         }
 
 
@@ -88,7 +101,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             // TODO performance optimization
             while (operations.Count > 0 && (restorePoint == null || !predicate(restorePoint)))
             {
-                restorePoint = this.operations.Pop();
+                restorePoint = this.operations.Last.Value;
+                this.operations.RemoveLast();
                 restoreOperations.Add(restorePoint);
             }
 
@@ -104,15 +118,26 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public bool ContainsReferenceTo(Tracker tracker)
         {
-            return operations.OfType<TrackerDelegateOperation>().Any(o => ReferenceEquals(tracker, o.Tracker)) || 
+            return operations.OfType<TrackerDelegateOperation>().Any(o => ReferenceEquals(tracker, o.Tracker)) ||
                    operations.OfType<ObjectTrackerOperation>().Any(o => ReferenceEquals(tracker, o.Tracker));
         }
 
         public void Clear()
         {
             this.operations.Clear();
-            //this.namedRestorePoints.Clear();
-            //this.currentItemIndex = 0;
+        }
+
+        public int MaximalOperationsCount
+        {
+            get
+            {
+                return this.maximalOperationsCount;
+            }
+            set
+            {
+                this.maximalOperationsCount = value;
+                this.Trim();
+            }
         }
     }
 }

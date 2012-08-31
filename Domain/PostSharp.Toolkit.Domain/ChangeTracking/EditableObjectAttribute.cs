@@ -141,7 +141,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             if (this.restorePointName == Guid.Empty)
             {
-                throw new InvalidOperationException("BeginEdit must be colled prior to EndEdit.");
+                throw new InvalidOperationException("BeginEdit must be called prior to EndEdit.");
             }
 
             this.UndoToRestorePoint(this.restorePointName.ToString());

@@ -29,30 +29,27 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public void Undo()
         {
-            AggregateTracker sot = this.Tracker as AggregateTracker;
-
-            using (sot.StartDisabledTrackingScope())
+            using (this.Tracker.StartDisabledTrackingScope())
             {
                 foreach (IOperation correntOperation in this.CurrentOperations)
                 {
                     correntOperation.Undo();
                 }
 
-                sot.SetOperationCollections(this.UndoOperations, this.RedoOperations);
+                this.Tracker.SetOperationCollections(this.UndoOperations, this.RedoOperations);
             }
         }
 
         public void Redo()
         {
-            AggregateTracker sot = this.Tracker as AggregateTracker;
-            using (sot.StartDisabledTrackingScope())
+            using (this.Tracker.StartDisabledTrackingScope())
             {
                 for (int i = this.CurrentOperations.Count - 1; i >= 0; i--)
                 {
                     this.CurrentOperations[i].Redo();
                 }
 
-                sot.SetOperationCollections( this.RedoOperations, this.UndoOperations );
+                this.Tracker.SetOperationCollections(this.RedoOperations, this.UndoOperations);
             }
         }
     }

@@ -30,6 +30,29 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         }
 
         [Test]
+        public void WhenTrackerTrackTurnedOff_IsNotTracking()
+        {
+            SimpleTrackedObject to = new SimpleTrackedObject();
+
+            var sot = (ITrackedObject)to;
+
+            sot.Tracker.StopTracking();
+
+            to.ChangeValues(1, 2, 3);
+            to.ChangeValues(1, 2, 3);
+
+            var token = ObjectTracker.AddRestorePoint(to);
+
+            to.ChangeValues(1, 2, 3);
+
+            ObjectTracker.UndoTo(to, token);
+
+            Assert.AreEqual(0, to.P1);
+            Assert.AreEqual(0, to.P2);
+            Assert.AreEqual(0, to.P3);
+        }
+
+        [Test]
         public void SimpleUndoRedoTest()
         {
             SimpleTrackedObject to = new SimpleTrackedObject();
