@@ -165,6 +165,37 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         }
 
         [Test]
+        [Ignore]
+        public void CyclicViaMultipleObjectsDependsOn()
+        {
+            TestHelpers.DoInpcTest<InpcCyclicDependencyObjectA>(
+                c =>
+                {
+                    c.ObjectB = new InpcCyclicDependencyObjectB();
+                    c.ObjectB.ObjectA = c;
+                    c.StringA = "stringA";
+                    c.ObjectB.StringB = "stringB";
+                },
+                4,
+                "B");
+        }
+
+        [Test]
+        [Ignore]
+        public void SelfCyclicObjectsDependsOn()
+        {
+            TestHelpers.DoInpcTest<InpcSelfCyclicDependencyObject>(
+                c =>
+                {
+                    c.CyclicObject = new InpcSelfCyclicDependencyObject();
+                    c.CyclicObject.StringB = "inner";
+                    c.StringB = "outer";
+                },
+                3,
+                "A");
+        }
+
+        [Test]
         public void ManualRaiseTest()
         {
             TestHelpers.DoInpcTest<InpcWithIgnoreClass>(
@@ -236,6 +267,69 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
                 }
 
                 return this.Str2;
+            }
+        }
+    }
+
+    [NotifyPropertyChanged]
+    public class InpcCyclicDependencyObjectA
+    {
+        public InpcCyclicDependencyObjectB ObjectB;
+
+        public string StringA;
+
+        public string B
+        {
+            get
+            {
+                if (Depends.Guard)
+                {
+                    Depends.On(this.ObjectB.A, StringA);
+                }
+
+                return this.ObjectB.StringB;
+            }
+        }
+    }
+
+    [NotifyPropertyChanged]
+    public class InpcCyclicDependencyObjectB
+    {
+        public InpcCyclicDependencyObjectA ObjectA;
+
+        public string StringB;
+
+        public string A
+        {
+            get
+            {
+                if (Depends.Guard)
+                {
+                    Depends.On(this.ObjectA.B, StringB);
+                }
+
+                return this.ObjectA.StringA;
+            }
+        }
+    }
+
+    [NotifyPropertyChanged]
+    public class InpcSelfCyclicDependencyObject
+    {
+        public InpcSelfCyclicDependencyObject CyclicObject;
+
+        public string StringB;
+
+        public string A
+        {
+            get
+            {
+                if (Depends.Guard)
+                {
+                    Depends.On(this.CyclicObject.A, StringB);
+                }
+
+                return this.CyclicObject.StringB;
             }
         }
     }

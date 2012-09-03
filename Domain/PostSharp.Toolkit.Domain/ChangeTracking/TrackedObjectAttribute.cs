@@ -68,8 +68,6 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
                 this.ThisTracker.AddToCurrentOperation(new FieldValueChange(this.Instance, args.Location.DeclaringType, args.LocationFullName, oldValue, newValue));
             }
-
-
         }
 
         protected IEnumerable<FieldInfo> SelectFields(Type type)

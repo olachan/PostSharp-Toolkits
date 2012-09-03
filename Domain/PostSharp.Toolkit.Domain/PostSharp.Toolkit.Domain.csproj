@@ -83,6 +83,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ChangeTracking\ForceChangeTrackingOperationAttribute.cs" />
+    <Compile Include="ChangeTracking\ObjectAccessorsMapSerializingAspect.cs" />
     <Compile Include="ChangeTracking\RestorePoint.cs" />
     <Compile Include="ChangeTracking\ComplexOperation.cs" />
     <Compile Include="ChangeTracking\ImplicitOperationManagementAttribute.cs" />

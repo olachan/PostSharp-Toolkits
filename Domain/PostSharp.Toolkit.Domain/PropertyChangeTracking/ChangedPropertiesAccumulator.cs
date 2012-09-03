@@ -17,44 +17,65 @@ namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
     {
         private readonly List<WeakPropertyDescriptor> changedProperties = new List<WeakPropertyDescriptor>();
 
-        public void AddProperty( object obj, string propertyName )
+        public void AddProperty(object obj, string propertyName, bool resetProcessed = true, bool matchPrefix = false)
         {
-            foreach ( WeakPropertyDescriptor weakPropertyDescriptor in this.changedProperties )
+            WeakPropertyDescriptor propertyToRemove = null;
+            foreach (WeakPropertyDescriptor weakPropertyDescriptor in this.changedProperties)
             {
-                if ( weakPropertyDescriptor.Instance.IsAlive && ReferenceEquals( weakPropertyDescriptor.Instance.Target, obj ) &&
-                     weakPropertyDescriptor.PropertyPath == propertyName )
+                if (!weakPropertyDescriptor.Instance.IsAlive || 
+                    !ReferenceEquals(weakPropertyDescriptor.Instance.Target, obj))
                 {
-                    if ( weakPropertyDescriptor.Processed )
+                    continue;
+                }
+
+                if (!matchPrefix && weakPropertyDescriptor.PropertyPath != propertyName)
+                {
+                    continue;
+                }
+
+                if (!matchPrefix || propertyName.StartsWith(weakPropertyDescriptor.PropertyPath))
+                {
+                    if (weakPropertyDescriptor.Processed && resetProcessed)
                     {
                         weakPropertyDescriptor.Processed = false;
                     }
 
                     return;
                 }
+
+                if (weakPropertyDescriptor.PropertyPath.StartsWith( propertyName ) && !weakPropertyDescriptor.Processed)
+                {
+                    propertyToRemove = weakPropertyDescriptor;
+                }
             }
 
-            this.changedProperties.Add( new WeakPropertyDescriptor( obj, propertyName ) );
-        }
-
-        public void AddProperties( object obj, IEnumerable<string> propertyNames )
-        {
-            foreach ( string propertyName in propertyNames )
+            if (propertyToRemove != null)
             {
-                this.AddProperty( obj, propertyName );
+                this.changedProperties.Remove( propertyToRemove );
+            }
+
+            this.changedProperties.Add(new WeakPropertyDescriptor(obj, propertyName));
+        }
+
+        public void AddProperties(object obj, IEnumerable<string> propertyNames)
+        {
+            foreach (string propertyName in propertyNames)
+            {
+                this.AddProperty(obj, propertyName);
             }
         }
 
-        public void Remove( WeakPropertyDescriptor propertyDescriptor )
+        public void Remove(WeakPropertyDescriptor propertyDescriptor)
         {
-            this.changedProperties.Remove( propertyDescriptor );
+            this.changedProperties.Remove(propertyDescriptor);
         }
 
         public void Compact()
         {
-            List<WeakPropertyDescriptor> deadObjects = this.changedProperties.Where( w => !w.Instance.IsAlive ).ToList();
-            foreach ( WeakPropertyDescriptor weakPropertyDescriptor in deadObjects )
+            List<WeakPropertyDescriptor> deadObjects = this.changedProperties.Where(w => !w.Instance.IsAlive).ToList();
+            foreach (WeakPropertyDescriptor weakPropertyDescriptor in deadObjects)
             {
-                this.changedProperties.Remove( weakPropertyDescriptor );
+                this.changedProperties.Remove(weakPropertyDescriptor);
             }
         }
 
