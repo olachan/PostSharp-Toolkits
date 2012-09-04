@@ -5,6 +5,8 @@
 // For licensing terms, see file License.txt
 #endregion
 
+using System;
+
 using NUnit.Framework;
 using PostSharp.Toolkit.Domain.ChangeTracking;
 
@@ -30,6 +32,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         }
 
         [Test]
+        [ExpectedException(typeof(InvalidOperationException))]
         public void WhenTrackerTrackTurnedOff_IsNotTracking()
         {
             SimpleTrackedObject to = new SimpleTrackedObject();

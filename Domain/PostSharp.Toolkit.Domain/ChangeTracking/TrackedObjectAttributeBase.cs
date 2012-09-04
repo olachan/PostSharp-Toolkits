@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Serialization;
+
 using PostSharp.Aspects;
 using PostSharp.Extensibility;
 using PostSharp.Reflection;
@@ -11,10 +11,8 @@ using PostSharp.Toolkit.Domain.Tools;
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     [Serializable]
-    public abstract class TrackedObjectAttributeBase : InstanceLevelAspect, ITrackedObject
+    public abstract class TrackedObjectAttributeBase : ObjectAccessorsMapSerializingAspect, ITrackedObject
     {
-        private ObjectAccessorsMap mapForSerialization;
-
         protected Dictionary<string, MethodSnapshotStrategy> MethodAttributes;
 
         protected HashSet<string> TrackedFields;
@@ -22,31 +20,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         [NonSerialized]
         private IObjectTracker tracker;
 
-        [OnSerializing]
-        public void OnSerializing(StreamingContext context)
-        {
-            //Grab the dependencies map to serialize if, if no other aspect has done it before
-            this.mapForSerialization = ObjectAccessorsMap.GetForSerialization();
-        }
-
-        [OnDeserialized]
-        public void OnDeserialized(StreamingContext context)
-        {
-            //If dependencies map was serialized within this aspect, copy the data to global map
-            if (this.mapForSerialization != null)
-            {
-                this.mapForSerialization.Restore();
-                this.mapForSerialization = null;
-            }
-        }
-
         public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
         {
-            if (!ObjectAccessorsMap.Map.ContainsKey(type))
-            {
-                ObjectAccessorsMap.Map.Add(type, new ObjectAccessors(type));
-            }
-
             //TODO: What about overloads?!?
             this.MethodAttributes = new Dictionary<string, MethodSnapshotStrategy>();
 
@@ -145,8 +120,6 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                     (!m.Name.StartsWith("get_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")));
             
             //TODO: Why are property getters ignored? They may make modifications as well...
-
-            // .Where( m => !m.IsDefined( typeof(DoNotMakeAutomaticSnapshotAttribute), true ) );
         }
 
         public void Undo()

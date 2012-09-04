@@ -6,81 +6,104 @@ using System.Reflection;
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 using PostSharp.Aspects.Dependencies;
+using PostSharp.Toolkit.Domain.Tools;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    //TODO: Need to make sure this IEditable is not part of an aggregate; it it is, we should throw or use a separate tracker
-    //TODO: Consider introducing the interfaces separately
+    // TODO: Need to make sure this IEditable is not part of an aggregate; it it is, we should throw or use a separate tracker
+    // TODO: Consider introducing the interfaces separately
+    // TODO interaction with IChangeTracking.
+    // TODO independent/shared stack trace
 
     [Serializable]
-    [IntroduceInterface(typeof(ITrackedObject), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
     [IntroduceInterface(typeof(IEditableObject), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
-    [IntroduceInterface(typeof(IChangeTracking), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
-    public class EditableObjectAttribute : TrackedObjectAttribute, IEditableObject, IChangeTracking
+    public class EditableObjectAttribute : ObjectAccessorsMapSerializingAspect, IEditableObject
     {
-        private Guid restorePointName;
-
         private Dictionary<MethodBase, MethodBase> interfaceImplementationMap;
+
+        [NonSerialized]
+        private AggregateTracker privateTracker;
+
+        [NonSerialized]
+        private RestorePointToken restorePointToken;
+
+        private Stack<IDisposable> implicitOperationStack;
+
+        public override object CreateInstance(AdviceArgs adviceArgs)
+        {
+            EditableObjectAttribute aspect = (EditableObjectAttribute)base.CreateInstance(adviceArgs);
+            aspect.privateTracker = new AggregateTracker( adviceArgs.Instance );
+            aspect.implicitOperationStack = new Stack<IDisposable>();
+            return aspect;
+        }
 
         [OnMethodInvokeAdvice]
         [MethodPointcut("SelectMethods")]
         [ProvideAspectRole("OT_ChunkManagement")]
         [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.After, "OT_EditableObjectImplementation")]
-        public new void OnMethodInvoke(MethodInterceptionArgs args)
+        public void OnMethodInvoke(MethodInterceptionArgs args)
         {
-            base.OnMethodInvoke(args);
+            this.implicitOperationStack.Push(this.privateTracker.StartImplicitOperation());
+            args.Proceed();
+            this.implicitOperationStack.Pop().Dispose();
+
+        }
+
+        protected IEnumerable<MethodBase> SelectMethods(Type type)
+        {
+            return
+                type.GetMethods(BindingFlagsSet.PublicInstanceDeclared).Where(
+                    m =>
+                    m.IsDefined(typeof(ForceChangeTrackingOperationAttribute), true) ||
+                    (!m.Name.StartsWith("get_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")));
+
+            //TODO: Why are property getters ignored? They may make modifications as well...
+
+            // .Where( m => !m.IsDefined( typeof(DoNotMakeAutomaticSnapshotAttribute), true ) );
+        }
+
+        [OnLocationSetValueAdvice]
+        [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.After, "INPC_FieldTracking")]
+        [MethodPointcut("SelectFields")]
+        public void PrivateTrackerOnFieldSet(LocationInterceptionArgs args)
+        {
+            using (this.privateTracker.StartImplicitOperation())
+            {
+                object oldValue = args.GetCurrentValue();
+                args.ProceedSetValue();
+                object newValue = args.Value;
+                this.privateTracker.AddToCurrentOperation(new FieldValueChange(this.Instance, args.Location.DeclaringType, args.LocationFullName, oldValue, newValue));
+            }
+        }
+
+        protected IEnumerable<FieldInfo> SelectFields(Type type)
+        {
+            // Select only fields that are relevant
+            return type.GetFields(BindingFlagsSet.AllInstanceDeclared);
         }
 
         public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
         {
             base.CompileTimeInitialize(type, aspectInfo);
 
-            if (!typeof(IEditableObject).IsAssignableFrom(type) && !typeof(IChangeTracking).IsAssignableFrom(type))
+
+            if (!typeof(IEditableObject).IsAssignableFrom(type))
             {
                 this.interfaceImplementationMap = new Dictionary<MethodBase, MethodBase>();
                 return;
             }
 
-            Dictionary<MethodBase, MethodBase> iEditableMap = null;
-            Dictionary<MethodBase, MethodBase> iChangetrackingMap = null;
-
             if (typeof(IEditableObject).IsAssignableFrom(type))
             {
                 var targetIEditableMethodsMap = type.GetInterfaceMap( typeof(IEditableObject) );
                 var aspectIEditableMethodsMap = this.GetType().GetInterfaceMap( typeof(IEditableObject) );
-               
-                iEditableMap = targetIEditableMethodsMap.TargetMethods.Join(
+
+                interfaceImplementationMap = targetIEditableMethodsMap.TargetMethods.Join(
                         aspectIEditableMethodsMap.TargetMethods,
                         m => m.Name,
                         m => m.Name,
                         ( tm, am ) => new { TargetMethod = (MethodBase)tm, AspectMethod = (MethodBase)am } ).ToDictionary(
                             r => r.TargetMethod, r => r.AspectMethod );
-            }
-
-            if (typeof(IChangeTracking).IsAssignableFrom(type))
-            {
-                var targeIChangeTrackingeMethodsMap = type.GetInterfaceMap( typeof(IChangeTracking) );
-                var aspectIChangeTrackingMethodsMap = this.GetType().GetInterfaceMap( typeof(IChangeTracking) );
-               
-                iChangetrackingMap = targeIChangeTrackingeMethodsMap.TargetMethods.Join(
-                        aspectIChangeTrackingMethodsMap.TargetMethods,
-                        m => m.Name,
-                        m => m.Name,
-                        ( tm, am ) => new { TargetMethod = (MethodBase)tm, AspectMethod = (MethodBase)am } ).ToDictionary(
-                            r => r.TargetMethod, r => r.AspectMethod );
-            }
-
-            if (iEditableMap == null)
-            {
-                this.interfaceImplementationMap = iChangetrackingMap;
-            }
-            else if(iChangetrackingMap == null)
-            {
-                this.interfaceImplementationMap = iEditableMap;
-            }
-            else
-            {
-                this.interfaceImplementationMap = iEditableMap.Union(iChangetrackingMap).ToDictionary(kv => kv.Key, kv => kv.Value);
             }
         }
 
@@ -108,57 +131,49 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                     type.GetInterfaceMap(typeof(IChangeTracking)).TargetMethods);
         }
 
-        [OnLocationSetValueAdvice]
-        [MethodPointcut("SelectFields")]
-        public new void OnFieldSet(LocationInterceptionArgs args)
-        {
-            base.OnFieldSet(args);
-        }
 
         public void BeginEdit()
         {
-            if (this.restorePointName != Guid.Empty)
+            if (this.restorePointToken != null)
             {
                 throw new InvalidOperationException("BeginEdit is not reentrant.");
             }
 
-            this.restorePointName = Guid.NewGuid();
-            this.ThisTracker.AddRestorePoint(this.restorePointName.ToString());
-            //chunkToken = this.ThisTracker.StartAtomicOperation();
+            this.restorePointToken = this.privateTracker.AddRestorePoint();
         }
 
         public void EndEdit()
         {
-            if (this.restorePointName == Guid.Empty)
+            if (this.restorePointToken == null)
             {
                 throw new InvalidOperationException("BeginEdit must be called prior to EndEdit.");
             }
 
-            this.restorePointName = Guid.Empty;
+            this.restorePointToken = null;
         }
 
         public void CancelEdit()
         {
-            if (this.restorePointName == Guid.Empty)
+            if (this.restorePointToken == null)
             {
                 throw new InvalidOperationException("BeginEdit must be called prior to EndEdit.");
             }
 
-            this.UndoToRestorePoint(this.restorePointName.ToString());
-            this.restorePointName = Guid.Empty;
+            this.privateTracker.UndoTo( this.restorePointToken );
+            this.restorePointToken = null;
+
         }
 
-        public void AcceptChanges()
+        public override void RuntimeInitialize(Type type)
         {
-            this.ThisTracker.Clear();
-        }
-
-        public bool IsChanged
-        {
-            get
+            var fieldAccessors = ObjectAccessorsMap.Map[type].FieldAccessors.Values;
+            foreach (FieldInfoWithCompiledAccessors fieldAccessor in fieldAccessors)
             {
-                return this.ThisTracker.OperationsCount != 0;
+                //TODO performance impact?
+                fieldAccessor.RuntimeInitialize();
             }
+
+            base.RuntimeInitialize(type);
         }
     }
 }
