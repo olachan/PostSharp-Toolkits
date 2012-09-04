@@ -20,7 +20,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         {
             SimpleTrackedObject to = new SimpleTrackedObject();
 
-            var token = ObjectTracker.AddRestorePoint( to );
+            var token = ObjectTracker.SetRestorePoint( to );
 
             to.ChangeValues(1, 2, 3);
 
@@ -44,7 +44,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             to.ChangeValues(1, 2, 3);
             to.ChangeValues(1, 2, 3);
 
-            var token = ObjectTracker.AddRestorePoint(to);
+            var token = ObjectTracker.SetRestorePoint(to);
 
             to.ChangeValues(1, 2, 3);
 
@@ -134,7 +134,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             to.ChangeValues(1, 2, 3);
 
-            ObjectTracker.AddRestorePoint(sot, "s1");
+            ObjectTracker.SetRestorePoint(sot, "s1");
 
             to.ChangeValues(4, 5, 6);
 
@@ -169,7 +169,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             to.ChangeValues(1, 2, 3);
 
-            ObjectTracker.AddRestorePoint(sot, "s1");
+            ObjectTracker.SetRestorePoint(sot, "s1");
 
             to.ChangeValues(4, 5, 6);
 
@@ -210,13 +210,13 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             to.ChangeValues(1, 2, 3);
 
-            ObjectTracker.AddRestorePoint(sot, "s1");
+            ObjectTracker.SetRestorePoint(sot, "s1");
 
             to.ChangeValues(4, 5, 6);
 
             to.ChangeValues(7, 8, 9);
 
-            ObjectTracker.AddRestorePoint(sot, "s1");
+            ObjectTracker.SetRestorePoint(sot, "s1");
 
             to.ChangeValues(10, 11, 12);
 

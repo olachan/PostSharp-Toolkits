@@ -82,6 +82,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             aspect.SetTracker(new AggregateTracker(adviceArgs.Instance));
 
+            //TODO: Tracking should be disabled by default for object tracking and enabled for HistoryTracker
+
             return aspect;
         }
 

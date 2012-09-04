@@ -54,13 +54,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Domain.Bu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Integration.Tests", "Tests\PostSharp.Toolkit.Integration.Tests\PostSharp.Toolkit.Integration.Tests.csproj", "{B233A486-0827-4F33-9F3E-EB2CE8AEB3FC}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{8AE825E4-6BFC-4D4C-95BD-0D5401A2AF85}"
-	ProjectSection(SolutionItems) = preProject
-		.nuget\NuGet.Config = .nuget\NuGet.Config
-		.nuget\NuGet.exe = .nuget\NuGet.exe
-		.nuget\NuGet.targets = .nuget\NuGet.targets
-		.nuget\packages.config = .nuget\packages.config
-	EndProjectSection
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Domain.TestApp", "Tests\PostSharp.Toolkit.Domain.TestApp\PostSharp.Toolkit.Domain.TestApp.csproj", "{A21DCDA1-6B67-4F05-BAAB-09787CEE6C61}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -132,6 +126,10 @@ Global
 		{B233A486-0827-4F33-9F3E-EB2CE8AEB3FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B233A486-0827-4F33-9F3E-EB2CE8AEB3FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B233A486-0827-4F33-9F3E-EB2CE8AEB3FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A21DCDA1-6B67-4F05-BAAB-09787CEE6C61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A21DCDA1-6B67-4F05-BAAB-09787CEE6C61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A21DCDA1-6B67-4F05-BAAB-09787CEE6C61}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A21DCDA1-6B67-4F05-BAAB-09787CEE6C61}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -147,5 +145,6 @@ Global
 		{5802A256-BF7B-4563-B329-80EB7D67E1B8} = {E79F9017-525A-458D-868D-37990CD4668B}
 		{11EA22F3-1407-4177-86EE-E0D9233B2EF6} = {E79F9017-525A-458D-868D-37990CD4668B}
 		{B233A486-0827-4F33-9F3E-EB2CE8AEB3FC} = {E79F9017-525A-458D-868D-37990CD4668B}
+		{A21DCDA1-6B67-4F05-BAAB-09787CEE6C61} = {E79F9017-525A-458D-868D-37990CD4668B}
 	EndGlobalSection
 EndGlobal

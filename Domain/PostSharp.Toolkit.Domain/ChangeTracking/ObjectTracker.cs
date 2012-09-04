@@ -13,7 +13,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     public static class ObjectTracker
     {
-        public static RestorePointToken AddRestorePoint( object trackedObject, string name = null )
+        public static RestorePointToken SetRestorePoint( object trackedObject, string name = null )
         {
             ITrackedObject to = CheckObject( trackedObject );
             return ((AggregateTracker)to.Tracker).AddRestorePoint( name );

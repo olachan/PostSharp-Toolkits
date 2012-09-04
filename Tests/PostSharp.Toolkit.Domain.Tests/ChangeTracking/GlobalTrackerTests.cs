@@ -77,7 +77,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             sto1.ChangeValues(1, 2, 3);
 
-            ObjectTracker.AddRestorePoint(sto1, "r1");
+            ObjectTracker.SetRestorePoint(sto1, "r1");
 
             sto1.ChangeValues(4, 5, 6);
 

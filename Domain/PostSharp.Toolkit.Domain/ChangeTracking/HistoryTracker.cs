@@ -19,6 +19,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             //TODO: What if target is already associated with other HistoryTracker?
             //TODO: What if target already has some history?
 
+            //TODO: What if target is not tracked at the moment? We should start tracking
+
             ((AggregateTracker)trackedObject.Tracker).AssociateWithParent(this);
             return this;
         }
@@ -51,5 +53,17 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         internal override void AddUndoOperationToParentTracker( List<IOperation> operations, OperationCollection undoOperations, OperationCollection redoOperations )
         {   
         }
+
+        //TODO: Required API:
+        //public IList<OperationInfo> UndoOperations *?
+        //public IList<OperationInfo> RedoOperations *?
+        //public bool CanUndo()
+        //public bool CanRedo()
+        //public bool RestorePointExists(string restorePoint)
+        //public void RedoTo(OperationInfo ) *?
+        //public void UndoTo(OperationInfo ) *?
+        //public void Clear()
+        //public void TrimHistory(count / operationInfo / restorePoint)
+        //* - only history tracker (other methods -> all trackers)
     }
 }

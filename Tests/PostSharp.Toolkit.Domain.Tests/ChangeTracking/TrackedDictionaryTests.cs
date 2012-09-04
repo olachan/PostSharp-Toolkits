@@ -26,7 +26,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             tc.Add(4, "4");
             tc.Add(5, "5");
 
-            ObjectTracker.AddRestorePoint(tc, "After 5");
+            ObjectTracker.SetRestorePoint(tc, "After 5");
 
             tc.Add(6, "6");
             tc.Add(7, "7");

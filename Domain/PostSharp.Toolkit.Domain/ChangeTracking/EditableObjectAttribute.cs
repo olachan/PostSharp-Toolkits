@@ -44,9 +44,14 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         public void OnMethodInvoke(MethodInterceptionArgs args)
         {
             this.implicitOperationStack.Push(this.privateTracker.StartImplicitOperation());
-            args.Proceed();
-            this.implicitOperationStack.Pop().Dispose();
-
+            try
+            {
+                args.Proceed();
+            }
+            finally
+            {
+                this.implicitOperationStack.Pop().Dispose();
+            }
         }
 
         protected IEnumerable<MethodBase> SelectMethods(Type type)
