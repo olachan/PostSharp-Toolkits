@@ -9,18 +9,18 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     {
         private readonly LinkedList<IOperation> operations;
 
-        private int maximalOperationsCount;
+        private int maximumOperationsCount;
 
         public OperationCollection()
         {
             this.operations = new LinkedList<IOperation>();
-            this.maximalOperationsCount = int.MaxValue;
+            this.maximumOperationsCount = int.MaxValue;
         }
 
         private OperationCollection(LinkedList<IOperation> operations)
         {
             this.operations = operations;
-            this.maximalOperationsCount = int.MaxValue;
+            this.maximumOperationsCount = int.MaxValue;
         }
 
         public OperationCollection Clone()
@@ -50,7 +50,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         private void Trim()
         {
-            while ( this.operations.Count > this.MaximalOperationsCount )
+            while ( this.operations.Count > this.MaximumOperationsCount )
             {
                 this.operations.RemoveFirst();
             }
@@ -127,15 +127,15 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.operations.Clear();
         }
 
-        public int MaximalOperationsCount
+        public int MaximumOperationsCount
         {
             get
             {
-                return this.maximalOperationsCount;
+                return this.maximumOperationsCount;
             }
             set
             {
-                this.maximalOperationsCount = value;
+                this.maximumOperationsCount = value;
                 this.Trim();
             }
         }

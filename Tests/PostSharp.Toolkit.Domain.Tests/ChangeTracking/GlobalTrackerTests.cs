@@ -122,7 +122,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             historyTracker.Track(sto1);
 
-            historyTracker.MaximalOperationsCount = 5;
+            historyTracker.MaximumOperationsCount = 5;
 
             sto1.ChangeValues(1, 2, 3);
             sto1.ChangeValues(2, 5, 6);

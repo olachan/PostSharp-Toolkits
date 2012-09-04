@@ -54,7 +54,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         // internal field used to temporary disable tracking (eg during performing undo/redo operations)
         protected bool IsTrackingInternal;
 
-        private int maximalOperationsCount;
+        private int maximumOperationsCount;
 
         // public property used to permanently disable tracking
         public bool IsTracking { get; private set; }
@@ -299,6 +299,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             this.UndoOperations.Clear();
             this.RedoOperations.Clear();
+
+            //TODO: What about child trackers in case of HistoryTracker?
         }
 
         public virtual bool CanStopTracking()
@@ -306,17 +308,17 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             return this.ParentTracker == null || !this.ParentTracker.ContainsReferenceTo( this );
         }
 
-        public int MaximalOperationsCount
+        public int MaximumOperationsCount
         {
             get
             {
-                return this.maximalOperationsCount;
+                return this.maximumOperationsCount;
             }
             set
             {
-                this.UndoOperations.MaximalOperationsCount = value;
-                this.RedoOperations.MaximalOperationsCount = value;
-                this.maximalOperationsCount = value;
+                this.UndoOperations.MaximumOperationsCount = value;
+                this.RedoOperations.MaximumOperationsCount = value;
+                this.maximumOperationsCount = value;
             }
         }
 

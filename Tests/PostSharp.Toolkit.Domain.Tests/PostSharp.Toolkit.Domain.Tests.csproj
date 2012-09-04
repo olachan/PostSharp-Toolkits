@@ -74,6 +74,7 @@
   <ItemGroup>
     <Compile Include="Integration\OperationTrackingInpcIntegrationTests.cs" />
     <Compile Include="NotifyPropertyChanged\AutomaticNotifyPropertyChangedAspectTests.cs" />
+    <Compile Include="NotifyPropertyChanged\CustomAspectIntegrationTests.cs" />
     <Compile Include="NotifyPropertyChanged\GenericClassInpcTests.cs" />
     <Compile Include="NotifyPropertyChanged\InpcInhertianceTests.cs" />
     <Compile Include="NotifyPropertyChanged\InpcIntegrationTests.cs" />

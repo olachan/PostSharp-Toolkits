@@ -22,6 +22,6 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         bool CanStopTracking();
 
-        int MaximalOperationsCount { get; set; }
+        int MaximumOperationsCount { get; set; }
     }
 }

@@ -16,6 +16,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             var trackedObject = ObjectTracker.CheckObject( target );
 
+            //TODO: What if target is already associated with other HistoryTracker?
+            //TODO: What if target already has some history?
+
             ((AggregateTracker)trackedObject.Tracker).AssociateWithParent(this);
             return this;
         }
