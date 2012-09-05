@@ -285,7 +285,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             SimpleTrackedObject to = new SimpleTrackedObject();
             var sot = (ITrackedObject)to;
 
-            using (ObjectTracker.StartAtomicOperation(sot))
+            using (ObjectTracker.StartAtomicOperation(sot, "name"))
             {
                 to.ChangeValues(4, 5, 6);
                 to.ChangeValues(7, 8, 9);

@@ -23,7 +23,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         public RestorePoint(string name)
         {
             this.Name = name;
-            this.Token = new RestorePointToken();
+            this.Token = new RestorePointToken(name);
         }
     }
 }

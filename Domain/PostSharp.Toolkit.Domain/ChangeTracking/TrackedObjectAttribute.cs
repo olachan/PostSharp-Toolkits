@@ -23,8 +23,16 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     [Serializable]
     [IntroduceInterface(typeof(ITrackedObject), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
     [MulticastAttributeUsage(MulticastTargets.Class, Inheritance = MulticastInheritance.Strict)]
-    public class TrackedObjectAttribute : TrackedObjectAttributeBase
+    public class TrackedObjectAttribute : ImplicitOperationManagementAttribute
     {
+        private string FieldSetOperationStringFormat
+        {
+            get
+            {
+                return this.ThisTracker.OperationNameGenerationConfiguration.FieldSetOperationStringFormat;
+            }
+        }
+
         [OnMethodInvokeAdvice]
         [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.After, "INPC_EventHook")]
         [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.After, "INPC_EventRaise")]
@@ -40,7 +48,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         [MethodPointcut("SelectFields")]
         public void OnFieldSet(LocationInterceptionArgs args)
         {
-            using (this.ThisTracker.StartImplicitOperation())
+            using (this.ThisTracker.StartImplicitOperationScope(string.Format(this.FieldSetOperationStringFormat, args.LocationName)))
             {
                 object oldValue = args.GetCurrentValue(); //TODO: Somewhat risky but probably have to stick to it
 

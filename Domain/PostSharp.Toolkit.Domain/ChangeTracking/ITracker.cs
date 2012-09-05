@@ -4,9 +4,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     {
         RestorePointToken AddRestorePoint(string name = null);
 
-        void Undo(bool addToParent = true);
+        void Undo();
 
-        void Redo(bool addToParent = true);
+        void Redo();
 
         void UndoTo(string name);
 

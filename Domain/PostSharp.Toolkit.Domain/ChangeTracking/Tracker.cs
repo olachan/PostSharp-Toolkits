@@ -15,13 +15,13 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     [ThreadUnsafeObject]
     public abstract class Tracker : ITracker, IDisposable
     {
-        protected class TrackingDisabledToken : IDisposable
+        protected sealed class TrackingDisabledScope : IDisposable
         {
             private readonly Tracker tracker;
 
             private readonly bool enableTrackingOnDispose;
 
-            public TrackingDisabledToken( Tracker tracker )
+            public TrackingDisabledScope(Tracker tracker)
             {
                 this.tracker = tracker;
                 this.enableTrackingOnDispose = tracker.IsTrackingEnabled;
@@ -30,7 +30,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             public void Dispose()
             {
-                if ( enableTrackingOnDispose )
+                if (enableTrackingOnDispose)
                 {
                     tracker.EnableTrackingInternal();
                 }
@@ -56,6 +56,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         private int maximumOperationsCount;
 
+        private OperationNameGenerationConfiguration operationNameGenerationConfiguration;
+
         // public property used to permanently disable tracking
         public bool IsTracking { get; private set; }
 
@@ -73,188 +75,223 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         protected abstract bool UndoRedoOperationEnabledCheck();
 
-        public virtual void AddOperation( IOperation operation, bool addToParent = true )
+        public virtual void AddOperation(IOperation operation, bool addToParent = true)
         {
             if (!this.AddOperationEnabledCheck())
             {
                 return;
             }
 
-            if ( addToParent && this.ParentTracker != null )
+            if (addToParent && this.ParentTracker != null)
             {
-                ((Tracker)this.ParentTracker).AddOperation( new TrackerDelegateOperation( this, () => this.Undo( false ), () => this.Redo( false ) ) );
+                this.ParentTracker.AddOperation(new TrackerDelegateOperation(this, () => this.Undo(false), () => this.Redo(false)));
             }
 
-            this.UndoOperations.Push( operation );
+            this.UndoOperations.Push(operation);
             this.RedoOperations.Clear();
         }
 
-        public virtual RestorePointToken AddRestorePoint( string name = null )
+        public virtual RestorePointToken AddRestorePoint(string name = null)
         {
             if (!this.AddRestorePointEnabledCheck())
             {
                 return null;
             }
 
-            return this.UndoOperations.AddRestorePoint( name );
+            return this.UndoOperations.AddRestorePoint(name);
         }
 
-        public virtual void Undo( bool addToParent = true )
+        public void Undo()
+        {
+            this.Undo(true);
+        }
+
+        public virtual void Undo(bool addToParent)
         {
             if (!this.UndoRedoOperationEnabledCheck())
             {
                 return;
             }
 
-            using ( this.StartDisabledTrackingScope() )
+            using (this.StartDisabledTrackingScope())
             {
-                this.UndoInternal( addToParent );
+                this.UndoInternal(addToParent);
             }
         }
 
-        private void UndoInternal( bool addToParent )
+        private void UndoInternal(bool addToParent)
         {
             OperationCollection undoOperations = null;
             OperationCollection redoOperations = null;
 
-            if ( addToParent )
+            if (addToParent)
             {
                 undoOperations = this.UndoOperations.Clone();
                 redoOperations = this.RedoOperations.Clone();
             }
 
             var operation = this.UndoOperations.Pop();
-            if ( operation != null )
+            if (operation == null)
             {
-                if ( addToParent )
-                {
-                    this.AddUndoOperationToParentTracker( operation, undoOperations, redoOperations );
-                }
+                return;
+            }
 
-                operation.Undo();
-                this.RedoOperations.Push( operation );
+            if (addToParent)
+            {
+                this.AddUndoOperationToParentTracker(
+                    operation, 
+                    undoOperations, 
+                    redoOperations, 
+                    string.Format(this.OperationNameGenerationConfiguration.UndoOperationStringFormat, operation.Name));
+            }
 
-                if ( operation.IsRestorePoint() )
-                {
-                    this.UndoInternal( addToParent );
-                }
+            operation.Undo();
+            this.RedoOperations.Push(operation);
+
+            if (operation.IsRestorePoint())
+            {
+                this.UndoInternal(addToParent);
             }
         }
 
-        public virtual void Redo( bool addToParent = true )
+        public void Redo()
+        {
+            this.Redo(true);
+        }
+
+        public virtual void Redo(bool addToParent)
         {
             if (!this.UndoRedoOperationEnabledCheck())
             {
                 return;
             }
 
-            using ( this.StartDisabledTrackingScope() )
+            using (this.StartDisabledTrackingScope())
             {
-                this.RedoInternal( addToParent );
+                this.RedoInternal(addToParent);
             }
         }
 
-        private void RedoInternal( bool addToParent )
+        private void RedoInternal(bool addToParent)
         {
             OperationCollection undoOperations = null;
             OperationCollection redoOperations = null;
 
-            if ( addToParent )
+            if (addToParent)
             {
                 undoOperations = this.UndoOperations.Clone();
                 redoOperations = this.RedoOperations.Clone();
             }
 
             var operation = this.RedoOperations.Pop();
-            if ( operation != null )
+
+            if (operation == null)
             {
-                if ( addToParent )
-                {
-                    this.AddUndoOperationToParentTracker( operation, undoOperations, redoOperations );
-                }
+                return;
+            }
 
-                operation.Redo();
-                this.UndoOperations.Push( operation );
+            if (addToParent)
+            {
+                this.AddUndoOperationToParentTracker(
+                    operation,
+                    undoOperations, 
+                    redoOperations, 
+                    string.Format(this.OperationNameGenerationConfiguration.RedoOperationStringFormat, operation.Name));
+            }
 
-                if ( operation.IsRestorePoint() )
-                {
-                    this.RedoInternal(addToParent);
-                }
+            operation.Redo();
+            this.UndoOperations.Push(operation);
+
+            if (operation.IsRestorePoint())
+            {
+                this.RedoInternal(addToParent);
             }
         }
 
-        public virtual void UndoTo( string name )
+        public virtual void UndoTo(string name)
         {
             if (!this.UndoRedoOperationEnabledCheck())
             {
                 return;
             }
 
-            this.UndoToRestorePoint( () => this.UndoOperations.GetOperationsToRestorePoint( name ), this.RedoOperations.Push );
+            this.UndoToRestorePoint(
+                () => this.UndoOperations.GetOperationsToRestorePoint(name), 
+                this.RedoOperations.Push,
+                string.Format( this.OperationNameGenerationConfiguration.UndoToStringFormat, name ));
         }
 
-        public virtual void UndoTo( RestorePointToken token )
+        public virtual void UndoTo(RestorePointToken token)
         {
             if (!this.UndoRedoOperationEnabledCheck())
             {
                 return;
             }
 
-            this.UndoToRestorePoint( () => this.UndoOperations.GetOperationsToRestorePoint( token ), this.RedoOperations.Push );
+            this.UndoToRestorePoint(
+                () => this.UndoOperations.GetOperationsToRestorePoint(token),
+                this.RedoOperations.Push,
+                string.Format(this.OperationNameGenerationConfiguration.UndoToStringFormat, token.Name));
         }
 
-        private void UndoToRestorePoint( Func<Stack<IOperation>> getOperationsToRestorePoint, Action<IOperation> pushToRedoAction )
+        private void UndoToRestorePoint(Func<Stack<IOperation>> getOperationsToRestorePoint, Action<IOperation> pushToRedoAction, string name)
         {
             if (!this.UndoRedoOperationEnabledCheck())
             {
                 return;
             }
 
-            using ( this.StartDisabledTrackingScope() )
+            using (this.StartDisabledTrackingScope())
             {
                 OperationCollection undoOperations = this.UndoOperations.Clone();
                 OperationCollection redoOperations = this.RedoOperations.Clone();
 
-                Stack<IOperation> snapshotsToResore = getOperationsToRestorePoint(); //this.UndoOperations.GetOperationsToRestorePoint(name);
+                Stack<IOperation> operationsToUndo = getOperationsToRestorePoint();
 
-                var snapshotsForParent = snapshotsToResore.ToList();
-                snapshotsForParent.Reverse();
+                var operationsForParentTracker = operationsToUndo.ToList();
+                operationsForParentTracker.Reverse();
 
-                this.AddUndoOperationToParentTracker( snapshotsForParent, undoOperations, redoOperations );
+                this.AddUndoOperationToParentTracker(operationsForParentTracker, undoOperations, redoOperations, name); //TODO
 
-                while ( snapshotsToResore.Count > 0 )
+                while (operationsToUndo.Count > 0)
                 {
                     // TODO consider optimization
-                    IOperation operation = snapshotsToResore.Pop();
+                    IOperation operation = operationsToUndo.Pop();
                     operation.Undo();
-                    pushToRedoAction( operation );
+                    pushToRedoAction(operation);
                 }
             }
         }
 
-        public void RedoTo( string name )
+        public void RedoTo(string name)
         {
             if (!this.UndoRedoOperationEnabledCheck())
             {
                 return;
             }
 
-            this.UndoToRestorePoint( () => this.RedoOperations.GetOperationsToRestorePoint( name ), this.UndoOperations.Push );
+            this.UndoToRestorePoint(
+                () => this.RedoOperations.GetOperationsToRestorePoint(name), 
+                this.UndoOperations.Push,
+                string.Format(this.OperationNameGenerationConfiguration.RedoToStringFormat, name));
         }
 
-        public void RedoTo( RestorePointToken token )
+        public void RedoTo(RestorePointToken token)
         {
             if (!this.UndoRedoOperationEnabledCheck())
             {
                 return;
             }
 
-            this.UndoToRestorePoint( () => this.RedoOperations.GetOperationsToRestorePoint( token ), this.UndoOperations.Push );
+            this.UndoToRestorePoint(
+                () => this.RedoOperations.GetOperationsToRestorePoint(token), 
+                this.UndoOperations.Push,
+                string.Format(this.OperationNameGenerationConfiguration.RedoToStringFormat, token.Name));
         }
 
         public IDisposable StartDisabledTrackingScope()
         {
-            return new TrackingDisabledToken( this );
+            return new TrackingDisabledScope(this);
         }
 
         protected void DisableTrackingInternal()
@@ -268,16 +305,16 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         }
 
         internal abstract void AddUndoOperationToParentTracker(
-            List<IOperation> operations, OperationCollection undoOperations, OperationCollection redoOperations );
+            List<IOperation> operations, OperationCollection undoOperations, OperationCollection redoOperations, string name);
 
-        internal virtual void AddUndoOperationToParentTracker( IOperation operation, OperationCollection undoOperations, OperationCollection redoOperations )
+        internal virtual void AddUndoOperationToParentTracker(IOperation operation, OperationCollection undoOperations, OperationCollection redoOperations, string name)
         {
-            this.AddUndoOperationToParentTracker( new List<IOperation>() { operation }, undoOperations, redoOperations );
+            this.AddUndoOperationToParentTracker(new List<IOperation> { operation }, undoOperations, redoOperations, name);
         }
 
-        internal bool ContainsReferenceTo( Tracker tracker )
+        internal bool ContainsReferenceTo(Tracker tracker)
         {
-            return this.UndoOperations.ContainsReferenceTo( tracker ) || this.RedoOperations.ContainsReferenceTo( tracker );
+            return this.UndoOperations.ContainsReferenceTo(tracker) || this.RedoOperations.ContainsReferenceTo(tracker);
         }
 
         public virtual void Track()
@@ -287,11 +324,11 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public virtual void StopTracking()
         {
-            if ( this.ParentTracker != null )
+            if (this.ParentTracker != null)
             {
-                if ( this.ParentTracker.ContainsReferenceTo( this ) )
+                if (this.ParentTracker.ContainsReferenceTo(this))
                 {
-                    throw new InvalidOperationException( "Can not stop tracking because parent tracker contains reference to operations in this tracker" );
+                    throw new InvalidOperationException("Can not stop tracking because parent tracker contains reference to operations in this tracker");
                 }
             }
 
@@ -305,7 +342,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public virtual bool CanStopTracking()
         {
-            return this.ParentTracker == null || !this.ParentTracker.ContainsReferenceTo( this );
+            return this.ParentTracker == null || !this.ParentTracker.ContainsReferenceTo(this);
         }
 
         public int MaximumOperationsCount
@@ -319,6 +356,28 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 this.UndoOperations.MaximumOperationsCount = value;
                 this.RedoOperations.MaximumOperationsCount = value;
                 this.maximumOperationsCount = value;
+            }
+        }
+
+        public OperationNameGenerationConfiguration OperationNameGenerationConfiguration
+        {
+            get
+            {
+                if (this.operationNameGenerationConfiguration != null)
+                {
+                    return this.operationNameGenerationConfiguration;
+                }
+                
+                if (this.ParentTracker != null)
+                {
+                    return this.ParentTracker.OperationNameGenerationConfiguration;
+                } 
+                
+                return OperationNameGenerationConfiguration.Default;
+            }
+            set
+            {
+                this.operationNameGenerationConfiguration = value;
             }
         }
 

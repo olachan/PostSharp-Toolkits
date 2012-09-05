@@ -8,7 +8,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     {
         private ComplexOperation currentOperation;
 
-        private AtomicOperationToken currentAtomicOperationToken;
+        private AtomicOperationScope currentAtomicOperationScope;
 
         private int implicitOperationNestingCounter;
 
@@ -41,7 +41,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             OperationCollection undoOperations = this.UndoOperations.Clone();
             OperationCollection redoOperations = this.RedoOperations.Clone();
 
-            this.AddUndoOperationToParentTracker(new List<IOperation>(), undoOperations, redoOperations);
+            this.AddUndoOperationToParentTracker(new List<IOperation>(), undoOperations, redoOperations, "Clear"); //TODO
 
             this.UndoOperations.Clear();
             this.RedoOperations.Clear();
@@ -105,7 +105,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public override RestorePointToken AddRestorePoint(string name = null)
         {
-            if (this.currentAtomicOperationToken != null)
+            if (this.currentAtomicOperationScope != null)
             {
                 throw new NotSupportedException("Adding restore point inside atomic operation is not supported");
             }
@@ -115,19 +115,19 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             var restorePoint = this.UndoOperations.AddRestorePoint(name);
             
-            this.StartOperation();
+            this.StartOperation( name );
 
             return restorePoint;
         }
 
-        public IDisposable StartAtomicOperation()
+        public IDisposable StartAtomicOperation(string name)
         {
-            return new AtomicOperationToken(this);
+            return new AtomicOperationScope(this, name);
         }
 
-        private void StartExplicitOperation(AtomicOperationToken token)
+        private void StartExplicitOperation(AtomicOperationScope scope)
         {
-            if (this.currentAtomicOperationToken != null)
+            if (this.currentAtomicOperationScope != null)
             {
                 //TODO: Some support for multiple operations?
                 throw new NotSupportedException("Operation already started");
@@ -138,14 +138,14 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 throw new NotSupportedException("Cannot start explicit operation while tracking is disabled");
             }
 
-            StartOperation();
+            this.StartOperation( scope.Name );
 
-            this.currentAtomicOperationToken = token;
+            this.currentAtomicOperationScope = scope;
         }
 
-        private void EndExplicitOperation(AtomicOperationToken token)
+        private void EndExplicitOperation(AtomicOperationScope scope)
         {
-            if (this.currentAtomicOperationToken != token)
+            if (this.currentAtomicOperationScope != scope)
             {
                 //TODO: Some support for multiple operations?
                 throw new NotSupportedException("Invalid state! Nested operations are not currently supported");
@@ -158,47 +158,47 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             EndOperation();
 
-            this.currentAtomicOperationToken = null;
+            this.currentAtomicOperationScope = null;
 
             // restore implicit operation if it was opened before starting atomic operation
             if (this.implicitOperationNestingCounter > 0)
             {
-                this.StartOperation();
+                this.StartOperation( scope.Name );
             }
         }
 
-        public IDisposable StartImplicitOperation()
+        public IDisposable StartImplicitOperationScope(string name)
         {
-            return new ImplicitOperationToken(this);
+            return new ImplicitOperationScope(this, name);
         }
 
-        private void StartImplicitOperationInternal(ImplicitOperationToken token)
+        private void StartImplicitOperation( ImplicitOperationScope scope )
         {
-            if (!this.IsTrackingEnabled || this.currentAtomicOperationToken != null)
+            if (!this.IsTrackingEnabled || this.currentAtomicOperationScope != null)
             {
                 return;
             }
 
-            token.Level = this.implicitOperationNestingCounter;
+            scope.Level = this.implicitOperationNestingCounter;
 
             if (this.implicitOperationNestingCounter == 0)
             {
-                this.StartOperation();
+                this.StartOperation(scope.Name);
             }
 
             this.implicitOperationNestingCounter++;
         }
 
-        private void EndImplicitOperation(ImplicitOperationToken token)
+        private void EndImplicitOperation(ImplicitOperationScope scope)
         {
-            if (!this.IsTrackingEnabled || this.currentAtomicOperationToken != null)
+            if (!this.IsTrackingEnabled || this.currentAtomicOperationScope != null)
             {
                 return;
             }
 
             this.implicitOperationNestingCounter--;
 
-            if (token.Level != this.implicitOperationNestingCounter)
+            if (scope.Level != this.implicitOperationNestingCounter)
             {
                 throw new ArgumentException("Implicit operations closed in wrong order");
             }
@@ -210,14 +210,14 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         }
 
 
-        private void StartOperation()
+        private void StartOperation( string name )
         {
             if (this.currentOperation != null)
             {
                 this.EndOperation();
             }
 
-            this.currentOperation = new ComplexOperation();
+            this.currentOperation = new ComplexOperation(name);
         }
 
         private void EndOperation()
@@ -230,13 +230,14 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.currentOperation = null;
         }
 
-        internal override void AddUndoOperationToParentTracker(List<IOperation> operations, OperationCollection undoOperations, OperationCollection redoOperations)
+        internal override void AddUndoOperationToParentTracker(List<IOperation> operations, OperationCollection undoOperations, OperationCollection redoOperations, string name)
         {
             if (this.ParentTracker != null)
             {
-                ((Tracker)this.ParentTracker).AddOperation(
+                this.ParentTracker.AddOperation(
                     new ObjectTrackerOperation(
                         this,
+                        name,
                         undoOperations,
                         redoOperations,
                         operations.Where(o => o != null).Select(InvertOperationWrapper.InvertOperation).ToList()));
@@ -248,18 +249,21 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             base.StopTracking();
 
             this.currentOperation = null;
-            this.currentAtomicOperationToken = null;
+            this.currentAtomicOperationScope = null;
         }
 
-        private class AtomicOperationToken : IDisposable
+        private sealed class AtomicOperationScope : IDisposable
         {
             private readonly AggregateTracker aggregateTracker;
 
-            internal AtomicOperationToken(AggregateTracker aggregateTracker)
+            internal AtomicOperationScope( AggregateTracker aggregateTracker, string name )
             {
                 this.aggregateTracker = aggregateTracker;
+                this.Name = name;
                 this.aggregateTracker.StartExplicitOperation(this);
             }
+
+            public string Name { get; private set; }
 
             public void Dispose()
             {
@@ -267,16 +271,19 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
-        private class ImplicitOperationToken : IDisposable
+        private sealed class ImplicitOperationScope : IDisposable
         {
+            public string Name { get; private set; }
+
             public int Level { get; set; }
 
             private readonly AggregateTracker aggregateTracker;
 
-            internal ImplicitOperationToken(AggregateTracker aggregateTracker)
+            internal ImplicitOperationScope( AggregateTracker aggregateTracker, string name )
             {
+                Name = name;
                 this.aggregateTracker = aggregateTracker;
-                this.aggregateTracker.StartImplicitOperationInternal(this);
+                this.aggregateTracker.StartImplicitOperation(this);
             }
 
             public void Dispose()

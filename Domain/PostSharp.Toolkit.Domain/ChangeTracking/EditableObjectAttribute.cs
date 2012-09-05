@@ -43,7 +43,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         [AspectRoleDependency(AspectDependencyAction.Order, AspectDependencyPosition.After, "OT_EditableObjectImplementation")]
         public void OnMethodInvoke(MethodInterceptionArgs args)
         {
-            this.implicitOperationStack.Push(this.privateTracker.StartImplicitOperation());
+            this.implicitOperationStack.Push(this.privateTracker.StartImplicitOperationScope(string.Empty));
             try
             {
                 args.Proceed();
@@ -72,7 +72,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         [MethodPointcut("SelectFields")]
         public void PrivateTrackerOnFieldSet(LocationInterceptionArgs args)
         {
-            using (this.privateTracker.StartImplicitOperation())
+            using (this.privateTracker.StartImplicitOperationScope(string.Empty))
             {
                 object oldValue = args.GetCurrentValue();
                 args.ProceedSetValue();

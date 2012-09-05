@@ -19,7 +19,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         {
             TrackedCollection<int> tc = new TrackedCollection<int>();
 
-            tc.Add(0);
+            tc.Add( 0 );
             tc.Add(1);
             tc.Add(2);
             tc.Add(3);

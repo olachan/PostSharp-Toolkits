@@ -50,7 +50,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             return true;
         }
 
-        internal override void AddUndoOperationToParentTracker( List<IOperation> operations, OperationCollection undoOperations, OperationCollection redoOperations )
+        internal override void AddUndoOperationToParentTracker( List<IOperation> operations, OperationCollection undoOperations, OperationCollection redoOperations, string name )
         {   
         }
 

@@ -84,9 +84,9 @@
   <ItemGroup>
     <Compile Include="ChangeTracking\ForceChangeTrackingOperationAttribute.cs" />
     <Compile Include="ChangeTracking\ObjectAccessorsMapSerializingAspect.cs" />
+    <Compile Include="ChangeTracking\OperationNameGenerationConfiguration.cs" />
     <Compile Include="ChangeTracking\RestorePoint.cs" />
     <Compile Include="ChangeTracking\ComplexOperation.cs" />
-    <Compile Include="ChangeTracking\ImplicitOperationManagementAttribute.cs" />
     <Compile Include="ChangeTracking\EditableObjectAttribute.cs" />
     <Compile Include="ChangeTracking\OperationExtensions.cs" />
     <Compile Include="ChangeTracking\RestorePointToken.cs" />
@@ -109,7 +109,7 @@
     <Compile Include="ChangeTracking\StackTrace.cs" />
     <Compile Include="ChangeTracking\TrackedCollection.cs" />
     <Compile Include="ChangeTracking\TrackedObjectAttribute.cs" />
-    <Compile Include="ChangeTracking\TrackedObjectAttributeBase.cs" />
+    <Compile Include="ChangeTracking\ImplicitOperationManagementAttribute.cs" />
     <Compile Include="ChangeTracking\ChangeTrackedAttribute.cs" />
     <Compile Include="ChangeTracking\ObjectTracker.cs" />
     <Compile Include="ChangeTracking\Tracker.cs" />

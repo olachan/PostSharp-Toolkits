@@ -43,10 +43,10 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             ((AggregateTracker)to.Tracker).RedoTo( token );
         }
 
-        public static IDisposable StartAtomicOperation( object trackedObject )
+        public static IDisposable StartAtomicOperation( object trackedObject, string name )
         {
             ITrackedObject to = CheckObject( trackedObject );
-            return ((AggregateTracker)to.Tracker).StartAtomicOperation();
+            return ((AggregateTracker)to.Tracker).StartAtomicOperation(name);
         }
 
         public static object GetAggregateRoot( object trackedObject )
