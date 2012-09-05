@@ -32,25 +32,14 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             get
             {
-                return this.UndoOperations.Count;
+                return this.UndoOperationCollection.Count;
             }
-        }
-
-        public void Clear()
-        {
-            OperationCollection undoOperations = this.UndoOperations.Clone();
-            OperationCollection redoOperations = this.RedoOperations.Clone();
-
-            this.AddUndoOperationToParentTracker(new List<IOperation>(), undoOperations, redoOperations, "Clear"); //TODO
-
-            this.UndoOperations.Clear();
-            this.RedoOperations.Clear();
         }
 
         internal void SetOperationCollections(OperationCollection undoOperations, OperationCollection redoOperations)
         {
-            this.UndoOperations = undoOperations;
-            this.RedoOperations = redoOperations;
+            this.UndoOperationCollection = undoOperations;
+            this.RedoOperationCollection = redoOperations;
         }
 
         public void AssociateWithParent(Tracker globalTracker)
@@ -73,31 +62,46 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.currentOperation.AddOperation(operation);
         }
 
-        protected override bool AddOperationEnabledCheck()
+        protected override bool AddOperationEnabledCheck( bool throwException = true )
         {
             if (!this.IsTrackingEnabled)
             {
-                throw new InvalidOperationException("Can not add operation to disabled tracker");
+                if (throwException)
+                {
+                    throw new InvalidOperationException("Can not add operation to disabled tracker");
+                }
+
+                return false;
             }
 
             return true;
         }
 
-        protected override bool AddRestorePointEnabledCheck()
+        protected override bool AddRestorePointEnabledCheck( bool throwException = true )
         {
             if (!this.IsTrackingEnabled)
             {
-                throw new InvalidOperationException("Can not add restore point to disabled tracker");
+                if (throwException)
+                {
+                    throw new InvalidOperationException("Can not add restore point to disabled tracker");
+                }
+
+                return false;
             }
 
             return true;
         }
 
-        protected override bool UndoRedoOperationEnabledCheck()
+        protected override bool UndoRedoOperationEnabledCheck( bool throwException = true )
         {
             if (!this.IsTrackingEnabled)
             {
-                throw new InvalidOperationException("Can not perform operations on disabled tracker");
+                if (throwException)
+                {
+                    throw new InvalidOperationException("Can not perform operations on disabled tracker");
+                }
+
+                return false;
             }
 
             return true;
@@ -113,7 +117,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             // if there is open implicit operation end it and after adding restore point start new one.
             this.EndOperation();
 
-            var restorePoint = this.UndoOperations.AddRestorePoint(name);
+            var restorePoint = this.UndoOperationCollection.AddRestorePoint(name);
             
             this.StartOperation( name );
 
