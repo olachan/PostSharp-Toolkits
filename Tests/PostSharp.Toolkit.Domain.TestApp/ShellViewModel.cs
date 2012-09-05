@@ -10,7 +10,7 @@ namespace PostSharp.Toolkit.Domain.TestApp
         //TODO: Need a way to exclude field/property from change tracking
         public HistoryTracker HistoryTracker { get; protected set; }
 
-        public Hammer Hammer { get; set; }
+        public Toolbox Toolbox { get; set; }
 
         public string Name { get; set; }
 
@@ -18,6 +18,7 @@ namespace PostSharp.Toolkit.Domain.TestApp
         {
             this.HistoryTracker = new HistoryTracker();
             this.HistoryTracker.Track( this );
+            this.CreateToolbox();
         }
 
         public bool CanSayHello
@@ -32,16 +33,18 @@ namespace PostSharp.Toolkit.Domain.TestApp
 
         private static readonly Random _random = new Random();
 
-        public void CreateHammer()
+        public void CreateToolbox()
         {
-            this.Hammer = new Hammer() { Length = _random.Next(29), Weight = _random.Next(113)};
-            this.HistoryTracker.Track( this.Hammer );
-            ObjectTracker.SetRestorePoint( this.Hammer, "New" );
+            this.Toolbox = new Toolbox();
+            this.HistoryTracker.Track( this.Toolbox );
+            //this.Toolbox.CreateNewHammer();
+
+            ObjectTracker.SetRestorePoint( this.Toolbox, "New" );
         }
 
-        public void ResetHammer()
+        public void Revert()
         {
-            ObjectTracker.UndoTo( this.Hammer, "New" );
+            ObjectTracker.UndoTo( this.Toolbox, "New" );
         }
 
         public bool CanResetHammder()

@@ -16,22 +16,26 @@
             </ToolBar>
             <TextBox x:Name="Name" MinWidth="250" />
             <Button x:Name="SayHello" Content="Hello?" />
-            <GroupBox Header="Hammer">
+            <GroupBox Header="Toolbox">
                 <StackPanel>
-                    <Button x:Name="CreateHammer">Give me a new hammer!</Button>
-                    <StackPanel Orientation="Horizontal">
-                        <Label>Weight:</Label>
-                        <TextBox Text="{Binding Hammer.Weight}" MinWidth="100"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <Label>Length:</Label>
-                        <TextBox Text="{Binding Hammer.Length}" MinWidth="100"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <Label>Efficiency:</Label>
-                        <TextBox Text="{Binding Hammer.Efficiency, Mode=OneWay}" IsReadOnly="True" MinWidth="100"/>
-                    </StackPanel>
-                    <Button x:Name="ResetHammer">Revert</Button>
+                    <Button x:Name="CreateToolbox">Bring the toolbox!</Button>
+                    <GroupBox Header="Hammer">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Label>Weight:</Label>
+                                <TextBox Text="{Binding Toolbox.Hammer.Weight}" MinWidth="100"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Label>Length:</Label>
+                                <TextBox Text="{Binding Toolbox.Hammer.Length}" MinWidth="100"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Label>Efficiency:</Label>
+                                <TextBox Text="{Binding Toolbox.Hammer.Efficiency, Mode=OneWay}" IsReadOnly="True" MinWidth="100"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </GroupBox>
+                    <Button x:Name="Revert">Revert</Button>
                 </StackPanel>
             </GroupBox>
         </StackPanel>
