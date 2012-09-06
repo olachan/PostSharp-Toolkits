@@ -48,5 +48,20 @@ namespace TestAssembly
         public void MethodWithObjectArguments( object arg0, StringBuilder arg1 )
         {
         }
+
+        public void MethodWithRefArgument(ref int arg0)
+        { }
+
+        public void MethodWithOutArguments(out int arg0, out SimpleClass arg1)
+        {
+            arg0 = 1;
+            arg1 = new SimpleClass();
+        }
+
+        public void MethodWithMixedArguments(int arg0, out int arg1, ref SimpleClass arg2, string arg3)
+        {
+            arg1 = 1;
+            arg2 = new SimpleClass();
+        }
     }
 }

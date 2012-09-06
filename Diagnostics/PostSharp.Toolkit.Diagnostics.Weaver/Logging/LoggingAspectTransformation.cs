@@ -115,7 +115,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
                     if (this.options.OnExceptionOptions != LogOptions.None)
                     {
-                        string messageArgumentsFormatString = this.argumentsFormatter.CreateMessageArguments(this.options.OnExceptionOptions, out argumentsIndex);
+                        string messageArgumentsFormatString = this.argumentsFormatter.CreateMessageArguments(this.options.OnExceptionOptions, false, out argumentsIndex);
                         messageFormatString = "An exception occurred in " + messageArgumentsFormatString + ":\n{" + argumentsIndex.Length + "}";
                     }
                     else
@@ -137,7 +137,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 protected override void ImplementOnEntry(InstructionBlock block, InstructionWriter writer)
                 {
                     int[] argumentsIndex;
-                    string messageFormatString = this.argumentsFormatter.CreateMessageArguments(this.options.OnEntryOptions, out argumentsIndex);
+                    string messageFormatString = this.argumentsFormatter.CreateMessageArguments(this.options.OnEntryOptions, false, out argumentsIndex);
 
                     this.EmitMessage(block, writer, this.options.OnEntryLevel, "Entering: " + messageFormatString, argumentsIndex);
                 }
@@ -145,12 +145,13 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                 protected override void ImplementOnSuccess(InstructionBlock block, InstructionWriter writer)
                 {
                     int[] argumentsIndex;
-                    string messageFormatString = this.argumentsFormatter.CreateMessageArguments(this.options.OnSuccessOptions, out argumentsIndex);
+                    string messageFormatString = this.argumentsFormatter.CreateMessageArguments(this.options.OnSuccessOptions, false, out argumentsIndex);
 
                     this.EmitMessage(block, writer, this.options.OnSuccessLevel, "Leaving: " + messageFormatString, argumentsIndex);
                 }
 
-                private void EmitMessage(InstructionBlock block, InstructionWriter writer, LogLevel logLevel, string messageFormatString, int[] arguments, ITypeSignature exceptionType = null)
+                private void EmitMessage(InstructionBlock block, InstructionWriter writer,
+                    LogLevel logLevel, string messageFormatString, int[] arguments, ITypeSignature exceptionType = null)
                 {
                     MethodDefDeclaration targetMethod = Context.TargetElement as MethodDefDeclaration;
                     if (targetMethod == null)
@@ -207,7 +208,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                                 {
                                     this.methodMappingWriter.EmitLoadArgument(index, instructionWriter);
 
-                                    instructionWriter.EmitConvertToObject(this.methodMappingWriter.MethodMapping.MethodSignature.GetParameterType(index));
+                                    instructionWriter.EmitConvertToObject(this.methodMappingWriter.MethodMapping.MethodSignature.GetParameterType(index).GetNakedType(TypeNakingOptions.IgnoreManagedPointers));
                                 }
                             }
                             else

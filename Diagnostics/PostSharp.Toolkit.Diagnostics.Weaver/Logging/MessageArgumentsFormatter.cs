@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using PostSharp.Sdk.AspectInfrastructure;
 using PostSharp.Sdk.CodeModel;
@@ -34,7 +35,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
             }
         }
 
-        public string CreateMessageArguments( LogOptions logOptions, out int[] argumentsIndex )
+        public string CreateMessageArguments( LogOptions logOptions, bool includeOutParams, out int[] argumentsIndex )
         {
             StringBuilder formatBuilder = new StringBuilder();
 
@@ -61,7 +62,7 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
 
             if ( includeParameterName || includeParameterType || includeParameterValue )
             {
-                this.WriteMethodArguments( formatBuilder, argumentsIndex, startParameter, includeParameterName, includeParameterType, includeParameterValue );
+                this.WriteMethodArguments( formatBuilder, argumentsIndex, startParameter, includeParameterName, includeParameterType, includeParameterValue, includeOutParams );
             }
 
             formatBuilder.Append( ")" );
@@ -77,9 +78,11 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
         }
 
         private void WriteMethodArguments( StringBuilder formatBuilder, int[] argumentsIndex, int startParameter, bool includeParameterName,
-                                           bool includeParameterType, bool includeParameterValue )
+            bool includeParameterType, bool includeParameterValue, bool includeOutParams )
         {
-            int parameterCount = this.context.MethodMapping.MethodSignature.ParameterCount;
+            IMethodSignature methodSignature = this.context.MethodMapping.MethodSignature;
+            int parameterCount = methodSignature.ParameterCount;
+            
             for ( int i = 0; i < parameterCount; i++ )
             {
                 int index = i + startParameter;
@@ -89,10 +92,19 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     formatBuilder.Append( ", " );
                 }
 
-                ITypeSignature parameterType = this.context.MethodMapping.MethodSignature.GetParameterType( i );
+                bool isOut = this.targetMethod.Parameters[i].Attributes.HasFlag(ParameterAttributes.Out);
+                bool isRef = this.targetMethod.Parameters[i].ParameterType is PointerTypeSignature;
+
+                ITypeSignature parameterType = methodSignature.GetParameterType( i );
+                
                 if ( includeParameterType )
                 {
-                    formatBuilder.Append( parameterType.GetReflectionName( ReflectionNameOptions.MethodParameterContext, NameShortener.Instance ) );
+                    string typeName = parameterType.GetReflectionName( ReflectionNameOptions.MethodParameterContext, NameShortener.Instance );
+                    if (isRef)
+                    {
+                        typeName = string.Format( "{0} {1}", (isOut ? "out" : "ref"), typeName.Remove( typeName.Length-6 )); //Remove 'ByRef' suffix
+                    }
+                    formatBuilder.Append( typeName );
                 }
 
                 if ( includeParameterName )
@@ -100,7 +112,9 @@ namespace PostSharp.Toolkit.Diagnostics.Weaver.Logging
                     formatBuilder.AppendFormat( " {0}", this.context.MethodMapping.MethodMappingInformation.GetParameterName( i ) );
                 }
 
-                if ( includeParameterValue )
+                
+
+                if ( (includeOutParams || !isOut) && includeParameterValue )
                 {
                     if ( includeParameterName || includeParameterType )
                     {

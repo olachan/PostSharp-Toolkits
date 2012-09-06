@@ -55,5 +55,41 @@ namespace PostSharp.Toolkit.Tests
             StringAssert.Contains( "TestAssembly.SimpleClass.MethodWith4Arguments(string arg0 = \"arg0\", " +
                                    "string arg1 = \"arg1\", string arg2 = \"arg2\", string arg3 = \"arg3\")", output );
         }
+
+        [Test]
+        public void MethodArguments_MethodWithRefArgument_LogsArgument()
+        {
+            SimpleClass s = new SimpleClass();
+            int x = 3;
+            s.MethodWithRefArgument( ref x );
+
+            string output = OutputString.ToString();
+            StringAssert.Contains("TestAssembly.SimpleClass.MethodWithRefArgument(ref int arg0 = {3})", output);
+        }
+
+        [Test]
+        public void MethodArguments_MethodWithOutArguments_LogsArguments()
+        {
+            SimpleClass s = new SimpleClass();
+            int x = 1;
+            SimpleClass sc;
+            s.MethodWithOutArguments(out x, out sc);
+
+            string output = OutputString.ToString();
+            StringAssert.Contains("TestAssembly.SimpleClass.MethodWithOutArguments(out int arg0, out TestAssembly.SimpleClass arg1)", output);
+        }
+
+
+        [Test]
+        public void MethodArguments_MethodWithMixedArguments_LogsArguments()
+        {
+            SimpleClass s = new SimpleClass();
+            int x;
+            SimpleClass sc = null;
+            s.MethodWithMixedArguments(5, out x, ref sc, "test");
+
+            string output = OutputString.ToString();
+            StringAssert.Contains("TestAssembly.SimpleClass.MethodWithMixedArguments(int arg0 = 5, out int arg1, ref TestAssembly.SimpleClass arg2 = {}, string arg3 = \"test\")", output);
+        }
     }
 }
