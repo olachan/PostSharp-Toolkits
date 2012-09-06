@@ -12,9 +12,16 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     public class HistoryTracker : Tracker
     {
+        private readonly List<AggregateTracker> childTrackers;
+
+        public HistoryTracker()
+        {
+            childTrackers = new List<AggregateTracker>();
+        }
+
         public HistoryTracker Track(object target)
         {
-            var trackedObject = ObjectTracker.CheckObject( target );
+            var trackedObject = ObjectTracker.CheckObject(target);
 
             //TODO: What if target is already associated with other HistoryTracker?
             //TODO: What if target already has some history?
@@ -22,48 +29,95 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             //TODO: What if target is not tracked at the moment? We should start tracking
 
             ((AggregateTracker)trackedObject.Tracker).AssociateWithParent(this);
+
+            childTrackers.Add((AggregateTracker)trackedObject.Tracker);
+
             return this;
         }
 
-        protected override bool AddOperationEnabledCheck()
+        protected override bool AddOperationEnabledCheck(bool throwException = true )
         {
             return this.IsTrackingEnabled;
         }
 
-        protected override bool AddRestorePointEnabledCheck()
+        protected override bool AddRestorePointEnabledCheck(bool throwException = true )
         {
             if (!this.IsTrackingEnabled)
             {
-                throw new InvalidOperationException("Can not add restore point to disabled tracker");
+                if (throwException)
+                {
+                    throw new InvalidOperationException("Can not add restore point to disabled tracker");
+                }
+
+                return false;
             }
 
             return true;
         }
 
-        protected override bool UndoRedoOperationEnabledCheck()
+        protected override bool UndoRedoOperationEnabledCheck(bool throwException = true )
         {
             if (!this.IsTrackingEnabled)
             {
-                throw new InvalidOperationException("Can not perform operations on disabled tracker");
+                if (throwException)
+                {
+                    throw new InvalidOperationException("Can not perform operations on disabled tracker");
+                }
+
+                return false;
             }
 
             return true;
         }
 
-        internal override void AddUndoOperationToParentTracker( List<IOperation> operations, OperationCollection undoOperations, OperationCollection redoOperations )
-        {   
+        public override void Dispose()
+        {
+            base.Dispose();
+
+            foreach (AggregateTracker aggregateTracker in childTrackers)
+            {
+                aggregateTracker.AssociateWithParent(null);
+            }
         }
 
-        //TODO: Required API:
-        //public IList<OperationInfo> UndoOperations *?
-        //public IList<OperationInfo> RedoOperations *?
-        //public bool CanUndo()
-        //public bool CanRedo()
-        //public bool RestorePointExists(string restorePoint)
-        //public void RedoTo(OperationInfo ) *?
-        //public void UndoTo(OperationInfo ) *?
-        //public void Clear()
-        //public void TrimHistory(count / operationInfo / restorePoint)
-        //* - only history tracker (other methods -> all trackers)
+        public override void StopTracking()
+        {
+            base.StopTracking();
+
+            foreach (AggregateTracker aggregateTracker in childTrackers)
+            {
+                aggregateTracker.StopTracking();
+            }
+        }
+
+        internal override void AddUndoOperationToParentTracker(List<IOperation> operations, OperationCollection undoOperations, OperationCollection redoOperations, string name)
+        {
+        }
+
+        public IEnumerable<IOperationInfo> UndoOperations
+        {
+            get
+            {
+                return this.UndoOperationCollection.OperationInfos;
+            }
+        }
+
+        public IEnumerable<IOperationInfo> RedoOperations
+        {
+            get
+            {
+                return this.RedoOperationCollection.OperationInfos;
+            }
+        }
+
+        public void RedoTo(IOperationInfo operationInfo)
+        {
+            this.RedoToOperation((IOperation)operationInfo);
+        }
+
+        public void UndoTo(IOperationInfo operationInfo)
+        {
+            this.UndoToOperation((IOperation)operationInfo);
+        }
     }
 }

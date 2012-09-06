@@ -17,7 +17,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public AggregateTracker Tracker { get; private set; }
 
-        public ObjectTrackerOperation(AggregateTracker tracker, OperationCollection undoOperations, OperationCollection redoOperations, List<IOperation> currentOperations)
+        public ObjectTrackerOperation( AggregateTracker tracker, string operations, OperationCollection undoOperations, OperationCollection redoOperations, List<IOperation> currentOperations )
         {
             this.Tracker = tracker;
             this.UndoOperations = undoOperations;

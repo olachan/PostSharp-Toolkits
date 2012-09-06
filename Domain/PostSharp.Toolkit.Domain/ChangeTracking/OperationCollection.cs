@@ -28,6 +28,14 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             return new OperationCollection(new LinkedList<IOperation>(this.operations));
         }
 
+        public IEnumerable<IOperationInfo> OperationInfos
+        {
+            get
+            {
+                return operations;
+            }
+        }
+
         public int Count
         {
             get
@@ -48,9 +56,39 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.Trim();
         }
 
-        private void Trim()
+        public void Trim(int? count = null)
         {
-            while ( this.operations.Count > this.MaximumOperationsCount )
+            while (this.operations.Count > (count ?? this.MaximumOperationsCount))
+            {
+                this.operations.RemoveFirst();
+            }
+        }
+
+        public void Trim(string restorePoint)
+        {
+            int? index = this.RestorePointIndex(o => o.Name == restorePoint);
+
+            if (!index.HasValue)
+            {
+                return;
+            }
+
+            for (int i = 0; i < index.Value; i++)
+            {
+                this.operations.RemoveFirst();
+            }
+        }
+
+        public void Trim(RestorePointToken restorePoint)
+        {
+            int? index = this.RestorePointIndex(o => (o is RestorePoint) && ReferenceEquals(((RestorePoint)o).Token, restorePoint));
+
+            if (!index.HasValue)
+            {
+                return;
+            }
+
+            for (int i = 0; i < index.Value; i++)
             {
                 this.operations.RemoveFirst();
             }
@@ -71,7 +109,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 return operation;
             }
 
-            return operation; 
+            return operation;
         }
 
 
@@ -92,13 +130,17 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             return GetOperationsToRestorePoint(o => (o is RestorePoint) && ReferenceEquals(((RestorePoint)o).Token, token));
         }
 
+        public Stack<IOperation> GetOperationsToRestorePoint(IOperation operation)
+        {
+            return GetOperationsToRestorePoint(o => ReferenceEquals(o, operation));
+        }
+
         private Stack<IOperation> GetOperationsToRestorePoint(Predicate<IOperation> predicate)
         {
             List<IOperation> restoreOperations = new List<IOperation>();
 
             IOperation restorePoint = null;
 
-            // TODO performance optimization
             while (operations.Count > 0 && (restorePoint == null || !predicate(restorePoint)))
             {
                 restorePoint = this.operations.Last.Value;
@@ -114,6 +156,33 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             restoreOperations.Reverse();
 
             return new Stack<IOperation>(restoreOperations);
+        }
+
+        public bool RestorePointExists(string name)
+        {
+            return this.RestorePointIndex(o => o.Name == name) != null;
+        }
+
+        public bool RestorePointExists(RestorePointToken token)
+        {
+            return this.RestorePointIndex(o => (o is RestorePoint) && ReferenceEquals(((RestorePoint)o).Token, token)) != null;
+        }
+
+        private int? RestorePointIndex(Predicate<IOperation> predicate)
+        {
+            LinkedListNode<IOperation> restorePoint = this.operations.Last;
+
+            for (int i = operations.Count; i > 0; i--)
+            {
+                if (predicate(restorePoint.Value))
+                {
+                    return i;
+                }
+
+                restorePoint = restorePoint.Previous;
+            }
+
+            return null;
         }
 
         public bool ContainsReferenceTo(Tracker tracker)

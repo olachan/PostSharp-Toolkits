@@ -6,7 +6,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     {
         private readonly List<ISubOperation> subOperations;
 
-        public ComplexOperation()
+        public ComplexOperation( string operations )
             : this(new List<ISubOperation>())
         {
         }

@@ -56,6 +56,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Integrati
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Toolkit.Domain.TestApp", "Tests\PostSharp.Toolkit.Domain.TestApp\PostSharp.Toolkit.Domain.TestApp.csproj", "{A21DCDA1-6B67-4F05-BAAB-09787CEE6C61}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{422D967F-0E7F-49B8-81C6-FCDF2490415F}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\packages.config = .nuget\packages.config
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

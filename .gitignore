@@ -42,3 +42,4 @@ Private/Distribution/source-status
 /Dependencies/PostSharp/PostSharpDir.Custom.targets
 /Build/NuGet/source-status
 /Dependencies/PostSharp/PostSharpDir.Custom.targets
+_TeamCity.PostSharp.Toolkits
