@@ -10,14 +10,9 @@ using PostSharp.Toolkit.Domain.Tools;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    // TODO: Need to make sure this IEditable is not part of an aggregate; it it is, we should throw or use a separate tracker
-    // TODO: Consider introducing the interfaces separately
-    // TODO interaction with IChangeTracking.
-    // TODO independent/shared stack trace
-
     [Serializable]
     [IntroduceInterface(typeof(IEditableObject), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
-    public class EditableObjectAttribute : ObjectAccessorsMapSerializingAspect, IEditableObject
+    public class EditableObjectAttribute : ChangeTrackingAspectBase, IEditableObject
     {
         private Dictionary<MethodBase, MethodBase> interfaceImplementationMap;
 
@@ -56,15 +51,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         protected IEnumerable<MethodBase> SelectMethods(Type type)
         {
-            return
-                type.GetMethods(BindingFlagsSet.PublicInstanceDeclared).Where(
-                    m =>
-                    m.IsDefined(typeof(ChangeTrackingForceOperationAttribute), true) ||
-                    (!m.Name.StartsWith("get_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")));
-
-            //TODO: Why are property getters ignored? They may make modifications as well...
-
-            // .Where( m => !m.IsDefined( typeof(DoNotMakeAutomaticSnapshotAttribute), true ) );
+            return type.GetMethods(BindingFlagsSet.PublicInstanceDeclared).Where(m => !m.IsEventAccessor());
         }
 
         [OnLocationSetValueAdvice]
@@ -83,8 +70,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         protected IEnumerable<FieldInfo> SelectFields(Type type)
         {
-            // Select only fields that are relevant
-            return type.GetFields(BindingFlagsSet.AllInstanceDeclared);
+            var ignoredFields = this.GetFieldsWithAttribute(type, typeof(ChangeTrackingIgnoreField), "INPC015");
+            return type.GetFields(BindingFlagsSet.AllInstanceDeclared).Where(f => !ignoredFields.Contains(f.FullName()));
         }
 
         public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
@@ -128,12 +115,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         private IEnumerable<MethodBase> SelectEditableObjectImplementingMethods(Type type)
         {
-            return (!typeof(IEditableObject).IsAssignableFrom(type) ?
-                    Enumerable.Empty<MethodBase>() :
-                    type.GetInterfaceMap(typeof(IEditableObject)).TargetMethods)
-                    .Union(!typeof(IChangeTracking).IsAssignableFrom(type) ?
-                    Enumerable.Empty<MethodBase>() :
-                    type.GetInterfaceMap(typeof(IChangeTracking)).TargetMethods);
+            return type.GetInterfaceMap(typeof(IEditableObject)).TargetMethods;
         }
 
 

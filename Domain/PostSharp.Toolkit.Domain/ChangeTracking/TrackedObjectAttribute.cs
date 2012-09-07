@@ -6,6 +6,7 @@
 #endregion
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using PostSharp.Aspects;
@@ -48,12 +49,6 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         [MethodPointcut("SelectFields")]
         public void OnFieldSet(LocationInterceptionArgs args)
         {
-            if (this.IgnoredFields.Contains( args.LocationFullName ))
-            {
-                args.ProceedSetValue();
-                return;
-            }
-
             using (this.ThisTracker.StartImplicitOperationScope(string.Format(this.FieldSetOperationStringFormat, args.LocationName)))
             {
                 object oldValue = args.GetCurrentValue(); //TODO: Somewhat risky but probably have to stick to it
@@ -86,8 +81,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         protected IEnumerable<FieldInfo> SelectFields(Type type)
         {
-            // Select only fields that are relevant
-            return type.GetFields(BindingFlagsSet.AllInstanceDeclared);
+            var ignoredFields = this.GetFieldsWithAttribute(type, typeof(ChangeTrackingIgnoreField), "INPC015");
+            return type.GetFields(BindingFlagsSet.AllInstanceDeclared).Where(f => !ignoredFields.Contains(f.FullName()));
         }
 
         public override void RuntimeInitialize(Type type)

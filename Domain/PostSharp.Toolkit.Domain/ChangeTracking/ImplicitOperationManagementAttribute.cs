@@ -12,14 +12,14 @@ using PostSharp.Toolkit.Domain.Tools;
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     [Serializable]
-    public class ImplicitOperationManagementAttribute : ObjectAccessorsMapSerializingAspect, ITrackedObject
+    public class ImplicitOperationManagementAttribute : ChangeTrackingAspectBase, ITrackedObject
     {
         [NonSerialized]
         protected Dictionary<MemberInfoIdentity, MethodDescriptor> MethodAttributes;
 
         protected HashSet<string> TrackedFields;
 
-        protected HashSet<string> IgnoredFields;
+        // protected HashSet<string> IgnoredFields;
 
         [NonSerialized]
         private IObjectTracker tracker;
@@ -36,43 +36,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             this.TrackedFields = this.GetFieldsWithAttribute(type, typeof(ChangeTrackedAttribute), "INPC013");
 
-            this.IgnoredFields = this.GetFieldsWithAttribute( type, typeof(ChangeTrackingIgnoreField), "INPC015" );
+            // this.IgnoredFields = this.GetFieldsWithAttribute( type, typeof(ChangeTrackingIgnoreField), "INPC015" );
 
             base.CompileTimeInitialize(type, aspectInfo);
-        }
-
-        private HashSet<string> GetFieldsWithAttribute(Type type, Type attributeType, string error)
-        {
-            HashSet<string> fieldSet = new HashSet<string>();
-
-            foreach (var propertyInfo in type.GetProperties(BindingFlagsSet.AllInstanceDeclared).Where(f => f.IsDefined(attributeType, true)))
-            {
-                var propertyInfoClosure = propertyInfo;
-
-                var fields =
-                    ReflectionSearch.GetDeclarationsUsedByMethod(propertyInfo.GetGetMethod(true))
-                        .Select(r => r.UsedDeclaration as FieldInfo)
-                        .Where(f => f != null)
-                        .Where(f => propertyInfoClosure.PropertyType.IsAssignableFrom(f.FieldType))
-                        .Where(f => f.DeclaringType.IsAssignableFrom(type))
-                        .ToList();
-
-                if (fields.Count() != 1)
-                {
-                    DomainMessageSource.Instance.Write(propertyInfo, SeverityType.Error, error, propertyInfo.FullName());
-                }
-                else
-                {
-                    fieldSet.Add(fields.First().FullName());
-                }
-            }
-
-            foreach (FieldInfo fieldInfo in type.GetFields(BindingFlagsSet.AllInstanceDeclared).Where(f => f.IsDefined(attributeType, true)))
-            {
-                fieldSet.Add(fieldInfo.FullName());
-            }
-
-            return fieldSet;
         }
 
         public override object CreateInstance(AdviceArgs adviceArgs)

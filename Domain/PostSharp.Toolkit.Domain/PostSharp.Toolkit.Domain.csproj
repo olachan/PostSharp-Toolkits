@@ -84,7 +84,7 @@
   <ItemGroup>
     <Compile Include="ChangeTracking\ChangeTrackingIgnoreField.cs" />
     <Compile Include="ChangeTracking\ChangeTrackingForceOperationAttribute.cs" />
-    <Compile Include="ChangeTracking\ObjectAccessorsMapSerializingAspect.cs" />
+    <Compile Include="ChangeTracking\ChangeTrackingAspectBase.cs" />
     <Compile Include="ChangeTracking\OperationNameGenerationConfiguration.cs" />
     <Compile Include="ChangeTracking\RestorePoint.cs" />
     <Compile Include="ChangeTracking\ComplexOperation.cs" />
