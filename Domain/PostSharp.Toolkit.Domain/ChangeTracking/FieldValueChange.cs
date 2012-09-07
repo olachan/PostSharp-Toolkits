@@ -11,7 +11,7 @@ using PostSharp.Toolkit.Domain.Tools;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    public class FieldValueChange : ISubOperation
+    public class FieldValueChange : SubOperation
     {
         private readonly object target;
 
@@ -29,14 +29,14 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.fieldAccessor = ObjectAccessorsMap.Map[implementingType].FieldAccessors[fieldFullName];
         }
 
-        public void Undo()
+        protected internal override void Undo()
         {
             this.CheckValues(this.newValue);
 
             this.fieldAccessor.SetValue(this.target, this.oldValue);
         }
 
-        public void Redo()
+        protected internal override void Redo()
         {
             this.CheckValues( this.oldValue );
 

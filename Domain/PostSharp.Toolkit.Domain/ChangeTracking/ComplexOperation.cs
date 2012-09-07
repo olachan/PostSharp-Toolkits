@@ -2,21 +2,22 @@ using System.Collections.Generic;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    internal class ComplexOperation : IOperation
+    internal class ComplexOperation : Operation
     {
-        private readonly List<ISubOperation> subOperations;
+        private readonly List<SubOperation> subOperations;
 
-        public ComplexOperation( string operations )
-            : this(new List<ISubOperation>())
+        public ComplexOperation( string name )
+            : this(new List<SubOperation>(), name)
         {
         }
 
-        public ComplexOperation(List<ISubOperation> subOperations)
+        public ComplexOperation(List<SubOperation> subOperations, string name)
         {
+            this.Name = name;
             this.subOperations = subOperations;
         }
 
-        public void AddOperation(ISubOperation change)
+        public void AddOperation(SubOperation change)
         {
             this.subOperations.Add(change);
         }
@@ -29,7 +30,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
-        public void Undo()
+        protected internal override void Undo()
         {
             for (int i = this.subOperations.Count - 1; i >= 0; i--)
             {
@@ -37,15 +38,12 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
-        public void Redo()
+        protected internal override void Redo()
         {
-            foreach (ISubOperation oper in this.subOperations)
+            foreach (SubOperation operation in this.subOperations)
             {
-                oper.Redo();
+                operation.Redo();
             }
         }
-
-        public string Name { get; private set; }
-
     }
 }

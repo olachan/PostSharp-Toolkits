@@ -82,7 +82,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ChangeTracking\ForceChangeTrackingOperationAttribute.cs" />
+    <Compile Include="ChangeTracking\ChangeTrackingIgnoreField.cs" />
+    <Compile Include="ChangeTracking\ChangeTrackingForceOperationAttribute.cs" />
     <Compile Include="ChangeTracking\ObjectAccessorsMapSerializingAspect.cs" />
     <Compile Include="ChangeTracking\OperationNameGenerationConfiguration.cs" />
     <Compile Include="ChangeTracking\RestorePoint.cs" />
@@ -92,12 +93,12 @@
     <Compile Include="ChangeTracking\RestorePointToken.cs" />
     <Compile Include="ChangeTracking\TrackedDictionary.cs" />
     <Compile Include="ChangeTracking\DelegateOperation.cs" />
-    <Compile Include="ChangeTracking\NoAutomaticChangeTrackingOperationAttribute.cs" />
+    <Compile Include="ChangeTracking\ChangeTrackingIgnoreOperationAttribute.cs" />
     <Compile Include="ChangeTracking\FieldValueChange.cs" />
     <Compile Include="ChangeTracking\HistoryTracker.cs" />
     <Compile Include="ChangeTracking\InvertOperationWrapper.cs" />
     <Compile Include="ChangeTracking\IObjectTracker.cs" />
-    <Compile Include="ChangeTracking\IOperation.cs" />
+    <Compile Include="ChangeTracking\Operation.cs" />
     <Compile Include="ChangeTracking\ITrackedObject.cs" />
     <Compile Include="ChangeTracking\ITracker.cs" />
     <Compile Include="ChangeTracking\ObjectAccessors.cs" />

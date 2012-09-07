@@ -38,6 +38,45 @@ namespace PostSharp.Toolkit.Domain.Tools
             return memberInfo.DeclaringType == null ? memberInfo.Name : string.Format( "{0}.{1}", memberInfo.DeclaringType.FullName, memberInfo.Name );
         }
 
+        public static bool IsEventAccessor(this MethodInfo methodInfo)
+        {
+            return methodInfo.IsSpecialName && !methodInfo.Name.StartsWith( "add_" ) && !methodInfo.Name.StartsWith( "remove_" );
+        }
+
+        public static bool IsPropertyAccessor(this MethodInfo methodInfo)
+        {
+            return methodInfo.IsSpecialName && !methodInfo.Name.StartsWith("get_") && !methodInfo.Name.StartsWith("set_");
+        }
+
+        public static PropertyInfo GetAccessorsProperty(this MethodInfo methodInfo)
+        {
+            if (!methodInfo.IsPropertyAccessor())
+            {
+                return null;
+            }
+
+            Type declaringType = methodInfo.DeclaringType;
+
+            return declaringType.GetProperty(methodInfo.Name.Remove(0, 4), BindingFlagsSet.AllInstance);
+        }
+
+        public static bool IsDefinedOnMethodOrProperty(this MethodInfo methodInfo, Type attributeType, bool inherit)
+        {
+            PropertyInfo propertyInfo;
+
+            if (methodInfo.IsDefined(attributeType, inherit))
+            {
+                return true;
+            }
+
+            if ((propertyInfo = methodInfo.GetAccessorsProperty()) != null)
+            {
+                return propertyInfo.IsDefined( attributeType, inherit );
+            }
+
+            return false;
+        }
+
         public static bool IsIdempotentMethod( this MethodBase method )
         {
             return method.GetCustomAttributes( typeof(IdempotentMethodAttribute), false ).Any();

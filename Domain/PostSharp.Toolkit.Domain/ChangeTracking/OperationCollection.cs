@@ -7,17 +7,17 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     internal class OperationCollection
     {
-        private readonly LinkedList<IOperation> operations;
+        private readonly LinkedList<Operation> operations;
 
         private int maximumOperationsCount;
 
         public OperationCollection()
         {
-            this.operations = new LinkedList<IOperation>();
+            this.operations = new LinkedList<Operation>();
             this.maximumOperationsCount = int.MaxValue;
         }
 
-        private OperationCollection(LinkedList<IOperation> operations)
+        private OperationCollection(LinkedList<Operation> operations)
         {
             this.operations = operations;
             this.maximumOperationsCount = int.MaxValue;
@@ -25,10 +25,10 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public OperationCollection Clone()
         {
-            return new OperationCollection(new LinkedList<IOperation>(this.operations));
+            return new OperationCollection(new LinkedList<Operation>(this.operations));
         }
 
-        public IEnumerable<IOperationInfo> OperationInfos
+        public IEnumerable<Operation> Operations
         {
             get
             {
@@ -44,7 +44,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
-        public void Push(IOperation operation)
+        public void Push(Operation operation)
         {
             if (operation == null)
             {
@@ -94,14 +94,14 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
-        public IOperation Pop()
+        public Operation Pop()
         {
             if (this.operations.Count == 0)
             {
                 return null;
             }
 
-            IOperation operation = this.operations.Last.Value;
+            Operation operation = this.operations.Last.Value;
             this.operations.RemoveLast();
 
             if (!operation.IsRestorePoint())
@@ -120,26 +120,26 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             return restorePoint.Token;
         }
 
-        public Stack<IOperation> GetOperationsToRestorePoint(string name)
+        public Stack<Operation> GetOperationsToRestorePoint(string name)
         {
             return GetOperationsToRestorePoint(o => o.Name == name);
         }
 
-        public Stack<IOperation> GetOperationsToRestorePoint(RestorePointToken token)
+        public Stack<Operation> GetOperationsToRestorePoint(RestorePointToken token)
         {
             return GetOperationsToRestorePoint(o => (o is RestorePoint) && ReferenceEquals(((RestorePoint)o).Token, token));
         }
 
-        public Stack<IOperation> GetOperationsToRestorePoint(IOperation operation)
+        public Stack<Operation> GetOperationsToRestorePoint(Operation operation)
         {
             return GetOperationsToRestorePoint(o => ReferenceEquals(o, operation));
         }
 
-        private Stack<IOperation> GetOperationsToRestorePoint(Predicate<IOperation> predicate)
+        private Stack<Operation> GetOperationsToRestorePoint(Predicate<Operation> predicate)
         {
-            List<IOperation> restoreOperations = new List<IOperation>();
+            List<Operation> restoreOperations = new List<Operation>();
 
-            IOperation restorePoint = null;
+            Operation restorePoint = null;
 
             while (operations.Count > 0 && (restorePoint == null || !predicate(restorePoint)))
             {
@@ -155,7 +155,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             restoreOperations.Reverse();
 
-            return new Stack<IOperation>(restoreOperations);
+            return new Stack<Operation>(restoreOperations);
         }
 
         public bool RestorePointExists(string name)
@@ -168,9 +168,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             return this.RestorePointIndex(o => (o is RestorePoint) && ReferenceEquals(((RestorePoint)o).Token, token)) != null;
         }
 
-        private int? RestorePointIndex(Predicate<IOperation> predicate)
+        private int? RestorePointIndex(Predicate<Operation> predicate)
         {
-            LinkedListNode<IOperation> restorePoint = this.operations.Last;
+            LinkedListNode<Operation> restorePoint = this.operations.Last;
 
             for (int i = operations.Count; i > 0; i--)
             {

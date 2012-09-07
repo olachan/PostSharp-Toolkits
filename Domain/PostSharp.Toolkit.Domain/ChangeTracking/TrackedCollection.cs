@@ -20,7 +20,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         private void Initialize()
         {
-            this.AggregateTracker = new AggregateTracker( this );
+            this.AggregateTracker = new AggregateTracker(this);
         }
 
         public TrackedCollection()
@@ -233,14 +233,17 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
+        [ChangeTrackingIgnoreOperation]
         public IObjectTracker Tracker
         {
+
             get
             {
                 return this.AggregateTracker;
             }
         }
 
+        [ChangeTrackingIgnoreField]
         internal AggregateTracker AggregateTracker { get; private set; }
 
         public void SetTracker(IObjectTracker tracker)

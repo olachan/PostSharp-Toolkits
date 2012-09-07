@@ -7,17 +7,17 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     /// (undo, redo, redo to snapshot etc.)
     /// </summary>
     //TODO: (KW) Debug usages, make sure it works
-    internal class ObjectTrackerOperation : IOperation
+    internal class ObjectTrackerOperation : Operation
     {
         protected readonly OperationCollection UndoOperations;
 
         protected readonly OperationCollection RedoOperations;
 
-        protected readonly List<IOperation> CurrentOperations;
+        protected readonly List<Operation> CurrentOperations;
 
         public AggregateTracker Tracker { get; private set; }
 
-        public ObjectTrackerOperation( AggregateTracker tracker, string operations, OperationCollection undoOperations, OperationCollection redoOperations, List<IOperation> currentOperations )
+        public ObjectTrackerOperation( AggregateTracker tracker, string operations, OperationCollection undoOperations, OperationCollection redoOperations, List<Operation> currentOperations )
         {
             this.Tracker = tracker;
             this.UndoOperations = undoOperations;
@@ -25,13 +25,11 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.CurrentOperations = currentOperations;
         }
 
-        public string Name { get; private set; }
-
-        public void Undo()
+        protected internal override void Undo()
         {
             using (this.Tracker.StartDisabledTrackingScope())
             {
-                foreach (IOperation correntOperation in this.CurrentOperations)
+                foreach (Operation correntOperation in this.CurrentOperations)
                 {
                     correntOperation.Undo();
                 }
@@ -40,7 +38,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
-        public void Redo()
+        protected internal override void Redo()
         {
             using (this.Tracker.StartDisabledTrackingScope())
             {

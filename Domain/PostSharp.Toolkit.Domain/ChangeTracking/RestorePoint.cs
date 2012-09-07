@@ -4,18 +4,16 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     //TODO: Restore point should not be an operation
     //Maybe operation should contain a collection of restore points?
-    internal sealed class RestorePoint : IOperation
+    internal sealed class RestorePoint : Operation
     {
-        public string Name { get; private set; }
-
         public RestorePointToken Token { get; private set; }
 
-        public void Undo()
+        protected internal override void Undo()
         {
             //Do nothing
         }
 
-        public void Redo()
+        protected internal override void Redo()
         {
             //Do nothing
         }

@@ -326,6 +326,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
+        [ChangeTrackingIgnoreOperation]
         public IObjectTracker Tracker
         {
             get
@@ -334,6 +335,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
+        [ChangeTrackingIgnoreField]
         internal AggregateTracker AggregateTracker { get; private set; }
 
         public void SetTracker(IObjectTracker tracker)

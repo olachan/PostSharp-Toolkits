@@ -7,7 +7,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     {
         IObjectTracker Tracker { get; }
 
-        [NoAutomaticChangeTrackingOperation]
+        [ChangeTrackingIgnoreOperation]
         void SetTracker(IObjectTracker tracker);
 
         bool IsAggregateRoot { get; }

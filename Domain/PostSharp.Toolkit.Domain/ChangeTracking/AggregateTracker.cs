@@ -47,7 +47,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.ParentTracker = globalTracker;
         }
 
-        public void AddToCurrentOperation(ISubOperation operation)
+        public void AddToCurrentOperation(SubOperation operation)
         {
             if (!this.IsTrackingEnabled)
             {
@@ -234,7 +234,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.currentOperation = null;
         }
 
-        internal override void AddUndoOperationToParentTracker(List<IOperation> operations, OperationCollection undoOperations, OperationCollection redoOperations, string name)
+        internal override void AddUndoOperationToParentTracker( string name, List<Operation> operations, OperationCollection undoOperations, OperationCollection redoOperations )
         {
             if (this.ParentTracker != null)
             {
@@ -244,7 +244,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                         name,
                         undoOperations,
                         redoOperations,
-                        operations.Where(o => o != null).Select(InvertOperationWrapper.InvertOperation).ToList()));
+                        operations.Where(o => o != null).Select(o => InvertOperationWrapper.InvertOperation(o, this.NameGenerationConfiguration.UndoOperationStringFormat)).ToList()));
             }
         }
 

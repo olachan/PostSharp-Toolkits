@@ -29,7 +29,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             get
             {
-                return this.ThisTracker.OperationNameGenerationConfiguration.FieldSetOperationStringFormat;
+                return this.ThisTracker.NameGenerationConfiguration.FieldSetOperationStringFormat;
             }
         }
 
@@ -48,11 +48,17 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         [MethodPointcut("SelectFields")]
         public void OnFieldSet(LocationInterceptionArgs args)
         {
+            if (this.IgnoredFields.Contains( args.LocationFullName ))
+            {
+                args.ProceedSetValue();
+                return;
+            }
+
             using (this.ThisTracker.StartImplicitOperationScope(string.Format(this.FieldSetOperationStringFormat, args.LocationName)))
             {
                 object oldValue = args.GetCurrentValue(); //TODO: Somewhat risky but probably have to stick to it
 
-                if (oldValue != null && this.TrackedFields.Contains(args.LocationName))
+                if (oldValue != null && this.TrackedFields.Contains(args.LocationFullName))
                 {
                     ITrackedObject trackedObject = (ITrackedObject)oldValue;
                     AggregateTracker newTracker = new AggregateTracker(trackedObject);
@@ -63,7 +69,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 args.ProceedSetValue();
                 object newValue = args.Value;
 
-                if (newValue != null && this.TrackedFields.Contains(args.LocationName))
+                if (newValue != null && this.TrackedFields.Contains(args.LocationFullName))
                 {
                     ITrackedObject trackedObject = (ITrackedObject)newValue;
                     if (trackedObject.Tracker == null || ((AggregateTracker)trackedObject.Tracker).OperationsCount != 0)

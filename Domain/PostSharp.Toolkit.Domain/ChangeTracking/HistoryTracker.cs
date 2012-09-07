@@ -90,34 +90,34 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
-        internal override void AddUndoOperationToParentTracker(List<IOperation> operations, OperationCollection undoOperations, OperationCollection redoOperations, string name)
+        internal override void AddUndoOperationToParentTracker( string name, List<Operation> operations, OperationCollection undoOperations, OperationCollection redoOperations )
         {
         }
 
-        public IEnumerable<IOperationInfo> UndoOperations
+        public IEnumerable<Operation> UndoOperations
         {
             get
             {
-                return this.UndoOperationCollection.OperationInfos;
+                return this.UndoOperationCollection.Operations;
             }
         }
 
-        public IEnumerable<IOperationInfo> RedoOperations
+        public IEnumerable<Operation> RedoOperations
         {
             get
             {
-                return this.RedoOperationCollection.OperationInfos;
+                return this.RedoOperationCollection.Operations;
             }
         }
 
-        public void RedoTo(IOperationInfo operationInfo)
+        public void RedoTo(Operation operation)
         {
-            this.RedoToOperation((IOperation)operationInfo);
+            this.RedoToOperation(operation);
         }
 
-        public void UndoTo(IOperationInfo operationInfo)
+        public void UndoTo(Operation operation)
         {
-            this.UndoToOperation((IOperation)operationInfo);
+            this.UndoToOperation(operation);
         }
     }
 }

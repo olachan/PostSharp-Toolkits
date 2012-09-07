@@ -8,7 +8,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     internal static class OperationExtensions
     {
-         public static bool IsRestorePoint(this IOperation operation)
+         public static bool IsRestorePoint(this Operation operation)
          {
              return operation is RestorePoint;
          }

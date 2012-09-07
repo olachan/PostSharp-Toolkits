@@ -46,7 +46,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         private OperationNameGenerationConfiguration operationNameGenerationConfiguration;
 
-        public OperationNameGenerationConfiguration OperationNameGenerationConfiguration
+        public OperationNameGenerationConfiguration NameGenerationConfiguration
         {
             get
             {
@@ -57,7 +57,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
                 if (this.ParentTracker != null)
                 {
-                    return this.ParentTracker.OperationNameGenerationConfiguration;
+                    return this.ParentTracker.NameGenerationConfiguration;
                 }
 
                 return OperationNameGenerationConfiguration.Default;
@@ -104,7 +104,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         protected abstract bool UndoRedoOperationEnabledCheck(bool throwException = true);
 
-        public virtual void AddOperation(IOperation operation, bool addToParent = true)
+        public virtual void AddOperation(Operation operation, bool addToParent = true)
         {
             if (!this.AddOperationEnabledCheck())
             {
@@ -172,11 +172,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             if (addToParent)
             {
-                this.AddUndoOperationToParentTracker(
-                    operation,
-                    undoOperations,
-                    redoOperations,
-                    string.Format(this.OperationNameGenerationConfiguration.UndoOperationStringFormat, operation.Name));
+                this.AddUndoOperationToParentTracker( string.Format(this.NameGenerationConfiguration.UndoOperationStringFormat, operation.Name), operation, undoOperations, redoOperations );
             }
 
             operation.Undo();
@@ -188,7 +184,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
-        public virtual void UndoToOperation(IOperation operation)
+        public virtual void UndoToOperation(Operation operation)
         {
             if (!this.UndoRedoOperationEnabledCheck())
             {
@@ -198,7 +194,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.UndoToRestorePoint(
                 () => this.UndoOperationCollection.GetOperationsToRestorePoint(operation),
                 this.RedoOperationCollection.Push,
-                string.Format(this.OperationNameGenerationConfiguration.UndoToStringFormat, operation.Name));
+                string.Format(this.NameGenerationConfiguration.UndoToStringFormat, operation.Name));
         }
 
         public virtual void UndoTo(string name)
@@ -211,7 +207,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.UndoToRestorePoint(
                 () => this.UndoOperationCollection.GetOperationsToRestorePoint(name),
                 this.RedoOperationCollection.Push,
-                string.Format(this.OperationNameGenerationConfiguration.UndoToStringFormat, name));
+                string.Format(this.NameGenerationConfiguration.UndoToStringFormat, name));
         }
 
         public virtual void UndoTo(RestorePointToken token)
@@ -224,10 +220,10 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.UndoToRestorePoint(
                 () => this.UndoOperationCollection.GetOperationsToRestorePoint(token),
                 this.RedoOperationCollection.Push,
-                string.Format(this.OperationNameGenerationConfiguration.UndoToStringFormat, token.Name));
+                string.Format(this.NameGenerationConfiguration.UndoToStringFormat, token.Name));
         }
 
-        private void UndoToRestorePoint(Func<Stack<IOperation>> getOperationsToRestorePoint, Action<IOperation> pushToRedoAction, string name)
+        private void UndoToRestorePoint(Func<Stack<Operation>> getOperationsToRestorePoint, Action<Operation> pushToRedoAction, string name)
         {
             if (!this.UndoRedoOperationEnabledCheck())
             {
@@ -239,17 +235,16 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 OperationCollection undoOperations = this.UndoOperationCollection.Clone();
                 OperationCollection redoOperations = this.RedoOperationCollection.Clone();
 
-                Stack<IOperation> operationsToUndo = getOperationsToRestorePoint();
+                Stack<Operation> operationsToUndo = getOperationsToRestorePoint();
 
                 var operationsForParentTracker = operationsToUndo.ToList();
                 operationsForParentTracker.Reverse();
 
-                this.AddUndoOperationToParentTracker(operationsForParentTracker, undoOperations, redoOperations, name); //TODO
+                this.AddUndoOperationToParentTracker( name, operationsForParentTracker, undoOperations, redoOperations );
 
                 while (operationsToUndo.Count > 0)
                 {
-                    // TODO consider optimization
-                    IOperation operation = operationsToUndo.Pop();
+                    Operation operation = operationsToUndo.Pop();
                     operation.Undo();
                     pushToRedoAction(operation);
                 }
@@ -299,11 +294,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             if (addToParent)
             {
-                this.AddUndoOperationToParentTracker(
-                    operation,
-                    undoOperations,
-                    redoOperations,
-                    string.Format(this.OperationNameGenerationConfiguration.RedoOperationStringFormat, operation.Name));
+                this.AddUndoOperationToParentTracker( string.Format(this.NameGenerationConfiguration.RedoOperationStringFormat, operation.Name), operation, undoOperations, redoOperations );
             }
 
             operation.Redo();
@@ -325,7 +316,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.UndoToRestorePoint(
                 () => this.RedoOperationCollection.GetOperationsToRestorePoint(name),
                 this.UndoOperationCollection.Push,
-                string.Format(this.OperationNameGenerationConfiguration.RedoToStringFormat, name));
+                string.Format(this.NameGenerationConfiguration.RedoToStringFormat, name));
         }
 
         public virtual void RedoTo(RestorePointToken token)
@@ -338,10 +329,10 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.UndoToRestorePoint(
                 () => this.RedoOperationCollection.GetOperationsToRestorePoint(token),
                 this.UndoOperationCollection.Push,
-                string.Format(this.OperationNameGenerationConfiguration.RedoToStringFormat, token.Name));
+                string.Format(this.NameGenerationConfiguration.RedoToStringFormat, token.Name));
         }
 
-        public virtual void RedoToOperation(IOperation operation)
+        public virtual void RedoToOperation(Operation operation)
         {
             if (!this.UndoRedoOperationEnabledCheck())
             {
@@ -351,7 +342,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.UndoToRestorePoint(
                 () => this.RedoOperationCollection.GetOperationsToRestorePoint(operation),
                 this.UndoOperationCollection.Push,
-                string.Format(this.OperationNameGenerationConfiguration.RedoToStringFormat, operation.Name));
+                string.Format(this.NameGenerationConfiguration.RedoToStringFormat, operation.Name));
         }
 
         public IDisposable StartDisabledTrackingScope()
@@ -369,12 +360,11 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.IsTrackingInternal = true;
         }
 
-        internal abstract void AddUndoOperationToParentTracker(
-            List<IOperation> operations, OperationCollection undoOperations, OperationCollection redoOperations, string name);
+        internal abstract void AddUndoOperationToParentTracker( string name, List<Operation> operations, OperationCollection undoOperations, OperationCollection redoOperations );
 
-        internal virtual void AddUndoOperationToParentTracker(IOperation operation, OperationCollection undoOperations, OperationCollection redoOperations, string name)
+        internal virtual void AddUndoOperationToParentTracker( string name, Operation operation, OperationCollection undoOperations, OperationCollection redoOperations )
         {
-            this.AddUndoOperationToParentTracker(new List<IOperation> { operation }, undoOperations, redoOperations, name);
+            this.AddUndoOperationToParentTracker( name, new List<Operation> { operation }, undoOperations, redoOperations );
         }
 
         internal bool ContainsReferenceTo(Tracker tracker)
@@ -401,8 +391,6 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             this.UndoOperationCollection.Clear();
             this.RedoOperationCollection.Clear();
-
-            //TODO: What about child trackers in case of HistoryTracker?
         }
 
         public virtual bool CanStopTracking()
@@ -431,7 +419,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             OperationCollection undoOperations = this.UndoOperationCollection.Clone();
             OperationCollection redoOperations = this.RedoOperationCollection.Clone();
 
-            this.AddUndoOperationToParentTracker(new List<IOperation>(), undoOperations, redoOperations, "Clear"); //TODO
+            this.AddUndoOperationToParentTracker( "Clear", new List<Operation>(), undoOperations, redoOperations );
 
             this.UndoOperationCollection.Clear();
             this.RedoOperationCollection.Clear();

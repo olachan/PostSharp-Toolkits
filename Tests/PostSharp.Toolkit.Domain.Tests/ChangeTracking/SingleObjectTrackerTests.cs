@@ -343,7 +343,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
         public int P2 { get; set; }
 
-        public int P3 { get; [ForceChangeTrackingOperation]set; }
+        public int P3 { get; [ChangeTrackingForceOperation]set; }
 
         public void ChangeValuesTracked(int? p1 = null, int? p2 = null, int? p3 = null)
         {
@@ -363,7 +363,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             }
         }
 
-        [NoAutomaticChangeTrackingOperation]
+        [ChangeTrackingIgnoreOperation]
         public void ChangeValuesNotTracked(int? p1 = null, int? p2 = null, int? p3 = null)
         {
             this.ChangeValuesTracked(p1, p2, p3);

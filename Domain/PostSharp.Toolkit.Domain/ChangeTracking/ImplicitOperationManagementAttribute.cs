@@ -19,6 +19,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         protected HashSet<string> TrackedFields;
 
+        protected HashSet<string> IgnoredFields;
+
         [NonSerialized]
         private IObjectTracker tracker;
 
@@ -26,43 +28,51 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             get
             {
-                return this.ThisTracker.OperationNameGenerationConfiguration.MethodOperationStringFormat;
+                return this.ThisTracker.NameGenerationConfiguration.MethodOperationStringFormat;
             }
         }
 
         public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
         {
-            this.TrackedFields = new HashSet<string>();
+            this.TrackedFields = this.GetFieldsWithAttribute(type, typeof(ChangeTrackedAttribute), "INPC013");
 
-            foreach (var propertyInfo in type.GetProperties(BindingFlagsSet.AllInstanceDeclared).Where(f => f.IsDefined(typeof(ChangeTrackedAttribute), false)))
+            this.IgnoredFields = this.GetFieldsWithAttribute( type, typeof(ChangeTrackingIgnoreField), "INPC015" );
+
+            base.CompileTimeInitialize(type, aspectInfo);
+        }
+
+        private HashSet<string> GetFieldsWithAttribute(Type type, Type attributeType, string error)
+        {
+            HashSet<string> fieldSet = new HashSet<string>();
+
+            foreach (var propertyInfo in type.GetProperties(BindingFlagsSet.AllInstanceDeclared).Where(f => f.IsDefined(attributeType, true)))
             {
                 var propertyInfoClosure = propertyInfo;
 
-                var fields = ReflectionSearch.GetDeclarationsUsedByMethod(propertyInfo.GetGetMethod(true))
-                    .Select(r => r.UsedDeclaration as FieldInfo)
-                    .Where(f => f != null)
-                    .Where(f => propertyInfoClosure.PropertyType.IsAssignableFrom(f.FieldType))
-                    .Where(f => f.DeclaringType.IsAssignableFrom(type))
-                    .ToList();
+                var fields =
+                    ReflectionSearch.GetDeclarationsUsedByMethod(propertyInfo.GetGetMethod(true))
+                        .Select(r => r.UsedDeclaration as FieldInfo)
+                        .Where(f => f != null)
+                        .Where(f => propertyInfoClosure.PropertyType.IsAssignableFrom(f.FieldType))
+                        .Where(f => f.DeclaringType.IsAssignableFrom(type))
+                        .ToList();
 
                 if (fields.Count() != 1)
                 {
-                    DomainMessageSource.Instance.Write(propertyInfo, SeverityType.Error, "INPC013", propertyInfo.Name);
+                    DomainMessageSource.Instance.Write(propertyInfo, SeverityType.Error, error, propertyInfo.FullName());
                 }
                 else
                 {
-                    this.TrackedFields.Add(fields.First().Name);
+                    fieldSet.Add(fields.First().FullName());
                 }
             }
 
-            foreach (FieldInfo fieldInfo in type
-                .GetFields(BindingFlagsSet.AllInstanceDeclared)
-                .Where(f => f.IsDefined(typeof(ChangeTrackedAttribute), false)))
+            foreach (FieldInfo fieldInfo in type.GetFields(BindingFlagsSet.AllInstanceDeclared).Where(f => f.IsDefined(attributeType, true)))
             {
-                this.TrackedFields.Add(fieldInfo.Name);
+                fieldSet.Add(fieldInfo.FullName());
             }
 
-            base.CompileTimeInitialize(type, aspectInfo);
+            return fieldSet;
         }
 
         public override object CreateInstance(AdviceArgs adviceArgs)
@@ -78,23 +88,34 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         private static Dictionary<MemberInfoIdentity, MethodDescriptor> GetMethodsAttributes(Type type)
         {
             Dictionary<MemberInfoIdentity, MethodDescriptor> methodAttributes = new Dictionary<MemberInfoIdentity, MethodDescriptor>();
-            foreach ( MethodInfo method in type.GetMethods( BindingFlagsSet.PublicInstance ) )
+            foreach (MethodInfo method in type.GetMethods(BindingFlagsSet.PublicInstance))
             {
                 MethodOperationStrategy operationStrategy = MethodOperationStrategy.Auto;
+                PropertyInfo propertyInfo;
+                if ((propertyInfo = method.GetAccessorsProperty()) != null)
+                {
+                    if (propertyInfo.IsDefined(typeof(ChangeTrackingIgnoreField), true) ||
+                        propertyInfo.IsDefined(typeof(ChangeTrackingIgnoreOperationAttribute), true))
+                    {
+                        continue;
+                    }
+                }
 
-                if ( method.GetCustomAttributes( typeof(NoAutomaticChangeTrackingOperationAttribute), true ).Any() )
+                if (method.IsDefinedOnMethodOrProperty(typeof(ChangeTrackingIgnoreOperationAttribute), true) ||
+                    method.IsDefinedOnMethodOrProperty(typeof(ChangeTrackingIgnoreField), true))
                 {
                     operationStrategy = MethodOperationStrategy.Never;
                 }
-                else if ( method.GetCustomAttributes( typeof(ForceChangeTrackingOperationAttribute), true ).Any() )
+
+                else if (method.IsDefined(typeof(ChangeTrackingForceOperationAttribute), true))
                 {
                     operationStrategy = MethodOperationStrategy.Always;
                 }
 
                 string operationName =
-                    method.GetCustomAttributes( typeof(OperationNameAttribute), false ).Select( a => ((OperationNameAttribute)a).Name ).FirstOrDefault();
+                    method.GetCustomAttributes(typeof(OperationNameAttribute), false).Select(a => ((OperationNameAttribute)a).Name).FirstOrDefault();
 
-                methodAttributes.Add(new MemberInfoIdentity( method ), new MethodDescriptor(operationStrategy, operationName));
+                methodAttributes.Add(new MemberInfoIdentity(method), new MethodDescriptor(operationStrategy, operationName));
             }
 
             return methodAttributes;
@@ -117,7 +138,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
 
             if (methodDescriptor.MethodOperationStrategy == MethodOperationStrategy.Always ||
-                (methodDescriptor.MethodOperationStrategy == MethodOperationStrategy.Auto && 
+                (methodDescriptor.MethodOperationStrategy == MethodOperationStrategy.Auto &&
                 (stackPeek == null || !ReferenceEquals(stackPeek.Tracker, this.ThisTracker))))
             {
                 operationScope = this.ThisTracker.StartImplicitOperationScope(string.Format(this.MethodOperationStringFormat, methodDescriptor.OperationName ?? args.Method.Name));
@@ -139,14 +160,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         protected IEnumerable<MethodBase> SelectMethods(Type type)
         {
-            return
-                type.GetMethods(BindingFlagsSet.PublicInstanceDeclared).Where(
-                    m =>
-                    m.IsDefined(typeof(ForceChangeTrackingOperationAttribute), true) ||
-                    (!m.Name.StartsWith("get_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")));
-            
-            //TODO: Why are property getters ignored? They may make modifications as well...
+            return type.GetMethods( BindingFlagsSet.PublicInstanceDeclared ).Where( m => !m.IsEventAccessor() );
         }
+        
 
         public void Undo()
         {
@@ -181,8 +197,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.tracker = tracker;
         }
 
-        public bool IsAggregateRoot 
-        { 
+        public bool IsAggregateRoot
+        {
             get
             {
                 return ReferenceEquals(this.ThisTracker.AggregateRoot, this.Instance);
@@ -229,28 +245,28 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             private Module Module { get; set; }
 
-            public MemberInfoIdentity( MemberInfo methodBase )
+            public MemberInfoIdentity(MemberInfo methodBase)
             {
                 this.MetadataToken = methodBase.MetadataToken;
                 this.Module = methodBase.Module;
             }
 
-            public bool Equals( MemberInfoIdentity other )
+            public bool Equals(MemberInfoIdentity other)
             {
-                if ( ReferenceEquals( null, other ) )
+                if (ReferenceEquals(null, other))
                 {
                     return false;
                 }
-                if ( ReferenceEquals( this, other ) )
+                if (ReferenceEquals(this, other))
                 {
                     return true;
                 }
-                return this.MetadataToken == other.MetadataToken && this.Module.Equals( other.Module );
+                return this.MetadataToken == other.MetadataToken && this.Module.Equals(other.Module);
             }
 
-            public override bool Equals( object obj )
+            public override bool Equals(object obj)
             {
-                return Equals( (MemberInfoIdentity)obj );
+                return Equals((MemberInfoIdentity)obj);
             }
 
             public override int GetHashCode()
