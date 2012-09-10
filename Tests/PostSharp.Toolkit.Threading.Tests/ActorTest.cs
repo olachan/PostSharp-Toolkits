@@ -40,6 +40,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             const int n = 1000000;
             ActorClass[] actors = new ActorClass[Math.Max(Environment.ProcessorCount - 1, 1)];
 
+
             for (int i = 0; i < actors.Length; i++)
             {
                 actors[i] = new ActorClass();
