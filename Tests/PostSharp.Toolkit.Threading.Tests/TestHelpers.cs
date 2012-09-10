@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using NUnit.Framework;
 
 namespace PostSharp.Toolkit.Threading.Tests
 {
@@ -29,12 +30,23 @@ namespace PostSharp.Toolkit.Threading.Tests
                
                 t1.Start();
                 t2.Start();
-                Task.WaitAll( new[] {t1, t2}, 200 );
+                Assert.IsTrue( Task.WaitAny( new[] {t1, t2}, 2000 ) != -1, "Task wait timed out" );
             }
             catch ( AggregateException aggregateException )
             {
-                Thread.Sleep( 200 ); //Make sure the second running task is over as well
                 throw aggregateException.InnerException;
+            }
+            finally
+            {
+                if (t1.Status == TaskStatus.Running)
+                {
+                    Assert.IsTrue(t1.Wait(1000), "Task wait timed out");
+                }
+
+                if (t2.Status == TaskStatus.Running)
+                {
+                    Assert.IsTrue(t2.Wait(1000), "Task wait timed out");
+                }
             }
 
             var ex = tasks.Select(t => t.Exception).FirstOrDefault(e => e != null);

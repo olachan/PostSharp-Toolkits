@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 using NUnit.Framework;
 
@@ -22,6 +23,13 @@ namespace PostSharp.Toolkit.Integration.Tests
         public ThreadSafeStringWriter TextWriter { get; private set; }
 
         public StringBuilder OutputString { get; private set; }
+
+        [TestFixtureSetUp]
+        public void FixtureSetUp()
+        {
+            // swallow all unobserved exceptions
+            TaskScheduler.UnobservedTaskException += (sender, args) => args.SetObserved();
+        }
 
         [SetUp]
         public virtual void SetUp()
@@ -39,6 +47,14 @@ namespace PostSharp.Toolkit.Integration.Tests
             {
                 this.TextWriter.Dispose();
             }
+
+            // wait for any pending exceptions from background tasks
+            try
+            {
+                GC.Collect(GC.MaxGeneration);
+                GC.WaitForPendingFinalizers();
+            }
+            catch { }
         }
     }
 
