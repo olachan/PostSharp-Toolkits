@@ -1,4 +1,6 @@
-namespace PostSharp.Toolkit.Domain.ChangeTracking
+using PostSharp.Toolkit.Domain.ChangeTracking;
+
+namespace PostSharp.Toolkit.Domain
 {
     public interface ITracker
     {
@@ -23,5 +25,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         bool CanStopTracking();
 
         int MaximumOperationsCount { get; set; }
+
+        bool IsTracking { get; }
     }
 }

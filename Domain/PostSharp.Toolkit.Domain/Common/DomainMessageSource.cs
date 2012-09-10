@@ -9,16 +9,16 @@
 
 using PostSharp.Extensibility;
 
-namespace PostSharp.Toolkit.Domain.Tools
+namespace PostSharp.Toolkit.Domain.Common
 {
     internal static class DomainMessageSource
     {
-        public static MessageSource Instance = new MessageSource( "PostSharp.Toolkit.INPC", new InpcMessageDispenser() );
+        public static MessageSource Instance = new MessageSource( "PostSharp.Toolkit.DOM", new DomainMessageDispenser() );
 
-        private class InpcMessageDispenser : MessageDispenser
+        private class DomainMessageDispenser : MessageDispenser
         {
-            public InpcMessageDispenser()
-                : base( "INPC" ) //TODO: Change prefix to "DOM" or sth similar or create separate message soruces for INPC and change tracking
+            public DomainMessageDispenser()
+                : base( "DOM" )
             {
             }
 

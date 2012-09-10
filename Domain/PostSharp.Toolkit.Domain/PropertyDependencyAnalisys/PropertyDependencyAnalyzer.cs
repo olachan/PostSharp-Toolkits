@@ -15,7 +15,7 @@ using System.Text;
 
 using PostSharp.Extensibility;
 using PostSharp.Reflection.Syntax;
-using PostSharp.Toolkit.Domain.Tools;
+using PostSharp.Toolkit.Domain.Common;
 
 namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
 {
@@ -293,7 +293,7 @@ namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
                         DomainMessageSource.Instance.Write(
                             this.context.Current.CurrentProperty, 
                             SeverityType.Error, 
-                            "INPC012", 
+                            "DOM012", 
                             this.context.Current.CurrentMethod );
                     }
 
@@ -404,7 +404,7 @@ namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
                 DomainMessageSource.Instance.Write(
                     this.context.Current.CurrentProperty,
                     SeverityType.Error,
-                    "INPC003",
+                    "DOM003",
                     this.context.Current.CurrentProperty,
                     this.context.Current.CurrentMethod );
                 return base.VisitMethodPointerExpression( expression );
@@ -522,7 +522,7 @@ namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
                         {
                             return new ExpressionValidationResultWithErrors( ExpressionValidationResult.RejectImmediateReturn )
                                 {
-                                    MessageId = "INPC001",
+                                    MessageId = "DOM001",
                                     SeverityType = SeverityType.Error,
                                     MessageArguments = new object[] { currentContext.CurrentProperty, currentContext.CurrentMethod }
                                 };
@@ -562,7 +562,7 @@ namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
 
                             return new ExpressionValidationResultWithErrors( ExpressionValidationResult.RejectImmediateReturn )
                                 {
-                                    MessageId = "INPC002",
+                                    MessageId = "DOM002",
                                     SeverityType = SeverityType.Error,
                                     MessageArguments = new object[] { currentContext.CurrentProperty, currentContext.CurrentMethod }
                                 };
@@ -585,7 +585,7 @@ namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
                         {
                             return new ExpressionValidationResultWithErrors( ExpressionValidationResult.RejectImmediateReturn )
                                 {
-                                    MessageId = "INPC011",
+                                    MessageId = "DOM011",
                                     SeverityType = SeverityType.Error,
                                     MessageArguments = new object[] { currentContext.CurrentProperty, currentContext.CurrentMethod }
                                 };

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using PostSharp.Toolkit.Domain.Tools;
 using System.Linq;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking

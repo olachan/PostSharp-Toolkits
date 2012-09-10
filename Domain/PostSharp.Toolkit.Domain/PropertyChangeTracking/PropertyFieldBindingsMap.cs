@@ -14,7 +14,7 @@ using System.Reflection;
 
 using PostSharp.Aspects;
 using PostSharp.Extensibility;
-using PostSharp.Toolkit.Domain.Tools;
+using PostSharp.Toolkit.Domain.Common;
 
 namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
 {
@@ -74,14 +74,14 @@ namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
 
             if ( fieldList.Count > 5 )
             {
-                DomainMessageSource.Instance.Write( propertyInfo, SeverityType.Warning, "INPC007", propertyInfo.Name );
+                DomainMessageSource.Instance.Write( propertyInfo, SeverityType.Warning, "DOM007", propertyInfo.Name );
             }
 
             foreach ( FieldInfo field in fieldList )
             {
                 if (field.FieldType.ContainsGenericParameters)
                 {
-                    DomainMessageSource.Instance.Write(propertyInfo, SeverityType.Error, "INPC014", propertyInfo.Name, field.Name);
+                    DomainMessageSource.Instance.Write(propertyInfo, SeverityType.Error, "DOM014", propertyInfo.Name, field.Name);
                 }
 
                 this.propertyToFieldMapping.AddToListValue( propertyName, new PropertyFieldBinding( propertyName, this.FiledInfos[field.Name], isActive ) );

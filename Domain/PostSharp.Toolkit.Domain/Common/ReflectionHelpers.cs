@@ -11,7 +11,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 
-namespace PostSharp.Toolkit.Domain.Tools
+namespace PostSharp.Toolkit.Domain.Common
 {
     internal static class ReflectionHelpers
     {

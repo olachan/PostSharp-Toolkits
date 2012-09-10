@@ -7,7 +7,7 @@ using System.Runtime.Serialization;
 using PostSharp.Aspects;
 using PostSharp.Extensibility;
 using PostSharp.Reflection;
-using PostSharp.Toolkit.Domain.Tools;
+using PostSharp.Toolkit.Domain.Common;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {

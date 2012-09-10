@@ -2,7 +2,7 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace PostSharp.Toolkit.Domain.Tools
+namespace PostSharp.Toolkit.Domain.Common
 {
     internal delegate void SetFieldValueDelegate(object instance, object value);
 

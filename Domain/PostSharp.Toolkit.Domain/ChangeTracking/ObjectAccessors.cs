@@ -8,7 +8,8 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using PostSharp.Toolkit.Domain.Tools;
+
+using PostSharp.Toolkit.Domain.Common;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {

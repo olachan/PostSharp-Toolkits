@@ -7,7 +7,7 @@ using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 using PostSharp.Extensibility;
 using PostSharp.Reflection;
-using PostSharp.Toolkit.Domain.Tools;
+using PostSharp.Toolkit.Domain.Common;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
@@ -34,9 +34,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public override void CompileTimeInitialize(Type type, AspectInfo aspectInfo)
         {
-            this.TrackedFields = this.GetFieldsWithAttribute(type, typeof(ChangeTrackedAttribute), "INPC013");
+            this.TrackedFields = this.GetFieldsWithAttribute(type, typeof(ChangeTrackedAttribute), "DOM013");
 
-            // this.IgnoredFields = this.GetFieldsWithAttribute( type, typeof(ChangeTrackingIgnoreField), "INPC015" );
+            // this.IgnoredFields = this.GetFieldsWithAttribute( type, typeof(ChangeTrackingIgnoreField), "DOM015" );
 
             base.CompileTimeInitialize(type, aspectInfo);
         }

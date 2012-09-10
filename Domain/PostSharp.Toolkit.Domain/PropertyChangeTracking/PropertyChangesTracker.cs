@@ -13,7 +13,7 @@ using System.Linq;
 using System.Threading;
 
 using PostSharp.Aspects;
-using PostSharp.Toolkit.Domain.Tools;
+using PostSharp.Toolkit.Domain.Common;
 
 namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
 {

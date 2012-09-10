@@ -12,7 +12,7 @@ using System.Reflection;
 
 using PostSharp.Aspects;
 using PostSharp.Extensibility;
-using PostSharp.Toolkit.Domain.Tools;
+using PostSharp.Toolkit.Domain.Common;
 
 namespace PostSharp.Toolkit.Domain
 {
@@ -27,7 +27,7 @@ namespace PostSharp.Toolkit.Domain
         {
             if ( !method.HasOnlyIntrinsicOrObjectParameters() )
             {
-                DomainMessageSource.Instance.Write( method, SeverityType.Error, "INPC004", method.FullName() );
+                DomainMessageSource.Instance.Write( method, SeverityType.Error, "DOM004", method.FullName() );
                 return false;
             }
 

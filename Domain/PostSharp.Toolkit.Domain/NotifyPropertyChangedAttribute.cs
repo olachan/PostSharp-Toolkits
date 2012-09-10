@@ -22,9 +22,9 @@ using PostSharp.Aspects.Serialization;
 using PostSharp.Constraints;
 using PostSharp.Extensibility;
 using PostSharp.Reflection;
+using PostSharp.Toolkit.Domain.Common;
 using PostSharp.Toolkit.Domain.PropertyChangeTracking;
 using PostSharp.Toolkit.Domain.PropertyDependencyAnalisys;
-using PostSharp.Toolkit.Domain.Tools;
 
 namespace PostSharp.Toolkit.Domain
 {
@@ -186,7 +186,7 @@ namespace PostSharp.Toolkit.Domain
                     "OnPropertyChanged", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(string) }, null );
                 if ( onPropertyChangedMethod == null || onPropertyChangedMethod.ReturnType != typeof(void) )
                 {
-                    DomainMessageSource.Instance.Write( type, SeverityType.Error, "INPC008", type.FullName );
+                    DomainMessageSource.Instance.Write( type, SeverityType.Error, "DOM008", type.FullName );
                 }
             }
 
@@ -198,7 +198,7 @@ namespace PostSharp.Toolkit.Domain
                 if ( (forbidenMethod != null && parameters.Length == 1 && parameters[0].ParameterType == typeof(string)) ||
                      type.GetEvent( "____PostSharpToolkitsDomain_ChildPropertyChanged____", BindingFlagsSet.AllMembers ) != null )
                 {
-                    DomainMessageSource.Instance.Write( type, SeverityType.Error, "INPC009", type.FullName );
+                    DomainMessageSource.Instance.Write( type, SeverityType.Error, "DOM009", type.FullName );
                 }
             }
 

@@ -31,6 +31,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
 
         // internal field used to temporary disable tracking (eg during performing undo/redo operations)
+
         protected bool IsTrackingInternal;
 
         // public property used to permanently disable tracking

@@ -31,12 +31,12 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             SingleThreadedMethodsObject o1 = new SingleThreadedMethodsObject();
             SingleThreadedMethodsObject o2 = new SingleThreadedMethodsObject();
-            TestHelpers.InvokeSimultaneouslyAndWait(() => o1.InstanceDependentMethod(new Barrier( 1 )), () => o2.InstanceDependentMethod(new Barrier( 1 )));
+            TestHelpers.InvokeSimultaneouslyAndWait(() => o1.InstanceDependentMethod(new Barrier(1)), () => o2.InstanceDependentMethod(new Barrier(1)));
         }
 
 #if (DEBUG || DEBUG_THREADING)
         [Test]
-        [ExpectedException( typeof(ThreadUnsafeException) )]
+        [ExpectedException(typeof(ThreadUnsafeException))]
 #endif
         public void InstanceDependentDerivedAndNotDerivedMethodInvoked_Exception()
         {
@@ -48,7 +48,7 @@ namespace PostSharp.Toolkit.Threading.Tests
 
 #if (DEBUG || DEBUG_THREADING)
         [Test]
-        [ExpectedException( typeof(ThreadUnsafeException) )]
+        [ExpectedException(typeof(ThreadUnsafeException))]
 #endif
         public void SameInstanceDependentMethodInvokedTwice_Exception()
         {
@@ -60,7 +60,7 @@ namespace PostSharp.Toolkit.Threading.Tests
 
 #if (DEBUG || DEBUG_THREADING)
         [Test]
-        [ExpectedException( typeof(ThreadUnsafeException) )]
+        [ExpectedException(typeof(ThreadUnsafeException))]
 #endif
         public void TwoInstanceDependentMethodsInvoked_Exception()
         {
@@ -72,7 +72,7 @@ namespace PostSharp.Toolkit.Threading.Tests
 
 #if (DEBUG || DEBUG_THREADING)
         [Test]
-        [ExpectedException( typeof(ThreadUnsafeException) )]
+        [ExpectedException(typeof(ThreadUnsafeException))]
 #endif
         public void TypeDependentStaticMethodInvokedTwice_Exception()
         {
@@ -84,7 +84,7 @@ namespace PostSharp.Toolkit.Threading.Tests
 
 #if (DEBUG || DEBUG_THREADING)
         [Test]
-        [ExpectedException( typeof(ThreadUnsafeException) )]
+        [ExpectedException(typeof(ThreadUnsafeException))]
 #endif
         public void TwoTypeDependentStaticMethodInvoked_Exception()
         {
@@ -100,18 +100,24 @@ namespace PostSharp.Toolkit.Threading.Tests
         public void MethodThrowsException_MonitorProperlyReleased()
         {
             SingleThreadedMethodsObject o1 = new SingleThreadedMethodsObject();
-            TestHelpers.InvokeSimultaneouslyAndWait( () => TestHelpers.Swallow<NotSupportedException>( o1.Exception ),
-                                                     () =>
+            var manualResetEvent = new ManualResetEvent(false);
+            TestHelpers.InvokeSimultaneouslyAndWait(() =>
                                                          {
-                                                             Thread.Sleep( 200 );
-                                                             TestHelpers.Swallow<NotSupportedException>( o1.Exception );
-                                                         } );
-            TestHelpers.InvokeSimultaneouslyAndWait( () => TestHelpers.Swallow<NotSupportedException>( o1.Exception ),
+                                                             TestHelpers.Swallow<NotSupportedException>(o1.Exception);
+                                                             manualResetEvent.Set();
+                                                         },
                                                      () =>
-                                                         {
-                                                             Thread.Sleep( 200 );
-                                                             TestHelpers.Swallow<NotSupportedException>(() => o1.InstanceDependentMethod(new Barrier( 1 )));
-                                                         } );
+                                                     {
+                                                         manualResetEvent.WaitOne();
+                                                         TestHelpers.Swallow<NotSupportedException>(o1.Exception);
+                                                     });
+            manualResetEvent.Reset();
+            TestHelpers.InvokeSimultaneouslyAndWait(() => { TestHelpers.Swallow<NotSupportedException>(o1.Exception); manualResetEvent.Set(); },
+                                                     () =>
+                                                     {
+                                                         manualResetEvent.WaitOne();
+                                                         TestHelpers.Swallow<NotSupportedException>(() => o1.InstanceDependentMethod(new Barrier(1)));
+                                                     });
         }
 
 #if (DEBUG || DEBUG_THREADING)
@@ -119,19 +125,21 @@ namespace PostSharp.Toolkit.Threading.Tests
 #endif
         public void StaticMethodThrowsException_MonitorProperlyReleased()
         {
-            TestHelpers.InvokeSimultaneouslyAndWait( () => TestHelpers.Swallow<NotSupportedException>( SingleThreadedMethodsObject.StaticException ),
+            var manualResetEvent = new ManualResetEvent(false);
+            TestHelpers.InvokeSimultaneouslyAndWait(() => { TestHelpers.Swallow<NotSupportedException>(SingleThreadedMethodsObject.StaticException); manualResetEvent.Set(); },
                                                      () =>
-                                                         {
-                                                             Thread.Sleep( 200 );
-                                                             TestHelpers.Swallow<NotSupportedException>( SingleThreadedMethodsObject.StaticException );
-                                                         } );
-            TestHelpers.InvokeSimultaneouslyAndWait( () => TestHelpers.Swallow<NotSupportedException>( SingleThreadedMethodsObject.StaticException ),
+                                                     {
+                                                         manualResetEvent.WaitOne();
+                                                         TestHelpers.Swallow<NotSupportedException>(SingleThreadedMethodsObject.StaticException);
+                                                     });
+            manualResetEvent.Reset();
+            TestHelpers.InvokeSimultaneouslyAndWait(() => { TestHelpers.Swallow<NotSupportedException>(SingleThreadedMethodsObject.StaticException); manualResetEvent.Set(); },
                                                      () =>
-                                                         {
-                                                             Thread.Sleep( 200 );
-                                                             TestHelpers.Swallow<NotSupportedException>(
-                                                                 () => SingleThreadedStaticMethodsObject.StaticTypeDependentMethod(new Barrier( 1 )));
-                                                         } );
+                                                     {
+                                                         manualResetEvent.WaitOne();
+                                                         TestHelpers.Swallow<NotSupportedException>(
+                                                             () => SingleThreadedStaticMethodsObject.StaticTypeDependentMethod(new Barrier(1)));
+                                                     });
         }
 
 #if (DEBUG || DEBUG_THREADING)
@@ -141,18 +149,18 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             SingleThreadedClassObject o = new SingleThreadedClassObject(null);
             int x;
-            TestHelpers.InvokeSimultaneouslyAndWait( () => { x = o.TestProperty; }, () => { x = o.TestProperty; } );
+            TestHelpers.InvokeSimultaneouslyAndWait(() => { x = o.TestProperty; }, () => { x = o.TestProperty; });
         }
 
 #if (DEBUG || DEBUG_THREADING)
         [Test]
-        [ExpectedException( typeof(ThreadUnsafeException) )]
+        [ExpectedException(typeof(ThreadUnsafeException))]
 #endif
         public void SingleThreadedClassSetter_MultipleAccessesThrow()
         {
-            SingleThreadedClassObject o = new SingleThreadedClassObject(new Barrier( 2 ));
-            TestHelpers.InvokeSimultaneouslyAndWait( () => { o.TestProperty = 3; },
-                                                     () => { o.TestProperty = 3; } );
+            SingleThreadedClassObject o = new SingleThreadedClassObject(new Barrier(2));
+            TestHelpers.InvokeSimultaneouslyAndWait(() => { o.TestProperty = 3; },
+                                                     () => { o.TestProperty = 3; });
         }
 
 #if (DEBUG || DEBUG_THREADING)
@@ -161,7 +169,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         public void ThreadSafeMethod_InvokedFromTwoThreads_DoesNotThrow()
         {
             SingleThreadedMethodsObject o = new SingleThreadedMethodsObject();
-            TestHelpers.InvokeSimultaneouslyAndWait( o.ThreadSafeMethod, o.ThreadSafeMethod );
+            TestHelpers.InvokeSimultaneouslyAndWait(o.ThreadSafeMethod, o.ThreadSafeMethod);
         }
 
 #if (DEBUG || DEBUG_THREADING)
@@ -170,7 +178,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         public void PrivateThreadUnsafeMethod_InvokedFromThreadSafeInTwoThreads_DoesNotThrow()
         {
             SingleThreadedMethodsObject o = new SingleThreadedMethodsObject();
-            TestHelpers.InvokeSimultaneouslyAndWait( o.ThreadSafeMethodInvokingThreadUnsafePrivateMethod, o.ThreadSafeMethodInvokingThreadUnsafePrivateMethod );
+            TestHelpers.InvokeSimultaneouslyAndWait(o.ThreadSafeMethodInvokingThreadUnsafePrivateMethod, o.ThreadSafeMethodInvokingThreadUnsafePrivateMethod);
         }
 
 #if (DEBUG || DEBUG_THREADING)
@@ -179,7 +187,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         public void PrivateThreadSafeMethod_InvokedFromTwoThreads_DoesNotThrow()
         {
             SingleThreadedMethodsObject o = new SingleThreadedMethodsObject();
-            TestHelpers.InvokeSimultaneouslyAndWait( o.ThreadSafeMethodInvokingThreadSafePrivateMethod, o.ThreadSafeMethodInvokingThreadSafePrivateMethod );
+            TestHelpers.InvokeSimultaneouslyAndWait(o.ThreadSafeMethodInvokingThreadSafePrivateMethod, o.ThreadSafeMethodInvokingThreadSafePrivateMethod);
         }
 
 #if (DEBUG || DEBUG_THREADING)
@@ -202,22 +210,22 @@ namespace PostSharp.Toolkit.Threading.Tests
 
 #if (DEBUG || DEBUG_THREADING)
         [Test]
-        [ExpectedException( typeof(LockNotHeldException) )]
+        [ExpectedException(typeof(LockNotHeldException))]
 #endif
         public void NonThreadSafeField_ModifiedFromStaticUnsafeMethod_Throws()
         {
             ThreadUnsafeWithFieldAccessCheckObject o = new ThreadUnsafeWithFieldAccessCheckObject();
-            ThreadUnsafeWithFieldAccessCheckObject.ChangeNonThreadSafeField( o );
+            ThreadUnsafeWithFieldAccessCheckObject.ChangeNonThreadSafeField(o);
         }
 
 #if (DEBUG || DEBUG_THREADING)
         [Test]
-        [ExpectedException( typeof(LockNotHeldException) )]
+        [ExpectedException(typeof(LockNotHeldException))]
 #endif
         public void NonThreadSafeField_ModifiedFromStaticSafeMethod_Throws()
         {
             ThreadUnsafeWithFieldAccessCheckObject o = new ThreadUnsafeWithFieldAccessCheckObject();
-            ThreadUnsafeWithFieldAccessCheckObject.ChangeNonThreadSafeFieldFromThreadSafe( o );
+            ThreadUnsafeWithFieldAccessCheckObject.ChangeNonThreadSafeFieldFromThreadSafe(o);
         }
 
 #if (DEBUG || DEBUG_THREADING)
@@ -226,7 +234,7 @@ namespace PostSharp.Toolkit.Threading.Tests
         public void ThreadSafeField_ModifiedFromStaticMethod_DoesNotThrow()
         {
             ThreadUnsafeWithFieldAccessCheckObject o = new ThreadUnsafeWithFieldAccessCheckObject();
-            ThreadUnsafeWithFieldAccessCheckObject.ChangeThreadSafeField( o );
+            ThreadUnsafeWithFieldAccessCheckObject.ChangeThreadSafeField(o);
         }
 
 #if (DEBUG || DEBUG_THREADING)
@@ -249,7 +257,7 @@ namespace PostSharp.Toolkit.Threading.Tests
 
 #if (DEBUG || DEBUG_THREADING)
         [Test]
-        [ExpectedException( typeof(LockNotHeldException) )]
+        [ExpectedException(typeof(LockNotHeldException))]
 #endif
         public void NonThreadSafeStaticField_ModifiedExternaly_Throws()
         {
@@ -298,31 +306,31 @@ namespace PostSharp.Toolkit.Threading.Tests
                 get
                 {
                     if (_barrier != null) _barrier.SignalAndWait();
-                    Thread.Sleep( 200 );
+                    Thread.Sleep(200);
                     return this._testProperty;
                 }
                 set
                 {
                     if (_barrier != null) _barrier.SignalAndWait();
-                    Thread.Sleep( 200 );
+                    Thread.Sleep(200);
                     this._testProperty = value;
                 }
             }
         }
 
-        [ThreadUnsafeObject( ThreadUnsafePolicy.Static )]
+        [ThreadUnsafeObject(ThreadUnsafePolicy.Static)]
         public class SingleThreadedStaticMethodsObject
         {
             public static void StaticTypeDependentMethod(Barrier barrier)
             {
                 barrier.SignalAndWait();
-                Thread.Sleep( 200 );
+                Thread.Sleep(200);
             }
 
             public static void StaticTypeDependentMethod2(Barrier barrier)
             {
                 barrier.SignalAndWait();
-                Thread.Sleep( 200 );
+                Thread.Sleep(200);
             }
         }
 
@@ -332,18 +340,18 @@ namespace PostSharp.Toolkit.Threading.Tests
             [ThreadSafe]
             public void ThreadSafeMethod()
             {
-                Thread.Sleep( 200 );
+                Thread.Sleep(200);
             }
 
             [ThreadUnsafeMethod]
             private void ThreadUnsafePrivateMethod()
             {
-                Thread.Sleep( 200 );
+                Thread.Sleep(200);
             }
 
             private void ThreadSafePrivateMethod()
             {
-                Thread.Sleep( 200 );
+                Thread.Sleep(200);
             }
 
             [ThreadSafe]
@@ -361,13 +369,13 @@ namespace PostSharp.Toolkit.Threading.Tests
             public void InstanceDependentMethod(Barrier barrier)
             {
                 barrier.SignalAndWait();
-                Thread.Sleep( 200 );
+                Thread.Sleep(200);
             }
 
             public void InstanceDependentMethod2(Barrier barrier)
             {
                 barrier.SignalAndWait();
-                Thread.Sleep( 200 );
+                Thread.Sleep(200);
             }
 
             public void Exception()
@@ -387,12 +395,12 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             public static void DerivedStaticTypeDependentMethod()
             {
-                Thread.Sleep( 200 );
+                Thread.Sleep(200);
             }
 
             public static void DerivedStaticTypeDependentMethod2()
             {
-                Thread.Sleep( 200 );
+                Thread.Sleep(200);
             }
         }
 
@@ -402,7 +410,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             public void DerivedInstanceDependentMethod(Barrier barrier)
             {
                 barrier.SignalAndWait();
-                Thread.Sleep( 100 );
+                Thread.Sleep(100);
             }
 
             public void DerivedInstanceDependentMethod2(Barrier barrier)
@@ -412,16 +420,21 @@ namespace PostSharp.Toolkit.Threading.Tests
             }
         }
 
-        [ThreadUnsafeObject( CheckFieldAccess = true )]
+        [ThreadUnsafeObject(CheckFieldAccess = true)]
         public class ThreadUnsafeWithFieldAccessCheckObject
         {
-            [ThreadSafe] private int threadSafeField = 11;
+            [ThreadSafe]
+            private int threadSafeField = 11;
 
             private int nonThreadSafeField = 12;
 
-            public int ThreadSafeProperty { [ThreadSafe]
-            get; [ThreadSafe]
-            set; }
+            public int ThreadSafeProperty
+            {
+                [ThreadSafe]
+                get;
+                [ThreadSafe]
+                set;
+            }
 
             public int NonThreadSafeProperty { get; set; }
 
@@ -437,28 +450,29 @@ namespace PostSharp.Toolkit.Threading.Tests
                 this.nonThreadSafeField++;
             }
 
-            public static void ChangeThreadSafeField( ThreadUnsafeWithFieldAccessCheckObject obj )
+            public static void ChangeThreadSafeField(ThreadUnsafeWithFieldAccessCheckObject obj)
             {
                 ++obj.threadSafeField;
             }
 
-            public static void ChangeNonThreadSafeField( ThreadUnsafeWithFieldAccessCheckObject obj )
+            public static void ChangeNonThreadSafeField(ThreadUnsafeWithFieldAccessCheckObject obj)
             {
                 ++obj.nonThreadSafeField;
             }
 
-            public static void ChangeNonThreadSafeFieldFromThreadSafe( ThreadUnsafeWithFieldAccessCheckObject obj )
+            public static void ChangeNonThreadSafeFieldFromThreadSafe(ThreadUnsafeWithFieldAccessCheckObject obj)
             {
                 ++obj.nonThreadSafeField;
             }
         }
 
-        [ThreadUnsafeObject( ThreadUnsafePolicy.Static, CheckFieldAccess = true )]
+        [ThreadUnsafeObject(ThreadUnsafePolicy.Static, CheckFieldAccess = true)]
         public class ThreadUnsafeWithFieldAccessCheckStaticClass
         {
             public static int NonThreadSafeStaticField = 21;
 
-            [ThreadSafe] public static int ThreadSafeStaticField = 22;
+            [ThreadSafe]
+            public static int ThreadSafeStaticField = 22;
 
             public void ChangeThreadSafeStaticField()
             {

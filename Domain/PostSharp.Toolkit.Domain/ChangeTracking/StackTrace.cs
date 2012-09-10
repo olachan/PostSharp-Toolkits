@@ -6,7 +6,8 @@
 #endregion
 
 using System.Threading;
-using PostSharp.Toolkit.Domain.Tools;
+
+using PostSharp.Toolkit.Domain.Common;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
