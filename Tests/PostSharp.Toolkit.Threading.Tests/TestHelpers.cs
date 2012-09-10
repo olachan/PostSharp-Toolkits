@@ -30,23 +30,11 @@ namespace PostSharp.Toolkit.Threading.Tests
                
                 t1.Start();
                 t2.Start();
-                Assert.IsTrue( Task.WaitAny( new[] {t1, t2}, 2000 ) != -1, "Task wait timed out" );
+                Assert.IsTrue( Task.WaitAll( new[] {t1, t2}, 2000 ), "Task wait timed out" );
             }
             catch ( AggregateException aggregateException )
             {
                 throw aggregateException.InnerException;
-            }
-            finally
-            {
-                if (t1.Status == TaskStatus.Running)
-                {
-                    Assert.IsTrue(t1.Wait(1000), "Task wait timed out");
-                }
-
-                if (t2.Status == TaskStatus.Running)
-                {
-                    Assert.IsTrue(t2.Wait(1000), "Task wait timed out");
-                }
             }
 
             var ex = tasks.Select(t => t.Exception).FirstOrDefault(e => e != null);
