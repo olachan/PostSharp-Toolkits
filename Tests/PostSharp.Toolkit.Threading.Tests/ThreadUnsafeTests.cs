@@ -46,7 +46,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             TestHelpers.InvokeSimultaneouslyAndWait(() => o1.DerivedInstanceDependentMethod(barrier), () => o1.InstanceDependentMethod(barrier));
         }
 
-#if (DEBUG || DEBUG_THREADING)
+#if (!TEAMCITY && (DEBUG || DEBUG_THREADING))
         [Test]
         [ExpectedException(typeof(ThreadUnsafeException))]
 #endif
@@ -58,7 +58,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             TestHelpers.InvokeSimultaneouslyAndWait(() => o1.InstanceDependentMethod(barrier), () => o1.InstanceDependentMethod2(barrier));
         }
 
-#if (DEBUG || DEBUG_THREADING)
+#if (!TEAMCITY && (DEBUG || DEBUG_THREADING))
         [Test]
         [ExpectedException(typeof(ThreadUnsafeException))]
 #endif
@@ -70,7 +70,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             TestHelpers.InvokeSimultaneouslyAndWait(() => o1.InstanceDependentMethod(barrier), () => o1.InstanceDependentMethod2(barrier));
         }
 
-#if (DEBUG || DEBUG_THREADING)
+#if (!TEAMCITY && (DEBUG || DEBUG_THREADING))
         [Test]
         [ExpectedException(typeof(ThreadUnsafeException))]
 #endif
@@ -82,7 +82,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                                                     () => SingleThreadedStaticMethodsObject.StaticTypeDependentMethod(barrier));
         }
 
-#if (DEBUG || DEBUG_THREADING)
+#if (!TEAMCITY && (DEBUG || DEBUG_THREADING))
         [Test]
         [ExpectedException(typeof(ThreadUnsafeException))]
 #endif
