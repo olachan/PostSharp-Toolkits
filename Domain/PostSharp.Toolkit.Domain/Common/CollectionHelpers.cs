@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace PostSharp.Toolkit.Domain.Tools
+namespace PostSharp.Toolkit.Domain.Common
 {
     internal static class CollectionHelpers
     {

@@ -9,7 +9,7 @@
 
 using PostSharp.Extensibility;
 
-namespace PostSharp.Toolkit.Domain.Tools
+namespace PostSharp.Toolkit.Domain.Common
 {
     internal static class DomainMessageSource
     {

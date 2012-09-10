@@ -15,7 +15,7 @@ using System.Text;
 
 using PostSharp.Extensibility;
 using PostSharp.Reflection.Syntax;
-using PostSharp.Toolkit.Domain.Tools;
+using PostSharp.Toolkit.Domain.Common;
 
 namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
 {

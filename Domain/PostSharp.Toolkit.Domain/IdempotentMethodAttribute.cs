@@ -12,7 +12,7 @@ using System.Reflection;
 
 using PostSharp.Aspects;
 using PostSharp.Extensibility;
-using PostSharp.Toolkit.Domain.Tools;
+using PostSharp.Toolkit.Domain.Common;
 
 namespace PostSharp.Toolkit.Domain
 {

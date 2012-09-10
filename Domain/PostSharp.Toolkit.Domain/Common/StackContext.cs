@@ -10,12 +10,12 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace PostSharp.Toolkit.Domain.Tools
+namespace PostSharp.Toolkit.Domain.Common
 {
     internal class StackContext : IEnumerable<object>
     {
         //TODO: Consider refactoring. Significantly.
-        //We may avoid storing the same object multiple times (whenevering entering a method check if stack trace modification is needed). 
+        //We may avoid storing the same object multiple times (whenever entering a method check if stack trace modification is needed). 
         //      - this would yield necessity to check if current method is outer most of current class (we would have to store some kind of counter)
         //Or maybe that's the simples/fastest way?
 

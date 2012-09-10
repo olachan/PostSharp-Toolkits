@@ -13,7 +13,7 @@ using System.Reflection;
 
 using PostSharp.Reflection;
 
-namespace PostSharp.Toolkit.Domain.Tools
+namespace PostSharp.Toolkit.Domain.Common
 {
     [Serializable]
     internal class FieldInfoWithCompiledGetter

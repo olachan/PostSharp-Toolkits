@@ -1,6 +1,8 @@
 using System;
 
-namespace PostSharp.Toolkit.Domain.ChangeTracking
+using PostSharp.Toolkit.Domain.ChangeTracking;
+
+namespace PostSharp.Toolkit.Domain
 {
     public class DelegateOperation : Operation
     {

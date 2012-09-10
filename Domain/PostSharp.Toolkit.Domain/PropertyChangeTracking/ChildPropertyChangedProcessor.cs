@@ -14,8 +14,8 @@ using System.Linq;
 using System.Reflection;
 
 using PostSharp.Aspects;
+using PostSharp.Toolkit.Domain.Common;
 using PostSharp.Toolkit.Domain.PropertyDependencyAnalisys;
-using PostSharp.Toolkit.Domain.Tools;
 
 namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
 {

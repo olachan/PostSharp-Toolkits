@@ -22,9 +22,9 @@ using PostSharp.Aspects.Serialization;
 using PostSharp.Constraints;
 using PostSharp.Extensibility;
 using PostSharp.Reflection;
+using PostSharp.Toolkit.Domain.Common;
 using PostSharp.Toolkit.Domain.PropertyChangeTracking;
 using PostSharp.Toolkit.Domain.PropertyDependencyAnalisys;
-using PostSharp.Toolkit.Domain.Tools;
 
 namespace PostSharp.Toolkit.Domain
 {
