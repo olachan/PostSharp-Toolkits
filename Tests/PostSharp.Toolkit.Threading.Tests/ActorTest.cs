@@ -45,7 +45,6 @@ namespace PostSharp.Toolkit.Threading.Tests
                 actors[i] = new ActorClass();
             }
 
-
             for (int i = 0; i < n; i++)
             {
                 for (int j = 0; j < actors.Length; j++)
