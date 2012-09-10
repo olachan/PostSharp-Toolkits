@@ -83,7 +83,7 @@ namespace PostSharp.Toolkit.Domain
 
         protected IEnumerable<FieldInfo> SelectFields(Type type)
         {
-            var ignoredFields = this.GetFieldsWithAttribute(type, typeof(ChangeTrackingIgnoreField), "INPC015");
+            var ignoredFields = this.GetFieldsWithAttribute(type, typeof(ChangeTrackingIgnoreField), "DOM015");
             return type.GetFields(BindingFlagsSet.AllInstanceDeclared).Where(f => !ignoredFields.Contains(f.FullName()));
         }
 

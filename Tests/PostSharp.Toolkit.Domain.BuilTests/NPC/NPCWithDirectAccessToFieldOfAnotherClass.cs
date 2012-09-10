@@ -1,4 +1,4 @@
-﻿// @ExpectedMessage(INPC001)
+﻿// @ExpectedMessage(DOM001)
 // @ExpectedMessage(PS0060)
 
 namespace PostSharp.Toolkit.Domain.BuilTests.NPC

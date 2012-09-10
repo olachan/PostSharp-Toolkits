@@ -1,7 +1,7 @@
-﻿// @ExpectedMessage(INPC003)
-// @ExpectedMessage(INPC001)
-// @ExpectedMessage(INPC002)
-// @ExpectedMessage(INPC011)
+﻿// @ExpectedMessage(DOM003)
+// @ExpectedMessage(DOM001)
+// @ExpectedMessage(DOM002)
+// @ExpectedMessage(DOM011)
 // @ExpectedMessage(PS0060)
 
 // TODO : cope with extra errors when delegate call encountered
