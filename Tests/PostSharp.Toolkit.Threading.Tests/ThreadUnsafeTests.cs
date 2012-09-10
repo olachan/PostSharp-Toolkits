@@ -55,7 +55,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             SingleThreadedMethodsObject o1 = new SingleThreadedMethodsObject();
             Barrier barrier = new Barrier(2);
 
-            TestHelpers.InvokeSimultaneouslyAndWait(() => o1.InstanceDependentMethod(barrier), () => o1.InstanceDependentMethod(barrier));
+            TestHelpers.InvokeSimultaneouslyAndWait(() => o1.InstanceDependentMethod(barrier), () => o1.InstanceDependentMethod2(barrier));
         }
 
 #if (DEBUG || DEBUG_THREADING)
@@ -305,13 +305,13 @@ namespace PostSharp.Toolkit.Threading.Tests
                 [ThreadSafe]
                 get
                 {
-                    if (_barrier != null) _barrier.SignalAndWait();
+                    // if (_barrier != null) _barrier.SignalAndWait();
                     Thread.Sleep(200);
                     return this._testProperty;
                 }
                 set
                 {
-                    if (_barrier != null) _barrier.SignalAndWait();
+                    // if (_barrier != null) _barrier.SignalAndWait();
                     Thread.Sleep(200);
                     this._testProperty = value;
                 }
@@ -323,13 +323,13 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             public static void StaticTypeDependentMethod(Barrier barrier)
             {
-                barrier.SignalAndWait();
+                //barrier.SignalAndWait();
                 Thread.Sleep(200);
             }
 
             public static void StaticTypeDependentMethod2(Barrier barrier)
             {
-                barrier.SignalAndWait();
+                //barrier.SignalAndWait();
                 Thread.Sleep(200);
             }
         }
@@ -368,13 +368,13 @@ namespace PostSharp.Toolkit.Threading.Tests
 
             public void InstanceDependentMethod(Barrier barrier)
             {
-                barrier.SignalAndWait();
+                //barrier.SignalAndWait();
                 Thread.Sleep(200);
             }
 
             public void InstanceDependentMethod2(Barrier barrier)
             {
-                barrier.SignalAndWait();
+                //barrier.SignalAndWait();
                 Thread.Sleep(200);
             }
 
@@ -409,14 +409,14 @@ namespace PostSharp.Toolkit.Threading.Tests
         {
             public void DerivedInstanceDependentMethod(Barrier barrier)
             {
-                barrier.SignalAndWait();
-                Thread.Sleep(100);
+                //barrier.SignalAndWait();
+                Thread.Sleep(200);
             }
 
             public void DerivedInstanceDependentMethod2(Barrier barrier)
             {
-                barrier.SignalAndWait();
-                Thread.Sleep(100);
+                //barrier.SignalAndWait();
+                Thread.Sleep(200);
             }
         }
 
