@@ -45,6 +45,9 @@
   <Target Name="Test" DependsOnTargets="Prepare;QuickBuild;UnitTests;BuildTests" />
 
   <Target Name="Build" DependsOnTargets="NuGet" />
+   <Target Name="Message">
+  <Message Condition="$(OS) != ''" Text = "Message: $(OS)"/>
+  </Target>
  
 
  
