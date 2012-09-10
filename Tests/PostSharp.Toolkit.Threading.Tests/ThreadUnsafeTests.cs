@@ -34,7 +34,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             TestHelpers.InvokeSimultaneouslyAndWait(() => o1.InstanceDependentMethod(new Barrier(1)), () => o2.InstanceDependentMethod(new Barrier(1)));
         }
 
-#if (DEBUG || DEBUG_THREADING)
+#if (!TEAMCITY && (DEBUG || DEBUG_THREADING))
         [Test]
         [ExpectedException(typeof(ThreadUnsafeException))]
 #endif
@@ -152,7 +152,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             TestHelpers.InvokeSimultaneouslyAndWait(() => { x = o.TestProperty; }, () => { x = o.TestProperty; });
         }
 
-#if (DEBUG || DEBUG_THREADING)
+#if (!TEAMCITY && (DEBUG || DEBUG_THREADING))
         [Test]
         [ExpectedException(typeof(ThreadUnsafeException))]
 #endif
