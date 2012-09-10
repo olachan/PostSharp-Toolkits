@@ -38,7 +38,8 @@ namespace PostSharp.Toolkit.Threading.Tests
         public void TestFast()
         {
             const int n = 1000000;
-            ActorClass[] actors = new ActorClass[Environment.ProcessorCount - 1];
+            ActorClass[] actors = new ActorClass[Math.Max(Environment.ProcessorCount - 1, 1)];
+
 
             for (int i = 0; i < actors.Length; i++)
             {
@@ -52,6 +53,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                     actors[j].Fast();
                 }
             }
+
 
             ManualResetEvent[] readyHandles = new ManualResetEvent[actors.Length];
             for (int i = 0; i < actors.Length; i++)
