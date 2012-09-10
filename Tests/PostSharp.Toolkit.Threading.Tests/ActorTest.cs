@@ -55,6 +55,7 @@ namespace PostSharp.Toolkit.Threading.Tests
                 }
             }
 
+
             ManualResetEvent[] readyHandles = new ManualResetEvent[actors.Length];
             for (int i = 0; i < actors.Length; i++)
             {
