@@ -21,8 +21,8 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants Condition="$(TEAMCITY_VERSION) != ''">TEAMCITY</DefineConstants>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants Condition="$(TEAMCITY_VERSION) != ''">DEBUG;TRACE;TEAMCITY</DefineConstants>
+    <DefineConstants Condition="$(TEAMCITY_VERSION) == ''">DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -30,7 +30,8 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants Condition="$(TEAMCITY_VERSION) != ''">TRACE;TEAMCITY</DefineConstants>
+    <DefineConstants Condition="$(TEAMCITY_VERSION) == ''">TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>

@@ -60,7 +60,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             stopwatch.Start();
             this.InvokeSimultaneouslyAndWait( () => rw.Write( 100, 101 ), () => rw.Read( 101 ) );
             stopwatch.Stop();
-            Assert.GreaterOrEqual( stopwatch.ElapsedMilliseconds, 200 );
+            Assert.GreaterOrEqual(stopwatch.ElapsedMilliseconds, 150);
         }
 
         [Test]
@@ -71,7 +71,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             stopwatch.Start();
             this.InvokeSimultaneouslyAndWait( () => rw.Write( 100, 101 ), () => rw.Read( 101 ) );
             stopwatch.Stop();
-            Assert.GreaterOrEqual( stopwatch.ElapsedMilliseconds, 200 );
+            Assert.GreaterOrEqual(stopwatch.ElapsedMilliseconds, 150);
         }
 
         [Test]
@@ -82,7 +82,7 @@ namespace PostSharp.Toolkit.Threading.Tests
             stopwatch.Start();
             this.InvokeSimultaneouslyAndWait( () => rw.Write( 100, 101 ), () => rw.Write( 100, 101 ) );
             stopwatch.Stop();
-            Assert.GreaterOrEqual( stopwatch.ElapsedMilliseconds, 200 );
+            Assert.GreaterOrEqual( stopwatch.ElapsedMilliseconds, 150 );
         }
 
         [Test]
