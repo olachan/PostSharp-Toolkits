@@ -9,7 +9,7 @@
 
 using System.Collections.Generic;
 
-namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
+namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalysis
 {
     internal static class FieldDependenciesMap
     {

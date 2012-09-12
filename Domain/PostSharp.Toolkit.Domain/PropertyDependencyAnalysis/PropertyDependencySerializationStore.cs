@@ -10,7 +10,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
+namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalysis
 {
     /// <summary>
     /// class used to store static data between compile time and runtime

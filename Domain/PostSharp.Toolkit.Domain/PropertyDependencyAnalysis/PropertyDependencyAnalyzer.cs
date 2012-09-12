@@ -17,7 +17,7 @@ using PostSharp.Extensibility;
 using PostSharp.Reflection.Syntax;
 using PostSharp.Toolkit.Domain.Common;
 
-namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
+namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalysis
 {
     /// <summary>
     /// Performs static code analysis to determine property dependencies. 
@@ -58,8 +58,8 @@ namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
             //We need to grab all the properties and build a map of their dependencies
 
             IEnumerable<PropertyInfo> allProperties =
-                type.GetProperties( BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly ).Where(
-                    p => !p.GetCustomAttributes( typeof(NotifyPropertyChangedIgnoreAttribute), true ).Any() ).ToList();
+                type.GetProperties( BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly )
+                    .Where( p => !p.IsInpcIgnoredMethod() ).ToList();
 
             IEnumerable<PropertyInfo> propertiesForImplicitAnalasis =
                 allProperties;

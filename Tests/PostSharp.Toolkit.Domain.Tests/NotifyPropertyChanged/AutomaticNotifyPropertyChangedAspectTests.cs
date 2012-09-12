@@ -312,7 +312,19 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
             "BaseClasseBasedProperty");
         }
 
-        
+        [Test]
+        public void Idexers_AreIgnored()
+        {
+            int eventCount = 0;
+            InpcWithIndexer c = new InpcWithIndexer();
+
+            ((INotifyPropertyChanged)c).PropertyChanged += ( sender, args ) => eventCount++;
+
+            c.IndexerOffset = 5;
+            c[1] = 2;
+
+            Assert.IsTrue( eventCount == 0 );
+        }
 
     }
 
@@ -352,6 +364,24 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         //}
 
         //public event EventHandler<ChildPropertyChangedEventArgs> ChildPropertyChanged;
+    }
+
+    [NotifyPropertyChanged]
+    public class InpcWithIndexer
+    {
+        public int IndexerOffset;
+
+        public int this[int index]
+        {
+            get
+            {
+                return index + this.IndexerOffset;
+            }
+            set
+            {
+                this.IndexerOffset = value;
+            }
+        }
     }
 
     public class InpcDerrivedClass : InpcBaseClass

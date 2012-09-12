@@ -9,7 +9,7 @@
 
 using System;
 
-namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
+namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalysis
 {
     internal abstract class NestableContextInfo : IDisposable
     {

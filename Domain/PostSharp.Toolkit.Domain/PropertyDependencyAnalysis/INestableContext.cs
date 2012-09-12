@@ -7,7 +7,7 @@
 
 #endregion
 
-namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
+namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalysis
 {
     internal interface INestableContext
     {

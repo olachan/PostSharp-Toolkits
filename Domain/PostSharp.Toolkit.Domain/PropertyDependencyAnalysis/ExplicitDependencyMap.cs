@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalisys
+namespace PostSharp.Toolkit.Domain.PropertyDependencyAnalysis
 {
     /// <summary>
     /// Map of dependencies built with <see cref="DependsOnAttribute"/> and <see cref="Depends.On"/> calls

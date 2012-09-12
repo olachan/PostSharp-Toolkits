@@ -24,7 +24,7 @@ using PostSharp.Extensibility;
 using PostSharp.Reflection;
 using PostSharp.Toolkit.Domain.Common;
 using PostSharp.Toolkit.Domain.PropertyChangeTracking;
-using PostSharp.Toolkit.Domain.PropertyDependencyAnalisys;
+using PostSharp.Toolkit.Domain.PropertyDependencyAnalysis;
 
 namespace PostSharp.Toolkit.Domain
 {
@@ -125,7 +125,8 @@ namespace PostSharp.Toolkit.Domain
 
         private IEnumerable<PropertyInfo> SelectProperties( Type type )
         {
-            return type.GetProperties( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly );
+            return type.GetProperties( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly )
+                .Where( p => !p.GetGetMethod(true).GetParameters().Any() );
         }
 
         [OnMethodInvokeAdvice]
@@ -150,8 +151,7 @@ namespace PostSharp.Toolkit.Domain
         private IEnumerable<MethodBase> SelectMethods( Type type )
         {
             return
-                type.GetMethods( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly ).Where(
-                    m => !m.GetCustomAttributes( typeof(NotifyPropertyChangedIgnoreAttribute), true ).Any() );
+                type.GetMethods( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly );
         }
 
         // hook handlers to all fields that contain not null value before constructor execution (field initializer assigned values)
