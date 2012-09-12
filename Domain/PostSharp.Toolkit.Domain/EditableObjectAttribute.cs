@@ -7,6 +7,8 @@ using System.Reflection;
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 using PostSharp.Aspects.Dependencies;
+using PostSharp.Extensibility;
+using PostSharp.Reflection;
 using PostSharp.Toolkit.Domain.ChangeTracking;
 using PostSharp.Toolkit.Domain.Common;
 
@@ -89,15 +91,30 @@ namespace PostSharp.Toolkit.Domain
 
             if (typeof(IEditableObject).IsAssignableFrom(type))
             {
-                var targetIEditableMethodsMap = type.GetInterfaceMap( typeof(IEditableObject) );
-                var aspectIEditableMethodsMap = this.GetType().GetInterfaceMap( typeof(IEditableObject) );
+                var targetIEditableMethodsInterfaceMap = type.GetInterfaceMap( typeof(IEditableObject) );
+                var aspectIEditableMethodsInterfaceMap = this.GetType().GetInterfaceMap( typeof(IEditableObject) );
 
-                this.interfaceImplementationMap = targetIEditableMethodsMap.TargetMethods.Join(
-                        aspectIEditableMethodsMap.TargetMethods,
-                        m => m.Name,
-                        m => m.Name,
-                        ( tm, am ) => new { TargetMethod = (MethodBase)tm, AspectMethod = (MethodBase)am } ).ToDictionary(
-                            r => r.TargetMethod, r => r.AspectMethod );
+                var targetIEditableMethodsMap = targetIEditableMethodsInterfaceMap.InterfaceMethods.Zip(
+                    targetIEditableMethodsInterfaceMap.TargetMethods, ( im, tm ) => new { InterfaceMethod = im, TargetMethod = tm } )
+                    .ToList();
+
+                if (!targetIEditableMethodsMap.All( t => t.TargetMethod.IsToBeImplementedMethod() ))
+                {
+                    DomainMessageSource.Instance.Write(type, SeverityType.Error, "DOM016", type.FullName);
+                }
+
+                var aspectIEditableMethodsMap = aspectIEditableMethodsInterfaceMap.InterfaceMethods.Zip(
+                    aspectIEditableMethodsInterfaceMap.TargetMethods, (im, tm) => new { InterfaceMethod = im, TargetMethod = tm })
+                    .ToList();
+                
+                this.interfaceImplementationMap = 
+                    targetIEditableMethodsMap
+                    .Join(
+                        aspectIEditableMethodsMap,
+                        m => m.InterfaceMethod,
+                        m => m.InterfaceMethod,
+                        ( tm, am ) => new { TargetMethod = (MethodBase)tm.TargetMethod, AspectMethod = (MethodBase)am.TargetMethod } )
+                    .ToDictionary(r => r.TargetMethod, r => r.AspectMethod );
             }
         }
 

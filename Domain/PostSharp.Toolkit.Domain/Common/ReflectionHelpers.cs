@@ -11,6 +11,8 @@ using System;
 using System.Linq;
 using System.Reflection;
 
+using PostSharp.Reflection;
+
 namespace PostSharp.Toolkit.Domain.Common
 {
     internal static class ReflectionHelpers
@@ -31,6 +33,23 @@ namespace PostSharp.Toolkit.Domain.Common
             }
 
             return attribute.Product == "Microsoft® .NET Framework";
+        }
+
+        /// <summary>
+        /// Uses ReflectionSearch so can be used only in Compile Time !!!
+        /// </summary>
+        public static bool IsToBeImplementedMethod(this MethodBase method)
+        {
+            var usedDeclarations = ReflectionSearch.GetDeclarationsUsedByMethod(method);
+
+            if (usedDeclarations.Count() != 1)
+            {
+                return false;
+            }
+
+            var usedDeclaration = usedDeclarations.Single();
+
+            return usedDeclaration.UsedType == typeof(ToBeIntroducedException) && usedDeclaration.UsedDeclaration is ConstructorInfo;
         }
 
         public static string FullName( this MemberInfo memberInfo )

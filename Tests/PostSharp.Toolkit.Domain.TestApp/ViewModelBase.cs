@@ -21,17 +21,17 @@ namespace PostSharp.Toolkit.Domain.TestApp
     {
         public void BeginEdit()
         {
-            throw new System.NotImplementedException();
+            throw new ToBeIntroducedException();
         }
 
         public void EndEdit()
         {
-            throw new System.NotImplementedException();
+            throw new ToBeIntroducedException();
         }
 
         public void CancelEdit()
         {
-            throw new System.NotImplementedException();
+            throw new ToBeIntroducedException();
         }
     }
 }

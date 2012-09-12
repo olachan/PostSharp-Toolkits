@@ -42,6 +42,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChangeTracking\EditableObjectWithPrivateImplementation.cs" />
     <Compile Include="NPC\NPCWithGenericField.cs" />
     <Compile Include="NPC\NPCWithVirtualMethod.cs" />
     <Compile Include="NPC\NPCWithCallToMethodOfAnotherClass.cs" />

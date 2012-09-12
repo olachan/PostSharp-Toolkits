@@ -97,6 +97,7 @@
     <Compile Include="EditableObjectAttribute.cs" />
     <Compile Include="ChangeTracking\OperationExtensions.cs" />
     <Compile Include="ChangeTracking\RestorePointToken.cs" />
+    <Compile Include="ToBeIntroducedException.cs" />
     <Compile Include="TrackedDictionary.cs" />
     <Compile Include="DelegateOperation.cs" />
     <Compile Include="ChangeTrackingIgnoreOperationAttribute.cs" />
