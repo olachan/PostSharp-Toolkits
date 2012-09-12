@@ -12,7 +12,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <NuGetSourceFiles Include="**\*.nuspec" Exclude="obj\**" />
+    <NuGetSourceFiles Include="**\*.nuspec" Exclude="obj\**;Rename\**" />
   </ItemGroup>
   
   <Target Name="CreateSpecFiles" DependsOnTargets="GetRevisionNumber">
@@ -26,7 +26,7 @@
     <Copy SourceFiles="functions.ps1" DestinationFolder=" $(ImageDir)"/>
     <FileUpdate Files="$(IntermediateNuGetDir)\%(NuGetSourceFiles.Filename).nuspec" Regex="{SRC}" ReplacementText="%(NuGetSourceFiles.RootDir)%(NuGetSourceFiles.Directory)" />
     <FileUpdate Files="$(IntermediateNuGetDir)\%(NuGetSourceFiles.Filename).nuspec" Regex="{VERSION}" ReplacementText="$(Version)" />
-    <FileUpdate Files="$(IntermediateNuGetDir)\%(NuGetSourceFiles.Filename).nuspec" Regex="{POSTSHARP_VERSION}" ReplacementText="2.1.7.5" />
+    <FileUpdate Files="$(IntermediateNuGetDir)\%(NuGetSourceFiles.Filename).nuspec" Regex="{POSTSHARP_VERSION}" ReplacementText="2.1.7.12" />
   </Target>
 
   <Target Name="Build" DependsOnTargets="CreateSpecFiles">
