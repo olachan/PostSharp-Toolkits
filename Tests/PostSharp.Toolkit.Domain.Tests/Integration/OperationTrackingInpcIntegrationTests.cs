@@ -43,7 +43,7 @@ namespace PostSharp.Toolkit.Domain.Tests.Integration
     [NotifyPropertyChanged]
     public class InpcAggregateTrackedObject
     {
-        [ChangeTracked]
+        [NestedTrackedObject]
         private InpcSimpleTrackedObject dependentTrackedObject;
 
         public int P1 { get; set; }

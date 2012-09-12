@@ -57,6 +57,7 @@
   <ItemGroup>
     <Compile Include="BaseTestsFixture.cs" />
     <Compile Include="DignosticThreadingIntegrationTests.cs" />
+    <Compile Include="InpcChangeTrackingIntegrationTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

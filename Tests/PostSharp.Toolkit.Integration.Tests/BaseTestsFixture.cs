@@ -8,9 +8,12 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,6 +27,8 @@ namespace PostSharp.Toolkit.Integration.Tests
 
         public StringBuilder OutputString { get; private set; }
 
+        protected Dictionary<Tuple<object, string>, int> FiredEvents;
+        
         [TestFixtureSetUp]
         public void FixtureSetUp()
         {
@@ -34,6 +39,7 @@ namespace PostSharp.Toolkit.Integration.Tests
         [SetUp]
         public virtual void SetUp()
         {
+            FiredEvents = new Dictionary<Tuple<object, string>, int>();
             this.OutputString = new StringBuilder();
             this.TextWriter = new ThreadSafeStringWriter(this.OutputString);
             Console.SetOut(this.TextWriter);
@@ -55,6 +61,42 @@ namespace PostSharp.Toolkit.Integration.Tests
                 GC.WaitForPendingFinalizers();
             }
             catch { }
+
+            FiredEvents.Clear();
+        }
+
+        protected void UniversalPropertyChangedHandler(object sender, PropertyChangedEventArgs e)
+        {
+            var key = new Tuple<object, string>( sender, e.PropertyName );
+            if (!this.FiredEvents.ContainsKey( key ))
+            {
+                this.FiredEvents.Add( key, 1 );
+            }
+            else
+            {
+                this.FiredEvents[key] += 1;
+            }
+        }
+
+        protected int GetEventCount<T, TProperty>(T instance, Expression<Func<T, TProperty>> propertySelector)
+        {
+            var memberExpression = propertySelector.Body as MemberExpression;
+            if (memberExpression == null)
+            {
+                var unaryExpression = propertySelector.Body as UnaryExpression;
+                if (unaryExpression != null)
+                {
+                    memberExpression = unaryExpression.Operand as MemberExpression;
+                    if (memberExpression == null)
+                        throw new NotSupportedException();
+                }
+                else
+                    throw new NotSupportedException();
+            }
+
+            var key = new Tuple<object, string>( instance, memberExpression.Member.Name );
+
+            return this.FiredEvents.ContainsKey( key ) ? this.FiredEvents[key] : 0;
         }
     }
 

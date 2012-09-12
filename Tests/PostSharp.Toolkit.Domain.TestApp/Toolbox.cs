@@ -7,10 +7,10 @@ namespace PostSharp.Toolkit.Domain.TestApp
     {
         private static readonly Random _random = new Random();
 
-        [ChangeTracked]
+        [NestedTrackedObject]
         public Hammer Hammer { get; set; }
 
-        [ChangeTracked]
+        [NestedTrackedObject]
         public TrackedCollection<Nail> Nails { get; private set; }
 
         public Toolbox()

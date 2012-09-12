@@ -118,7 +118,7 @@
     <Compile Include="TrackedCollection.cs" />
     <Compile Include="TrackedObjectAttribute.cs" />
     <Compile Include="ChangeTracking\ImplicitOperationManagementAttribute.cs" />
-    <Compile Include="ChangeTrackedAttribute.cs" />
+    <Compile Include="NestedTrackedObjectAttribute.cs" />
     <Compile Include="ObjectTracker.cs" />
     <Compile Include="ChangeTracking\Tracker.cs" />
     <Compile Include="ChangeTracking\TrackerDelegateOperation.cs" />

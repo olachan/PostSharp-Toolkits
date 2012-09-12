@@ -127,7 +127,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
         public int P3 { get; set; }
 
-        [ChangeTracked]
+        [NestedTrackedObject]
         public SimpleTrackedObject DependentTrackedObject
         {
             get
