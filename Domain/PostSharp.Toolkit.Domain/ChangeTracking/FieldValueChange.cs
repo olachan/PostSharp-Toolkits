@@ -12,7 +12,7 @@ using PostSharp.Toolkit.Domain.Common;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    public class FieldValueChange : SubOperation
+    internal class FieldValueChange : SubOperation
     {
         private readonly object target;
 

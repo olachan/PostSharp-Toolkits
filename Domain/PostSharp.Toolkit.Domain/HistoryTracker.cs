@@ -12,7 +12,7 @@ using PostSharp.Toolkit.Domain.ChangeTracking;
 
 namespace PostSharp.Toolkit.Domain
 {
-    public class HistoryTracker : Tracker
+    internal class HistoryTracker : Tracker
     {
         private readonly List<AggregateTracker> childTrackers;
 

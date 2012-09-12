@@ -1,6 +1,6 @@
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    public sealed class RestorePointToken
+    internal sealed class RestorePointToken
     {
         public string Name { get; private set; }
 

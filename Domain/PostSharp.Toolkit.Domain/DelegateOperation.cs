@@ -4,7 +4,7 @@ using PostSharp.Toolkit.Domain.ChangeTracking;
 
 namespace PostSharp.Toolkit.Domain
 {
-    public class DelegateOperation : Operation
+    internal class DelegateOperation : Operation
     {
         public Action UndoAction { get; set; }
 

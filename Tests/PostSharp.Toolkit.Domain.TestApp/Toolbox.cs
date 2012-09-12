@@ -3,7 +3,7 @@ using PostSharp.Toolkit.Domain.ChangeTracking;
 
 namespace PostSharp.Toolkit.Domain.TestApp
 {
-    public class Toolbox : ModelBase
+    internal class Toolbox : ModelBase
     {
         private static readonly Random _random = new Random();
 

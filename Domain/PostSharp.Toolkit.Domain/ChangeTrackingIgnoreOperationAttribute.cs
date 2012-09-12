@@ -10,7 +10,7 @@ using System;
 namespace PostSharp.Toolkit.Domain
 {
     [AttributeUsage(AttributeTargets.Method|AttributeTargets.Property)]
-    public class ChangeTrackingIgnoreOperationAttribute : Attribute
+    internal class ChangeTrackingIgnoreOperationAttribute : Attribute
     {
     }
 }

@@ -12,7 +12,7 @@ using PostSharp.Toolkit.Domain.Common;
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     [Serializable]
-    public class ImplicitOperationManagementAttribute : ChangeTrackingAspectBase, ITrackedObject
+    internal class ImplicitOperationManagementAttribute : ChangeTrackingAspectBase, ITrackedObject
     {
         [NonSerialized]
         protected Dictionary<MemberInfoIdentity, MethodDescriptor> MethodAttributes;

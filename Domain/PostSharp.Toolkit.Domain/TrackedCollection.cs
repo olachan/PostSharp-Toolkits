@@ -16,7 +16,7 @@ using PostSharp.Toolkit.Domain.ChangeTracking;
 namespace PostSharp.Toolkit.Domain
 {
     [ImplicitOperationManagement]
-    public class TrackedCollection<T> : INotifyCollectionChanged, IList<T>, IList, ITrackedObject
+    internal class TrackedCollection<T> : INotifyCollectionChanged, IList<T>, IList, ITrackedObject
     {
         private readonly ObservableCollection<T> innerCollection;
 

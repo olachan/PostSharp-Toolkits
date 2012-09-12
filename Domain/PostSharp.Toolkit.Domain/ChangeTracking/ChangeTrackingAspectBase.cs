@@ -12,7 +12,7 @@ using PostSharp.Toolkit.Domain.Common;
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     [Serializable]
-    public abstract class ChangeTrackingAspectBase : InstanceLevelAspect
+    internal abstract class ChangeTrackingAspectBase : InstanceLevelAspect
     {
         private ObjectAccessorsMap mapForSerialization;
 

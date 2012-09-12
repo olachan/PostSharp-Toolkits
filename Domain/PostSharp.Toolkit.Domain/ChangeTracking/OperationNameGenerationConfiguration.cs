@@ -1,6 +1,6 @@
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    public sealed class OperationNameGenerationConfiguration
+    internal sealed class OperationNameGenerationConfiguration
     {
         private static readonly OperationNameGenerationConfiguration defaultConfiguration = 
             new OperationNameGenerationConfiguration()

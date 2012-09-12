@@ -5,7 +5,7 @@ using PostSharp.Toolkit.Domain.ChangeTracking;
 namespace PostSharp.Toolkit.Domain.TestApp
 {
     [TrackedObject] //TODO: Option to exclude all properties by default (opt-in behavior)
-    public class ShellViewModel : ViewModelBase
+    internal class ShellViewModel : ViewModelBase
     {
         //TODO: Need a way to exclude field/property from change tracking
         public HistoryTracker HistoryTracker { get; protected set; }

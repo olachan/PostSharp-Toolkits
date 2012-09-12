@@ -26,7 +26,7 @@ namespace PostSharp.Toolkit.Domain
     [Serializable]
     [IntroduceInterface(typeof(ITrackedObject), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
     [MulticastAttributeUsage(MulticastTargets.Class, Inheritance = MulticastInheritance.Strict)]
-    public class TrackedObjectAttribute : ImplicitOperationManagementAttribute
+    internal class TrackedObjectAttribute : ImplicitOperationManagementAttribute
     {
         private string FieldSetOperationStringFormat
         {

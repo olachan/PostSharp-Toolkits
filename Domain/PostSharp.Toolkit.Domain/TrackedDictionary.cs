@@ -14,7 +14,7 @@ using PostSharp.Toolkit.Domain.ChangeTracking;
 namespace PostSharp.Toolkit.Domain
 {
     [ImplicitOperationManagement]
-    public class TrackedDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IDictionary, ITrackedObject
+    internal class TrackedDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IDictionary, ITrackedObject
     {
         private readonly Dictionary<TKey, TValue> innerCollection;
 

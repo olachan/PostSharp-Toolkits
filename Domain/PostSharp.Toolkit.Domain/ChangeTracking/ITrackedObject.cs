@@ -3,7 +3,7 @@ using PostSharp.Constraints;
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     [Internal]
-    public interface ITrackedObject
+    internal interface ITrackedObject
     {
         IObjectTracker Tracker { get; }
 

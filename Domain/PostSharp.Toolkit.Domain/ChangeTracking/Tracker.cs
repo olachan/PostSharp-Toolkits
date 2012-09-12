@@ -13,7 +13,7 @@ using PostSharp.Toolkit.Threading;
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
     [ThreadUnsafeObject]
-    public abstract class Tracker : ITracker, IDisposable
+    internal abstract class Tracker : ITracker, IDisposable
     {
         internal OperationCollection UndoOperationCollection;
 

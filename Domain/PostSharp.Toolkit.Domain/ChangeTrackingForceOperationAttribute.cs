@@ -9,7 +9,7 @@ using System;
 
 namespace PostSharp.Toolkit.Domain
 {
-    public class ChangeTrackingForceOperationAttribute : Attribute
+    internal class ChangeTrackingForceOperationAttribute : Attribute
     {
          
     }

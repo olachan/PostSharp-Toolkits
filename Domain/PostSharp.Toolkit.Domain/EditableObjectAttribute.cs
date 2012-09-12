@@ -14,7 +14,7 @@ namespace PostSharp.Toolkit.Domain
 {
     [Serializable]
     [IntroduceInterface(typeof(IEditableObject), OverrideAction = InterfaceOverrideAction.Ignore, AncestorOverrideAction = InterfaceOverrideAction.Ignore)]
-    public class EditableObjectAttribute : ChangeTrackingAspectBase, IEditableObject
+    internal class EditableObjectAttribute : ChangeTrackingAspectBase, IEditableObject
     {
         private Dictionary<MethodBase, MethodBase> interfaceImplementationMap;
 

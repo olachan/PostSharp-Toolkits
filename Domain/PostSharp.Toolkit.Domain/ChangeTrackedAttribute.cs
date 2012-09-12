@@ -13,7 +13,7 @@ namespace PostSharp.Toolkit.Domain
     //TODO: Review error messages and other string for classes names after refactoring
 
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-    public class ChangeTrackedAttribute : Attribute
+    internal class ChangeTrackedAttribute : Attribute
     {
          
     }

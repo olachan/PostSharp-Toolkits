@@ -13,7 +13,7 @@ using PostSharp.Toolkit.Domain.ChangeTracking;
 
 namespace PostSharp.Toolkit.Domain
 {
-    public static class ObjectTracker
+    internal static class ObjectTracker
     {
         public static RestorePointToken SetRestorePoint( object trackedObject, string name = null )
         {
