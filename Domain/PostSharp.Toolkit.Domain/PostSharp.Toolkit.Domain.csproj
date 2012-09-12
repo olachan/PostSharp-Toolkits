@@ -82,6 +82,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\AssemblyVersion.cs">
+      <Link>Properties\AssemblyVersion.cs</Link>
+    </Compile>
+    <Compile Include="..\..\SharedAssemblyInfo.cs">
+      <Link>Properties\SharedAssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="ChangeTrackingIgnoreField.cs" />
     <Compile Include="ChangeTrackingForceOperationAttribute.cs" />
     <Compile Include="ChangeTracking\ChangeTrackingAspectBase.cs" />
