@@ -1,348 +1,235 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+
+using PostSharp.Toolkit.Domain.ChangeTracking;
 
 namespace PostSharp.Toolkit.Domain.Controls
 {
-    public class UndoRedoButton : ContentControl, ICommandSource
+    [TemplatePart(Name = splitElementName, Type = typeof(UIElement))]
+    public class UndoRedoButton : Button, INotifyPropertyChanged
     {
-        #region Constructors
+        private const string splitElementName = "PART_SplitElement";
+        
+        private UIElement splitElement;
 
-        static UndoRedoButton()
-        {
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(UndoRedoButton), new FrameworkPropertyMetadata(typeof(UndoRedoButton)));
-        }
+        public IEnumerable<Operation> UndoOperations { get; private set; }
+
+        protected bool IsMouseOverSplitElement { get; private set; }
 
         public UndoRedoButton()
         {
-            Keyboard.AddKeyDownHandler(this, OnKeyDown);
-            Mouse.AddPreviewMouseDownOutsideCapturedElementHandler(this, OnMouseDownOutsideCapturedElement);
+            this.DefaultStyleKey = typeof(UndoRedoButton);
         }
 
-        #endregion //Constructors
+        public static readonly DependencyProperty MaxOperationsCountProperty = DependencyProperty.Register(
+            "MaxOperationsCount", typeof(int), typeof(UndoRedoButton), new PropertyMetadata(10));
 
-        #region Properties
-
-        private System.Windows.Controls.Primitives.ButtonBase _button;
-        protected System.Windows.Controls.Primitives.ButtonBase Button
+        public int MaxOperationsCount
         {
             get
             {
-                return _button;
+                return (int)GetValue(MaxOperationsCountProperty);
             }
             set
             {
-                if (_button != null)
-                    _button.Click -= DropDownButton_Click;
-
-                _button = value;
-
-                if (_button != null)
-                    _button.Click += DropDownButton_Click;
+                SetValue(MaxOperationsCountProperty, value);
             }
         }
 
-        #region DropDownContent
+        public static readonly DependencyProperty HistoryTrackerProperty = DependencyProperty.Register(
+            "HistoryTracker", typeof(HistoryTracker), typeof(UndoRedoButton), new PropertyMetadata(default(HistoryTracker), HistoryTrackerChanged));
 
-        public static readonly DependencyProperty DropDownContentProperty = DependencyProperty.Register("DropDownContent", typeof(object), typeof(UndoRedoButton), new UIPropertyMetadata(null, OnDropDownContentChanged));
-        public object DropDownContent
+        private bool isOpen;
+
+        private static void HistoryTrackerChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs dependencyPropertyChangedEventArgs)
+        {
+            UndoRedoButton sb = (UndoRedoButton)dependencyObject;
+
+            if (dependencyPropertyChangedEventArgs.OldValue != null)
+            {
+                HistoryTracker ht = (HistoryTracker)dependencyPropertyChangedEventArgs.OldValue;
+                ht.UndoOperationsChanged -= sb.HistoryTrackerOnUndoOperationsChanged;
+                ht.RedoOperationsChanged -= sb.HistoryTrackerOnRedoOperationsChanged;
+            }
+
+            if (dependencyPropertyChangedEventArgs.NewValue != null)
+            {
+                sb.HistoryTracker.UndoOperationsChanged += sb.HistoryTrackerOnUndoOperationsChanged;
+                sb.HistoryTracker.RedoOperationsChanged += sb.HistoryTrackerOnRedoOperationsChanged;
+            }
+
+            sb.SetUndoOperations();
+
+        }
+
+        private void HistoryTrackerOnRedoOperationsChanged(object sender, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
+        {
+
+        }
+
+        private void HistoryTrackerOnUndoOperationsChanged(object sender, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
+        {
+            this.SetUndoOperations();
+        }
+
+        private void SetUndoOperations()
+        {
+            this.UndoOperations = this.HistoryTracker.UndoOperations.Reverse().Take(MaxOperationsCount);
+            this.OnPropertyChanged("UndoOperations");
+        }
+
+        public HistoryTracker HistoryTracker
         {
             get
             {
-                return (object)GetValue(DropDownContentProperty);
+                return (HistoryTracker)GetValue(HistoryTrackerProperty);
             }
             set
             {
-                SetValue(DropDownContentProperty, value);
+                SetValue(HistoryTrackerProperty, value);
             }
         }
 
-        private static void OnDropDownContentChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+        protected override bool IsEnabledCore
         {
-            UndoRedoButton undoRedoButton = o as UndoRedoButton;
-            if (undoRedoButton != null)
-                undoRedoButton.OnDropDownContentChanged((object)e.OldValue, (object)e.NewValue);
+            get
+            {
+                return this.UndoOperations != null && this.UndoOperations.Any();
+            }
         }
 
-        protected virtual void OnDropDownContentChanged(object oldValue, object newValue)
+        public ICommand UndoToCommand
         {
-            // TODO: Add your property changed side-effects. Descendants can override as well.
+            get
+            {
+                return this.HistoryTracker != null ? new UndoCommand(this) : null;
+            }
         }
 
-        #endregion //DropDownContent
+        public override void OnApplyTemplate()
+        {
+            if (null != this.splitElement)
+            {
+                this.splitElement.MouseEnter -= this.SplitElementMouseEnter;
+                this.splitElement.MouseLeave -= this.SplitElementMouseLeave;
+                this.splitElement = null;
+            }
 
-        #region IsOpen
+            base.OnApplyTemplate();
 
-        public static readonly DependencyProperty IsOpenProperty = DependencyProperty.Register("IsOpen", typeof(bool), typeof(UndoRedoButton), new UIPropertyMetadata(false, OnIsOpenChanged));
+            this.splitElement = this.GetTemplateChild(splitElementName) as UIElement;
+
+            if (null != this.splitElement)
+            {
+                this.splitElement.MouseEnter += this.SplitElementMouseEnter;
+                this.splitElement.MouseLeave += this.SplitElementMouseLeave;
+            }
+
+        }
+
+        protected override void OnClick()
+        {
+            if (this.IsMouseOverSplitElement)
+            {
+                this.OpenButtonMenu();
+            }
+            else
+            {
+                base.OnClick();
+
+                if (this.HistoryTracker != null)
+                {
+                    this.HistoryTracker.Undo();
+                }
+            }
+        }
+
+        protected override void OnKeyDown(KeyEventArgs eventArgs)
+        {
+            if (null == eventArgs)
+            {
+                throw new ArgumentNullException("eventArgs");
+            }
+
+            if ((Key.Down == eventArgs.Key) || (Key.Up == eventArgs.Key))
+            {
+                this.Dispatcher.BeginInvoke((Action)(this.OpenButtonMenu));
+            }
+            else
+            {
+                base.OnKeyDown(eventArgs);
+            }
+        }
+
+        protected void OpenButtonMenu()
+        {
+            if (this.UndoOperations.Any())
+            {
+                this.IsOpen = true;
+            }
+        }
+
         public bool IsOpen
         {
             get
             {
-                return (bool)GetValue(IsOpenProperty);
+                return this.isOpen;
             }
             set
             {
-                SetValue(IsOpenProperty, value);
+                this.isOpen = value;
+                this.OnPropertyChanged("IsOpen");
             }
         }
 
-        private static void OnIsOpenChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+        private void SplitElementMouseEnter(object sender, MouseEventArgs e)
         {
-            UndoRedoButton undoRedoButton = o as UndoRedoButton;
-            if (undoRedoButton != null)
-                undoRedoButton.OnIsOpenChanged((bool)e.OldValue, (bool)e.NewValue);
+            this.IsMouseOverSplitElement = true;
         }
 
-        protected virtual void OnIsOpenChanged(bool oldValue, bool newValue)
+        private void SplitElementMouseLeave(object sender, MouseEventArgs e)
         {
-            if (newValue)
-                RaiseRoutedEvent(UndoRedoButton.OpenedEvent);
-            else
-                RaiseRoutedEvent(UndoRedoButton.ClosedEvent);
+            this.IsMouseOverSplitElement = false;
         }
 
-        #endregion //IsOpen
+        public event PropertyChangedEventHandler PropertyChanged;
 
-        #endregion //Properties
-
-        #region Base Class Overrides
-
-        public override void OnApplyTemplate()
+        protected virtual void OnPropertyChanged(string propertyName)
         {
-            base.OnApplyTemplate();
-            Button = GetTemplateChild("PART_DropDownButton") as ToggleButton;
-        }
-
-        #endregion //Base Class Overrides
-
-        #region Events
-
-        public static readonly RoutedEvent ClickEvent = EventManager.RegisterRoutedEvent("Click", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(UndoRedoButton));
-        public event RoutedEventHandler Click
-        {
-            add
+            PropertyChangedEventHandler handler = this.PropertyChanged;
+            if (handler != null)
             {
-                AddHandler(ClickEvent, value);
+                handler(this, new PropertyChangedEventArgs(propertyName));
             }
-            remove
+        }
+
+        private sealed class UndoCommand : ICommand
+        {
+            private readonly UndoRedoButton undoRedoButton;
+
+            public UndoCommand(UndoRedoButton undoRedoButton)
             {
-                RemoveHandler(ClickEvent, value);
+                this.undoRedoButton = undoRedoButton;
             }
-        }
 
-        public static readonly RoutedEvent OpenedEvent = EventManager.RegisterRoutedEvent("Opened", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(UndoRedoButton));
-        public event RoutedEventHandler Opened
-        {
-            add
+            public bool CanExecute(object parameter)
             {
-                AddHandler(OpenedEvent, value);
+                return true;
             }
-            remove
+
+            public void Execute(object parameter)
             {
-                RemoveHandler(OpenedEvent, value);
+                this.undoRedoButton.HistoryTracker.UndoTo(parameter as Operation);
+                this.undoRedoButton.IsOpen = false;
             }
+
+            public event EventHandler CanExecuteChanged;
         }
-
-        public static readonly RoutedEvent ClosedEvent = EventManager.RegisterRoutedEvent("Closed", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(UndoRedoButton));
-        public event RoutedEventHandler Closed
-        {
-            add
-            {
-                AddHandler(ClosedEvent, value);
-            }
-            remove
-            {
-                RemoveHandler(ClosedEvent, value);
-            }
-        }
-
-        #endregion //Events
-
-        #region Event Handlers
-
-        private void OnKeyDown(object sender, KeyEventArgs e)
-        {
-            switch (e.Key)
-            {
-                case Key.Escape:
-                    {
-                        CloseDropDown();
-                        break;
-                    }
-            }
-        }
-
-        private void OnMouseDownOutsideCapturedElement(object sender, MouseButtonEventArgs e)
-        {
-            CloseDropDown();
-        }
-
-        private void DropDownButton_Click(object sender, RoutedEventArgs e)
-        {
-            OnClick();
-        }
-
-        void CanExecuteChanged(object sender, EventArgs e)
-        {
-            CanExecuteChanged();
-        }
-
-        #endregion //Event Handlers
-
-        #region Methods
-
-        private void CanExecuteChanged()
-        {
-            if (Command != null)
-            {
-                RoutedCommand command = Command as RoutedCommand;
-
-                // If a RoutedCommand.
-                if (command != null)
-                    IsEnabled = command.CanExecute(CommandParameter, CommandTarget) ? true : false;
-                // If a not RoutedCommand.
-                else
-                    IsEnabled = Command.CanExecute(CommandParameter) ? true : false;
-            }
-        }
-
-        /// <summary>
-        /// Closes the drop down.
-        /// </summary>
-        private void CloseDropDown()
-        {
-            if (IsOpen)
-                IsOpen = false;
-            ReleaseMouseCapture();
-        }
-
-        protected virtual void OnClick()
-        {
-            RaiseRoutedEvent(UndoRedoButton.ClickEvent);
-            RaiseCommand();
-        }
-
-        /// <summary>
-        /// Raises routed events.
-        /// </summary>
-        private void RaiseRoutedEvent(RoutedEvent routedEvent)
-        {
-            RoutedEventArgs args = new RoutedEventArgs(routedEvent, this);
-            RaiseEvent(args);
-        }
-
-        /// <summary>
-        /// Raises the command's Execute event.
-        /// </summary>
-        private void RaiseCommand()
-        {
-            if (Command != null)
-            {
-                RoutedCommand routedCommand = Command as RoutedCommand;
-
-                if (routedCommand == null)
-                    ((ICommand)Command).Execute(CommandParameter);
-                else
-                    routedCommand.Execute(CommandParameter, CommandTarget);
-            }
-        }
-
-        /// <summary>
-        /// Unhooks a command from the Command property.
-        /// </summary>
-        /// <param name="oldCommand">The old command.</param>
-        /// <param name="newCommand">The new command.</param>
-        private void UnhookCommand(ICommand oldCommand, ICommand newCommand)
-        {
-            EventHandler handler = CanExecuteChanged;
-            oldCommand.CanExecuteChanged -= handler;
-        }
-
-        /// <summary>
-        /// Hooks up a command to the CanExecuteChnaged event handler.
-        /// </summary>
-        /// <param name="oldCommand">The old command.</param>
-        /// <param name="newCommand">The new command.</param>
-        private void HookUpCommand(ICommand oldCommand, ICommand newCommand)
-        {
-            EventHandler handler = new EventHandler(CanExecuteChanged);
-            canExecuteChangedHandler = handler;
-            if (newCommand != null)
-                newCommand.CanExecuteChanged += canExecuteChangedHandler;
-        }
-
-        #endregion //Methods
-
-        #region ICommandSource Members
-
-        // Keeps a copy of the CanExecuteChnaged handler so it doesn't get garbage collected.
-        private EventHandler canExecuteChangedHandler;
-
-        #region Command
-
-        public static readonly DependencyProperty CommandProperty = DependencyProperty.Register("Command", typeof(ICommand), typeof(UndoRedoButton), new PropertyMetadata((ICommand)null, OnCommandChanged));
-        [TypeConverter(typeof(CommandConverter))]
-        public ICommand Command
-        {
-            get
-            {
-                return (ICommand)GetValue(CommandProperty);
-            }
-            set
-            {
-                SetValue(CommandProperty, value);
-            }
-        }
-
-        private static void OnCommandChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            UndoRedoButton undoRedoButton = d as UndoRedoButton;
-            if (undoRedoButton != null)
-                undoRedoButton.OnCommandChanged((ICommand)e.OldValue, (ICommand)e.NewValue);
-        }
-
-        protected virtual void OnCommandChanged(ICommand oldValue, ICommand newValue)
-        {
-            // If old command is not null, then we need to remove the handlers.
-            if (oldValue != null)
-                UnhookCommand(oldValue, newValue);
-
-            HookUpCommand(oldValue, newValue);
-
-            CanExecuteChanged(); //may need to call this when changing the command parameter or target.
-        }
-
-        #endregion //Command
-
-        public static readonly DependencyProperty CommandParameterProperty = DependencyProperty.Register("CommandParameter", typeof(object), typeof(UndoRedoButton), new PropertyMetadata(null));
-        public object CommandParameter
-        {
-            get
-            {
-                return GetValue(CommandParameterProperty);
-            }
-            set
-            {
-                SetValue(CommandParameterProperty, value);
-            }
-        }
-
-        public static readonly DependencyProperty CommandTargetProperty = DependencyProperty.Register("CommandTarget", typeof(IInputElement), typeof(UndoRedoButton), new PropertyMetadata(null));
-        public IInputElement CommandTarget
-        {
-            get
-            {
-                return (IInputElement)GetValue(CommandTargetProperty);
-            }
-            set
-            {
-                SetValue(CommandTargetProperty, value);
-            }
-        }
-
-        #endregion //ICommandSource Members
     }
 }

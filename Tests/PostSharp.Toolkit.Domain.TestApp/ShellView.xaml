@@ -4,15 +4,20 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:Controls="clr-namespace:PostSharp.Toolkit.Domain.Controls;assembly=PostSharp.Toolkit.Domain.Controls"
-             mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300">
+             xmlns:TestApp="clr-namespace:PostSharp.Toolkit.Domain.TestApp" 
+             mc:Ignorable="d"
+             d:DesignHeight="300"
+             d:DesignWidth="300"
+             d:DataContext="{d:DesignInstance TestApp:ShellViewModel}">
    
         <ScrollViewer>
         <StackPanel Orientation="Vertical">
-            <Controls:UndoRedoButton HorizontalAlignment="Left" />
+           
             <ToolBar>
                 <ToolBarPanel Orientation="Horizontal">
-                    <Button x:Name="Undo">Undo</Button>
+                    <Controls:UndoRedoButton HorizontalAlignment="Left"
+                                            
+                                             HistoryTracker="{Binding HistoryTracker}" />
                     <Button x:Name="Redo">Redo</Button>
                 </ToolBarPanel>
             </ToolBar>

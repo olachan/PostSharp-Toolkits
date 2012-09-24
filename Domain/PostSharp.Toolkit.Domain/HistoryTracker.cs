@@ -7,6 +7,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.ComponentModel;
 
 using PostSharp.Toolkit.Domain.ChangeTracking;
 
@@ -19,6 +21,18 @@ namespace PostSharp.Toolkit.Domain
         public HistoryTracker()
         {
             this.childTrackers = new List<AggregateTracker>();
+            this.UndoOperationCollection.CollectionChanged += UndoOperationCollectionCollectionChanged;
+            this.RedoOperationCollection.CollectionChanged += RedoOperationCollectionCollectionChanged;
+        }
+
+        private void RedoOperationCollectionCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            this.OnRedoOperationsChanged( e );
+        }
+
+        private void UndoOperationCollectionCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            this.OnUndoOperationsChanged( e );
         }
 
         public HistoryTracker Track(object target)
@@ -127,6 +141,28 @@ namespace PostSharp.Toolkit.Domain
         public void UndoTo(Operation operation)
         {
             this.UndoToOperation(operation);
+        }
+
+        public event NotifyCollectionChangedEventHandler RedoOperationsChanged;
+
+        private void OnRedoOperationsChanged( NotifyCollectionChangedEventArgs e )
+        {
+            NotifyCollectionChangedEventHandler handler = this.RedoOperationsChanged;
+            if ( handler != null )
+            {
+                handler( this, e );
+            }
+        }
+
+        public event NotifyCollectionChangedEventHandler UndoOperationsChanged;
+
+        private void OnUndoOperationsChanged( NotifyCollectionChangedEventArgs e )
+        {
+            NotifyCollectionChangedEventHandler handler = this.UndoOperationsChanged;
+            if ( handler != null )
+            {
+                handler( this, e );
+            }
         }
     }
 }

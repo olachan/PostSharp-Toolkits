@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
 {
-    internal class OperationCollection
+    internal class OperationCollection: INotifyCollectionChanged
     {
         private readonly LinkedList<Operation> operations;
 
@@ -52,6 +53,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             this.operations.AddLast(operation);
 
+            this.OnCollectionChanged( new NotifyCollectionChangedEventArgs( NotifyCollectionChangedAction.Add, operation ) );
+
             this.Trim();
         }
 
@@ -59,7 +62,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             while (this.operations.Count > (count ?? this.MaximumOperationsCount))
             {
+                var removed = this.operations.First;
                 this.operations.RemoveFirst();
+                this.OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, removed));
             }
         }
 
@@ -74,7 +79,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             for (int i = 0; i < index.Value; i++)
             {
+                var removed = this.operations.First;
                 this.operations.RemoveFirst();
+                this.OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, removed));
             }
         }
 
@@ -89,7 +96,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             for (int i = 0; i < index.Value; i++)
             {
+                var removed = this.operations.First;
                 this.operations.RemoveFirst();
+                this.OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, removed));
             }
         }
 
@@ -102,6 +111,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
             Operation operation = this.operations.Last.Value;
             this.operations.RemoveLast();
+            this.OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, operation));
 
             if (!operation.IsRestorePoint())
             {
@@ -146,6 +156,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                 this.operations.RemoveLast();
                 restoreOperations.Add(restorePoint);
             }
+
+            this.OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
 
             if (!predicate(restorePoint))
             {
@@ -193,6 +205,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         public void Clear()
         {
             this.operations.Clear();
+            this.OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
 
         public int MaximumOperationsCount
@@ -205,6 +218,17 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             {
                 this.maximumOperationsCount = value;
                 this.Trim();
+            }
+        }
+
+        public event NotifyCollectionChangedEventHandler CollectionChanged;
+
+        public void OnCollectionChanged( NotifyCollectionChangedEventArgs e )
+        {
+            NotifyCollectionChangedEventHandler handler = this.CollectionChanged;
+            if ( handler != null )
+            {
+                handler( this, e );
             }
         }
     }
