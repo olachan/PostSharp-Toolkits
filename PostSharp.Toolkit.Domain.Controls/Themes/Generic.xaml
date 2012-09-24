@@ -29,22 +29,17 @@
                       Offset="1" />
     </LinearGradientBrush>
 
-    <Style TargetType="{x:Type local:UndoRedoButton}"
+    <SolidColorBrush x:Key="DisabledBackgroundBrush"
+                     Color="#FFF4F4F4"/>
+
+    <BooleanToVisibilityConverter x:Key="boolToVisibilityConverter" />
+    <local:InvertedBooleanToVisibilityConverter x:Key="invertedBoolToVisibilityConverter" />
+
+    <Style TargetType="{x:Type local:UndoRedoButtonBase}"
            BasedOn="{StaticResource {x:Type Button}}">
-
-        <Setter Property="Content">
-            <Setter.Value>
-                <Image HorizontalAlignment="Stretch"
-                       VerticalAlignment="Stretch"
-                       Height="16"
-                       Width="16"
-                       Source="pack://application:,,,/PostSharp.Toolkit.Domain.Controls;component/Resources/UndoIcon.png" />
-            </Setter.Value>
-        </Setter>
-
         <Setter Property="Control.Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type local:UndoRedoButton}">
+                <ControlTemplate TargetType="{x:Type local:UndoRedoButtonBase}">
                     <Grid>
                         <themes:ButtonChrome x:Name="Chrome"
                                              Background="{TemplateBinding Control.Background}"
@@ -67,14 +62,22 @@
                                                   RecognizesAccessKey="True"
                                                   SnapsToDevicePixels="{TemplateBinding UIElement.SnapsToDevicePixels}"
                                                   VerticalAlignment="{TemplateBinding Control.VerticalContentAlignment}" />
+                                <Rectangle Name="DisableOverlay"
+                                           Fill="{StaticResource DisabledBackgroundBrush}"
+                                           Opacity="0.7"
+                                           Visibility="Hidden"
+                                           VerticalAlignment="Stretch"
+                                           HorizontalAlignment="Stretch" />
                                 <Rectangle Grid.Column="1"
                                            Width="1"
                                            Fill="{TemplateBinding Foreground}"
                                            Opacity="0.4"
-                                           Margin="0 4 0 4" />
+                                           Margin="0 4 0 4"
+                                           Visibility="{Binding IsListEnabled, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource boolToVisibilityConverter}}" />
                                 <Grid x:Name="PART_SplitElement"
                                       Grid.Column="2"
-                                      Background="Transparent">
+                                      Background="Transparent"
+                                      Visibility="{Binding IsListEnabled, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource boolToVisibilityConverter}}">
                                     <Path Data="M 0,0 L 8,0 L 4,4 Z"
                                           Fill="{TemplateBinding Foreground}"
                                           Margin="2 0 4 0"
@@ -92,12 +95,12 @@
                                     Background="{StaticResource PopupBackgroundBrush}"
                                     BorderBrush="{StaticResource PopupBorderBrush}"
                                     CornerRadius="2.75">
-                                <ItemsControl ItemsSource="{Binding UndoOperations, RelativeSource={RelativeSource TemplatedParent}}"
+                                <ItemsControl ItemsSource="{Binding Operations, RelativeSource={RelativeSource TemplatedParent}}"
                                               Name="PART_UndoItems">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <MenuItem Header="{Binding Name}"
-                                                      Command="{Binding TemplatedParent.UndoToCommand, RelativeSource={RelativeSource AncestorType=Popup}}"
+                                                      Command="{Binding TemplatedParent.RevertOperationCommand, RelativeSource={RelativeSource AncestorType=Popup}}"
                                                       CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Self}}" />
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -116,10 +119,43 @@
                                  Value="False">
                             <Setter Property="Control.Foreground"
                                     Value="#FFADADAD" />
+                            <Setter Property="Visibility"
+                                    Value="Visible"
+                                    TargetName="DisableOverlay" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type local:UndoButton}"
+           BasedOn="{StaticResource {x:Type local:UndoRedoButtonBase}}">
+        <Setter Property="Content">
+            <Setter.Value>
+                <Image HorizontalAlignment="Stretch"
+                       VerticalAlignment="Stretch"
+                       Height="16"
+                       Width="16"
+                       Source="pack://application:,,,/PostSharp.Toolkit.Domain.Controls;component/Resources/UndoIcon.png" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type local:RedoButton}"
+           BasedOn="{StaticResource {x:Type local:UndoRedoButtonBase}}">
+        <Setter Property="Content">
+            <Setter.Value>
+                <Grid>
+                    <Image HorizontalAlignment="Stretch"
+                           VerticalAlignment="Stretch"
+                           Height="16"
+                           Width="16"
+                           Source="pack://application:,,,/PostSharp.Toolkit.Domain.Controls;component/Resources/RedoIcon.png" />
+                </Grid>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="IsListEnabled"
+                Value="False" />
     </Style>
 </ResourceDictionary>

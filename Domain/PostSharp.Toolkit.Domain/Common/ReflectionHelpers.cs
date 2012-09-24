@@ -43,12 +43,12 @@ namespace PostSharp.Toolkit.Domain.Common
 
         public static bool IsEventAccessor(this MethodInfo methodInfo)
         {
-            return methodInfo.IsSpecialName && !methodInfo.Name.StartsWith( "add_" ) && !methodInfo.Name.StartsWith( "remove_" );
+            return methodInfo.IsSpecialName && (methodInfo.Name.StartsWith( "add_" ) || methodInfo.Name.StartsWith( "remove_" ));
         }
 
         public static bool IsPropertyAccessor(this MethodInfo methodInfo)
         {
-            return methodInfo.IsSpecialName && !methodInfo.Name.StartsWith("get_") && !methodInfo.Name.StartsWith("set_");
+            return methodInfo.IsSpecialName && (methodInfo.Name.StartsWith("get_") || methodInfo.Name.StartsWith("set_"));
         }
 
         public static PropertyInfo GetAccessorsProperty(this MethodInfo methodInfo)
@@ -78,6 +78,25 @@ namespace PostSharp.Toolkit.Domain.Common
             }
 
             return false;
+        }
+
+        public static TAttribute[] GetCustomAttributeFromMethodOrProperty<TAttribute>(this MethodInfo methodInfo, bool inherit)
+            where TAttribute : Attribute
+        {
+            PropertyInfo propertyInfo;
+
+            object[] attributes = methodInfo.GetCustomAttributes( typeof(TAttribute), inherit );
+            if (attributes.Any())
+            {
+                return attributes.Cast<TAttribute>().ToArray();
+            }
+
+            if ((propertyInfo = methodInfo.GetAccessorsProperty()) != null)
+            {
+                return propertyInfo.GetCustomAttributes(typeof(TAttribute), inherit).Cast<TAttribute>().ToArray();
+            }
+
+            return new TAttribute[0];
         }
     }
 }

@@ -54,18 +54,18 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         private static Dictionary<MemberInfoIdentity, MethodDescriptor> GetMethodsAttributes(Type type)
         {
             Dictionary<MemberInfoIdentity, MethodDescriptor> methodAttributes = new Dictionary<MemberInfoIdentity, MethodDescriptor>();
-            foreach (MethodInfo method in type.GetMethods(BindingFlagsSet.PublicInstance))
+            foreach (MethodInfo method in type.GetMethods(BindingFlagsSet.PublicInstance).Where( m => !m.IsEventAccessor()))
             {
                 MethodOperationStrategy operationStrategy = MethodOperationStrategy.Auto;
-                PropertyInfo propertyInfo;
-                if ((propertyInfo = method.GetAccessorsProperty()) != null)
-                {
-                    if (propertyInfo.IsDefined(typeof(ChangeTrackingIgnoreField), true) ||
-                        propertyInfo.IsDefined(typeof(ChangeTrackingIgnoreOperationAttribute), true))
-                    {
-                        continue;
-                    }
-                }
+                //PropertyInfo propertyInfo;
+                //if ((propertyInfo = method.GetAccessorsProperty()) != null)
+                //{
+                //    if (propertyInfo.IsDefined(typeof(ChangeTrackingIgnoreField), true) ||
+                //        propertyInfo.IsDefined(typeof(ChangeTrackingIgnoreOperationAttribute), true))
+                //    {
+                //        continue;
+                //    }
+                //}
 
                 if (method.IsDefinedOnMethodOrProperty(typeof(ChangeTrackingIgnoreOperationAttribute), true) ||
                     method.IsDefinedOnMethodOrProperty(typeof(ChangeTrackingIgnoreField), true))
@@ -78,8 +78,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                     operationStrategy = MethodOperationStrategy.Always;
                 }
 
-                string operationName =
-                    method.GetCustomAttributes(typeof(OperationNameAttribute), false).Select(a => ((OperationNameAttribute)a).Name).FirstOrDefault();
+                string operationName = method.GetCustomAttributeFromMethodOrProperty<OperationNameAttribute>(false).Select(a => a.Name).FirstOrDefault();
 
                 methodAttributes.Add(new MemberInfoIdentity(method), new MethodDescriptor(operationStrategy, operationName));
             }

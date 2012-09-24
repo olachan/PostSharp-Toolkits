@@ -12,23 +12,38 @@ using PostSharp.Toolkit.Domain.ChangeTracking;
 namespace PostSharp.Toolkit.Domain.Controls
 {
     [TemplatePart(Name = splitElementName, Type = typeof(UIElement))]
-    public class UndoRedoButton : Button, INotifyPropertyChanged
+    public abstract class UndoRedoButtonBase : Button, INotifyPropertyChanged
     {
         private const string splitElementName = "PART_SplitElement";
-        
+
         private UIElement splitElement;
 
-        public IEnumerable<Operation> UndoOperations { get; private set; }
+        public IEnumerable<Operation> Operations { get; protected set; }
 
         protected bool IsMouseOverSplitElement { get; private set; }
 
-        public UndoRedoButton()
+        protected UndoRedoButtonBase()
         {
-            this.DefaultStyleKey = typeof(UndoRedoButton);
+            this.DefaultStyleKey = typeof(UndoRedoButtonBase);
+        }
+
+        public static readonly DependencyProperty IsListEnabledProperty = DependencyProperty.Register(
+            "IsListEnabled", typeof(bool), typeof(UndoRedoButtonBase), new PropertyMetadata(true));
+
+        public bool IsListEnabled
+        {
+            get
+            {
+                return (bool)GetValue(IsListEnabledProperty);
+            }
+            set
+            {
+                SetValue(IsListEnabledProperty, value);
+            }
         }
 
         public static readonly DependencyProperty MaxOperationsCountProperty = DependencyProperty.Register(
-            "MaxOperationsCount", typeof(int), typeof(UndoRedoButton), new PropertyMetadata(10));
+            "MaxOperationsCount", typeof(int), typeof(UndoRedoButtonBase), new PropertyMetadata(10));
 
         public int MaxOperationsCount
         {
@@ -43,46 +58,38 @@ namespace PostSharp.Toolkit.Domain.Controls
         }
 
         public static readonly DependencyProperty HistoryTrackerProperty = DependencyProperty.Register(
-            "HistoryTracker", typeof(HistoryTracker), typeof(UndoRedoButton), new PropertyMetadata(default(HistoryTracker), HistoryTrackerChanged));
+            "HistoryTracker", typeof(HistoryTracker), typeof(UndoRedoButtonBase), new PropertyMetadata(default(HistoryTracker), HistoryTrackerChanged));
 
         private bool isOpen;
 
         private static void HistoryTrackerChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs dependencyPropertyChangedEventArgs)
         {
-            UndoRedoButton sb = (UndoRedoButton)dependencyObject;
+            UndoRedoButtonBase sb = (UndoRedoButtonBase)dependencyObject;
 
             if (dependencyPropertyChangedEventArgs.OldValue != null)
             {
                 HistoryTracker ht = (HistoryTracker)dependencyPropertyChangedEventArgs.OldValue;
-                ht.UndoOperationsChanged -= sb.HistoryTrackerOnUndoOperationsChanged;
-                ht.RedoOperationsChanged -= sb.HistoryTrackerOnRedoOperationsChanged;
+                ht.UndoOperationsChanged -= sb.HistoryTrackerOnOperationsChanged;
+                ht.RedoOperationsChanged -= sb.HistoryTrackerOnOperationsChanged;
             }
 
             if (dependencyPropertyChangedEventArgs.NewValue != null)
             {
-                sb.HistoryTracker.UndoOperationsChanged += sb.HistoryTrackerOnUndoOperationsChanged;
-                sb.HistoryTracker.RedoOperationsChanged += sb.HistoryTrackerOnRedoOperationsChanged;
+                sb.HistoryTracker.UndoOperationsChanged += sb.HistoryTrackerOnOperationsChanged;
+                sb.HistoryTracker.RedoOperationsChanged += sb.HistoryTrackerOnOperationsChanged;
             }
 
-            sb.SetUndoOperations();
-
+            sb.SetOperations();
+            sb.CoerceValue(UIElement.IsEnabledProperty);
         }
 
-        private void HistoryTrackerOnRedoOperationsChanged(object sender, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
+        private void HistoryTrackerOnOperationsChanged(object sender, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
         {
-
+            this.SetOperations();
+            this.CoerceValue(UIElement.IsEnabledProperty);
         }
 
-        private void HistoryTrackerOnUndoOperationsChanged(object sender, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
-        {
-            this.SetUndoOperations();
-        }
-
-        private void SetUndoOperations()
-        {
-            this.UndoOperations = this.HistoryTracker.UndoOperations.Reverse().Take(MaxOperationsCount);
-            this.OnPropertyChanged("UndoOperations");
-        }
+        protected abstract void SetOperations();
 
         public HistoryTracker HistoryTracker
         {
@@ -100,17 +107,12 @@ namespace PostSharp.Toolkit.Domain.Controls
         {
             get
             {
-                return this.UndoOperations != null && this.UndoOperations.Any();
+                return base.IsEnabledCore && this.Operations != null && this.Operations.Any();
             }
         }
 
-        public ICommand UndoToCommand
-        {
-            get
-            {
-                return this.HistoryTracker != null ? new UndoCommand(this) : null;
-            }
-        }
+        public abstract ICommand RevertOperationCommand { get; }
+
 
         public override void OnApplyTemplate()
         {
@@ -142,13 +144,11 @@ namespace PostSharp.Toolkit.Domain.Controls
             else
             {
                 base.OnClick();
-
-                if (this.HistoryTracker != null)
-                {
-                    this.HistoryTracker.Undo();
-                }
+                this.OnClickCore();
             }
         }
+
+        protected abstract void OnClickCore();
 
         protected override void OnKeyDown(KeyEventArgs eventArgs)
         {
@@ -169,7 +169,7 @@ namespace PostSharp.Toolkit.Domain.Controls
 
         protected void OpenButtonMenu()
         {
-            if (this.UndoOperations.Any())
+            if (this.Operations.Any())
             {
                 this.IsOpen = true;
             }
@@ -209,13 +209,16 @@ namespace PostSharp.Toolkit.Domain.Controls
             }
         }
 
-        private sealed class UndoCommand : ICommand
+        protected sealed class UndoRedoCommand : ICommand
         {
-            private readonly UndoRedoButton undoRedoButton;
+            private readonly UndoRedoButtonBase undoRedoButtonBase;
 
-            public UndoCommand(UndoRedoButton undoRedoButton)
+            private readonly bool undo;
+
+            public UndoRedoCommand(UndoRedoButtonBase undoRedoButtonBase, bool undo)
             {
-                this.undoRedoButton = undoRedoButton;
+                this.undoRedoButtonBase = undoRedoButtonBase;
+                this.undo = undo;
             }
 
             public bool CanExecute(object parameter)
@@ -225,8 +228,15 @@ namespace PostSharp.Toolkit.Domain.Controls
 
             public void Execute(object parameter)
             {
-                this.undoRedoButton.HistoryTracker.UndoTo(parameter as Operation);
-                this.undoRedoButton.IsOpen = false;
+                if (undo)
+                {
+                    this.undoRedoButtonBase.HistoryTracker.UndoTo(parameter as Operation);
+                }
+                else
+                {
+                    this.undoRedoButtonBase.HistoryTracker.RedoTo(parameter as Operation);
+                }
+                this.undoRedoButtonBase.IsOpen = false;
             }
 
             public event EventHandler CanExecuteChanged;

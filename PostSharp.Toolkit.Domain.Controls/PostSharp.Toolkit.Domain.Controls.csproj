@@ -50,7 +50,10 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="UndoRedoButton.cs" />
+    <Compile Include="InvertedBooleanToVisibilityConverter.cs" />
+    <Compile Include="RedoButton.cs" />
+    <Compile Include="UndoButton.cs" />
+    <Compile Include="UndoRedoButtonBase.cs" />
     <Page Include="Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -88,6 +91,9 @@
       <Project>{9648d4b9-9c05-4db5-953b-de3139b6087c}</Project>
       <Name>PostSharp.Toolkit.Domain</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\RedoIcon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

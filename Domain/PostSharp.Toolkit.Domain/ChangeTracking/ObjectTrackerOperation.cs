@@ -17,12 +17,13 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         public AggregateTracker Tracker { get; private set; }
 
-        public ObjectTrackerOperation( AggregateTracker tracker, string operations, OperationCollection undoOperations, OperationCollection redoOperations, List<Operation> currentOperations )
+        public ObjectTrackerOperation( AggregateTracker tracker, string name, OperationCollection undoOperations, OperationCollection redoOperations, List<Operation> currentOperations )
         {
             this.Tracker = tracker;
             this.UndoOperations = undoOperations;
             this.RedoOperations = redoOperations;
             this.CurrentOperations = currentOperations;
+            this.Name = name;
         }
 
         protected internal override void Undo()

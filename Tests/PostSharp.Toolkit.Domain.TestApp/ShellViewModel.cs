@@ -12,6 +12,7 @@ namespace PostSharp.Toolkit.Domain.TestApp
 
         public Toolbox Toolbox { get; set; }
 
+        [OperationName("NameChanged")]
         public string Name { get; set; }
 
         public ShellViewModel()
@@ -55,7 +56,7 @@ namespace PostSharp.Toolkit.Domain.TestApp
 
         public void Undo()
         {
-            HistoryTracker.Undo(  ); //TODO: addToParent argument does not make sense here...
+            HistoryTracker.Undo(  ); 
         }
 
         public bool CanUndo()
@@ -66,7 +67,7 @@ namespace PostSharp.Toolkit.Domain.TestApp
 
         public void Redo()
         {
-            HistoryTracker.Redo( ); //TODO: addToParent argument does not make sense here...
+            HistoryTracker.Redo();
         }
 
         public bool CanRedo()

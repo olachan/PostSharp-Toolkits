@@ -142,7 +142,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.Undo(true);
         }
 
-        public virtual void Undo(bool addToParent)
+        protected virtual void Undo(bool addToParent)
         {
             if (!this.UndoRedoOperationEnabledCheck())
             {
@@ -263,7 +263,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             this.Redo(true);
         }
 
-        public virtual void Redo(bool addToParent)
+        protected virtual void Redo(bool addToParent)
         {
             if (!this.UndoRedoOperationEnabledCheck())
             {

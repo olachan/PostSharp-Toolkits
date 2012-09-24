@@ -15,10 +15,10 @@
            
             <ToolBar>
                 <ToolBarPanel Orientation="Horizontal">
-                    <Controls:UndoRedoButton HorizontalAlignment="Left"
-                                            
+                    <Controls:UndoButton HorizontalAlignment="Left"
                                              HistoryTracker="{Binding HistoryTracker}" />
-                    <Button x:Name="Redo">Redo</Button>
+                    <Controls:RedoButton HorizontalAlignment="Left"
+                                         HistoryTracker="{Binding HistoryTracker}" />
                 </ToolBarPanel>
             </ToolBar>
             <TextBox x:Name="Name" MinWidth="250" />
