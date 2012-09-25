@@ -48,6 +48,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AbstractMethodsTests.cs" />
     <Compile Include="BaseTestsFixture.cs" />
     <Compile Include="ExceptionThrowingClass.cs" />
     <Compile Include="ExceptionLogOptionsTests.cs" />

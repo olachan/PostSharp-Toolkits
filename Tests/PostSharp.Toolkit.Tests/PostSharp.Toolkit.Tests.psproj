@@ -36,6 +36,12 @@
               AttributeTargetTypes="TestAssembly.StaticClass"
               OnEntryOptions="IncludeThisArgument | IncludeParameterType | IncludeParameterName | IncludeParameterValue"
               OnSuccessOptions="IncludeReturnValue" />
+
+    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics"
+                     AttributeTargetTypes="PostSharp.Toolkit.Tests.LogWithAbstract" />
+    
+    <LogAttribute xmlns="clr-namespace:PostSharp.Toolkit.Diagnostics;assembly:PostSharp.Toolkit.Diagnostics"
+                      AttributeTargetTypes="PostSharp.Toolkit.Tests.DerivedFromLogAbstract" />
   </Data>
 
 </Project>
