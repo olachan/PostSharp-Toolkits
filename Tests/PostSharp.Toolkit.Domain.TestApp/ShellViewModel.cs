@@ -41,7 +41,6 @@ namespace PostSharp.Toolkit.Domain.TestApp
         {
             this.Toolbox = new Toolbox();
             this.HistoryTracker.Track( this.Toolbox );
-            //this.Toolbox.CreateNewHammer();
 
             ObjectTracker.SetRestorePoint( this.Toolbox, "New" );
             NotifyPropertyChangedController.RaisePropertyChanged( this, vm => vm.CanRevert );

@@ -58,7 +58,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         private static Dictionary<MemberInfoIdentity, MethodDescriptor> GetMethodsAttributes(Type type)
         {
             Dictionary<MemberInfoIdentity, MethodDescriptor> methodAttributes = new Dictionary<MemberInfoIdentity, MethodDescriptor>();
-            foreach (MethodInfo method in type.GetMethods(BindingFlagsSet.AllInstanceDeclared).Where(m => !m.IsEventAccessor() && (m.IsPublic || m.IsFinal)))
+            foreach (MethodInfo method in type.GetMethods(BindingFlagsSet.AllInstance).Where(m => !m.IsEventAccessor() && (m.IsPublic || m.IsFinal)))
             {
                 MethodOperationStrategy operationStrategy = MethodOperationStrategy.Auto;
 

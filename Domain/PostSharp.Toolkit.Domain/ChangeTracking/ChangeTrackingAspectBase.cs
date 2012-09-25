@@ -46,7 +46,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             HashSet<string> fieldSet = new HashSet<string>();
 
-            foreach (var propertyInfo in type.GetProperties(BindingFlagsSet.AllInstanceDeclared).Where(f => f.IsDefined(attributeType, true)))
+            foreach (var propertyInfo in type.GetProperties(BindingFlagsSet.AllInstance).Where(f => f.IsDefined(attributeType, true)))
             {
                 var propertyInfoClosure = propertyInfo;
 

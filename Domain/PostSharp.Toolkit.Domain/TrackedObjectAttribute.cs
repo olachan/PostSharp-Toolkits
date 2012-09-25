@@ -58,7 +58,7 @@ namespace PostSharp.Toolkit.Domain
         {
             using (this.ThisTracker.StartImplicitOperationScope(string.Format(this.FieldSetOperationStringFormat, args.LocationName)))
             {
-                object oldValue = args.GetCurrentValue(); //TODO: Somewhat risky but probably have to stick to it
+                object oldValue = args.GetCurrentValue();
 
                 if (oldValue != null && this.TrackedFields.Contains(args.LocationFullName))
                 {

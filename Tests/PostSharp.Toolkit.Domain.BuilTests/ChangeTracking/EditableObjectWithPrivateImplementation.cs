@@ -21,17 +21,17 @@ namespace PostSharp.Toolkit.Domain.BuilTests.ChangeTracking
         {
             public void BeginEdit()
             {
-                throw new NotImplementedException();
+                throw new InvalidOperationException();
             }
 
             public void EndEdit()
             {
-                throw new NotImplementedException();
+                throw new InvalidOperationException();
             }
 
             public void CancelEdit()
             {
-                throw new NotImplementedException();
+                throw new InvalidOperationException();
             }
         }
     }

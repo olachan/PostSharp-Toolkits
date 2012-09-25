@@ -148,13 +148,13 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
             Assert.AreEqual(2, to.P2);
             Assert.AreEqual(3, to.P3);
 
-            sot.Tracker.Redo(); // TODO: should redo after restoring named point work this way? 
+            sot.Tracker.Redo();
 
             Assert.AreEqual(4, to.P1);
             Assert.AreEqual(5, to.P2);
             Assert.AreEqual(6, to.P3);
 
-            sot.Tracker.Undo(); // TODO: what shoul happen here?
+            sot.Tracker.Undo();
 
             Assert.AreEqual(1, to.P1);
             Assert.AreEqual(2, to.P2);

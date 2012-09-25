@@ -45,8 +45,6 @@ namespace PostSharp.Toolkit.Domain
                 throw new InvalidOperationException("Object is already tracked by another history tracker");
             }
 
-            //TODO: What if target already has some history?
-
             if (!trackedObject.Tracker.IsTracking)
             {
                 trackedObject.Tracker.Track();
