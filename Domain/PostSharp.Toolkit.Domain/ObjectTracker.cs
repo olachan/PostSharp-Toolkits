@@ -21,6 +21,18 @@ namespace PostSharp.Toolkit.Domain
             return ((AggregateTracker)to.Tracker).AddRestorePoint( name );
         }
 
+        public static bool RestorePointExists(object trackedObject, string restorePoint)
+        {
+            ITrackedObject to = CheckObject(trackedObject);
+            return ((AggregateTracker)to.Tracker).RestorePointExists(restorePoint);
+        }
+
+        public static bool RestorePointExists(object trackedObject, RestorePointToken restorePoint)
+        {
+            ITrackedObject to = CheckObject(trackedObject);
+            return ((AggregateTracker)to.Tracker).RestorePointExists(restorePoint);
+        }
+
         public static void UndoTo( object trackedObject, string name )
         {
             ITrackedObject to = CheckObject( trackedObject );

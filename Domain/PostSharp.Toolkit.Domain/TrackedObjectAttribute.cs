@@ -28,6 +28,11 @@ namespace PostSharp.Toolkit.Domain
     [MulticastAttributeUsage(MulticastTargets.Class, Inheritance = MulticastInheritance.Strict)]
     public class TrackedObjectAttribute : ImplicitOperationManagementAttribute
     {
+        public TrackedObjectAttribute( bool enableTrackingOnTrackerCreation = false )
+            : base( enableTrackingOnTrackerCreation )
+        {
+        }
+
         private string FieldSetOperationStringFormat
         {
             get
@@ -58,8 +63,9 @@ namespace PostSharp.Toolkit.Domain
                 if (oldValue != null && this.TrackedFields.Contains(args.LocationFullName))
                 {
                     ITrackedObject trackedObject = (ITrackedObject)oldValue;
-                    AggregateTracker newTracker = new AggregateTracker(trackedObject);
+                    AggregateTracker newTracker = new AggregateTracker(trackedObject, this.EnableTrackingOnTrackerCreation);
                     newTracker.AssociateWithParent(this.ThisTracker.ParentTracker);
+
                     trackedObject.SetTracker(newTracker);
                 }
 

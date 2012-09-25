@@ -5,8 +5,6 @@ using System.Reflection;
 
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
-using PostSharp.Extensibility;
-using PostSharp.Reflection;
 using PostSharp.Toolkit.Domain.Common;
 
 namespace PostSharp.Toolkit.Domain.ChangeTracking
@@ -14,12 +12,17 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
     [Serializable]
     public class ImplicitOperationManagementAttribute : ChangeTrackingAspectBase, ITrackedObject
     {
+        protected readonly bool EnableTrackingOnTrackerCreation;
+
+        public ImplicitOperationManagementAttribute(bool enableTrackingOnTrackerCreation = false)
+        {
+            this.EnableTrackingOnTrackerCreation = enableTrackingOnTrackerCreation;
+        }
+
         [NonSerialized]
         protected Dictionary<MemberInfoIdentity, MethodDescriptor> MethodAttributes;
 
         protected HashSet<string> TrackedFields;
-
-        // protected HashSet<string> IgnoredFields;
 
         [NonSerialized]
         private IObjectTracker tracker;
@@ -36,8 +39,6 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             this.TrackedFields = this.GetFieldsWithAttribute(type, typeof(NestedTrackedObjectAttribute), "DOM013");
 
-            // this.IgnoredFields = this.GetFieldsWithAttribute( type, typeof(ChangeTrackingIgnoreField), "DOM015" );
-
             base.CompileTimeInitialize(type, aspectInfo);
         }
 
@@ -45,7 +46,10 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         {
             ImplicitOperationManagementAttribute aspect = (ImplicitOperationManagementAttribute)base.CreateInstance(adviceArgs);
 
-            aspect.SetTracker(new AggregateTracker(adviceArgs.Instance));
+            var newTracker = new AggregateTracker(adviceArgs.Instance, this.EnableTrackingOnTrackerCreation);
+
+            aspect.SetTracker(newTracker);
+
             aspect.MethodAttributes = GetMethodsAttributes(adviceArgs.Instance.GetType());
 
             return aspect;
@@ -54,18 +58,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         private static Dictionary<MemberInfoIdentity, MethodDescriptor> GetMethodsAttributes(Type type)
         {
             Dictionary<MemberInfoIdentity, MethodDescriptor> methodAttributes = new Dictionary<MemberInfoIdentity, MethodDescriptor>();
-            foreach (MethodInfo method in type.GetMethods(BindingFlagsSet.PublicInstance).Where( m => !m.IsEventAccessor()))
+            foreach (MethodInfo method in type.GetMethods(BindingFlagsSet.PublicInstance).Where(m => !m.IsEventAccessor()))
             {
                 MethodOperationStrategy operationStrategy = MethodOperationStrategy.Auto;
-                //PropertyInfo propertyInfo;
-                //if ((propertyInfo = method.GetAccessorsProperty()) != null)
-                //{
-                //    if (propertyInfo.IsDefined(typeof(ChangeTrackingIgnoreField), true) ||
-                //        propertyInfo.IsDefined(typeof(ChangeTrackingIgnoreOperationAttribute), true))
-                //    {
-                //        continue;
-                //    }
-                //}
 
                 if (method.IsDefinedOnMethodOrProperty(typeof(ChangeTrackingIgnoreOperationAttribute), true) ||
                     method.IsDefinedOnMethodOrProperty(typeof(ChangeTrackingIgnoreField), true))
@@ -125,9 +120,9 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         protected IEnumerable<MethodBase> SelectMethods(Type type)
         {
-            return type.GetMethods( BindingFlagsSet.PublicInstanceDeclared ).Where( m => !m.IsEventAccessor() );
+            return type.GetMethods(BindingFlagsSet.PublicInstanceDeclared).Where(m => !m.IsEventAccessor());
         }
-        
+
 
         public void Undo()
         {
@@ -170,9 +165,13 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
-        public bool IsTracked { get; private set; }
-
-        public int OperationCount { get; private set; }
+        public bool IsTracked
+        {
+            get
+            {
+                return this.ThisTracker.IsTracking;
+            }
+        }
 
         internal AggregateTracker ThisTracker
         {
@@ -241,16 +240,6 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
                     return (this.MetadataToken * 397) ^ this.Module.GetHashCode();
                 }
             }
-        }
-    }
-
-    public sealed class OperationNameAttribute : Attribute
-    {
-        public string Name { get; private set; }
-
-        public OperationNameAttribute(string name)
-        {
-            Name = name;
         }
     }
 }

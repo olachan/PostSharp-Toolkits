@@ -19,6 +19,7 @@ namespace PostSharp.Toolkit.Domain
         private readonly List<AggregateTracker> childTrackers;
 
         public HistoryTracker()
+            : base(true)
         {
             this.childTrackers = new List<AggregateTracker>();
             this.UndoOperationCollection.CollectionChanged += UndoOperationCollectionCollectionChanged;

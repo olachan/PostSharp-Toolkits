@@ -216,13 +216,13 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
 
             to.ChangeValues(7, 8, 9);
 
-            ObjectTracker.SetRestorePoint(sot, "s1");
+            ObjectTracker.SetRestorePoint(sot, "s2");
 
             to.ChangeValues(10, 11, 12);
 
             to.ChangeValues(1, 2, 3);
 
-            ObjectTracker.UndoTo(sot, "s1");
+            ObjectTracker.UndoTo(sot, "s2");
 
             Assert.AreEqual(7, to.P1);
             Assert.AreEqual(8, to.P2);
@@ -319,7 +319,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         }
     }
 
-    [TrackedObject]
+    [TrackedObject(true)]
     public class SimpleTrackedObject
     {
         public int P1 { get; set; }
@@ -336,7 +336,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         }
     }
 
-    [TrackedObject]
+    [TrackedObject(true)]
     public class TrackedObject
     {
         public int P1 { get; set; }

@@ -91,6 +91,7 @@
     <Compile Include="ChangeTrackingIgnoreField.cs" />
     <Compile Include="ChangeTrackingForceOperationAttribute.cs" />
     <Compile Include="ChangeTracking\ChangeTrackingAspectBase.cs" />
+    <Compile Include="ChangeTracking\OperationNameAttribute.cs" />
     <Compile Include="ChangeTracking\OperationNameGenerationConfiguration.cs" />
     <Compile Include="ChangeTracking\RestorePoint.cs" />
     <Compile Include="ChangeTracking\ComplexOperation.cs" />

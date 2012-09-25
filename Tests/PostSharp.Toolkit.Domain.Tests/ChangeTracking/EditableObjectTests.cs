@@ -76,7 +76,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
     // ReSharper restore InconsistentNaming 
 
     [EditableObject]
-    [TrackedObject]
+    [TrackedObject(true)]
     public class EditableTrackedObjectClass : IEditableObject
     {
         public int IntP { get; set; }

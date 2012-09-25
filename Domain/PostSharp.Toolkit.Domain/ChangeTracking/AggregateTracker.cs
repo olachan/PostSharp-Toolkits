@@ -12,7 +12,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         private int implicitOperationNestingCounter;
 
-        public AggregateTracker(object aggregateRoot)
+        public AggregateTracker(object aggregateRoot, bool enableTracking)
+            : base(enableTracking)
         {
             this.AggregateRoot = aggregateRoot;
             this.implicitOperationNestingCounter = 0;

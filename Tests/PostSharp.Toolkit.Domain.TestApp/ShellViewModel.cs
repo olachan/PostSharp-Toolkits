@@ -7,7 +7,7 @@ namespace PostSharp.Toolkit.Domain.TestApp
     [TrackedObject] //TODO: Option to exclude all properties by default (opt-in behavior)
     public class ShellViewModel : ViewModelBase
     {
-        //TODO: Need a way to exclude field/property from change tracking
+        [ChangeTrackingIgnoreField]
         public HistoryTracker HistoryTracker { get; protected set; }
 
         public Toolbox Toolbox { get; set; }
@@ -41,39 +41,24 @@ namespace PostSharp.Toolkit.Domain.TestApp
             //this.Toolbox.CreateNewHammer();
 
             ObjectTracker.SetRestorePoint( this.Toolbox, "New" );
+            NotifyPropertyChangedController.RaisePropertyChanged( this, vm => vm.CanRevert );
         }
 
         public void Revert()
         {
-            ObjectTracker.UndoTo( this.Toolbox, "New" );
+            if (this.Toolbox != null)
+            {
+                ObjectTracker.UndoTo( this.Toolbox, "New" );
+            }
         }
 
-        public bool CanResetHammder()
+        [NotifyPropertyChangedSafe]
+        public bool CanRevert
         {
-            //TODO: Need API
-            return true;
-        }
-
-        public void Undo()
-        {
-            HistoryTracker.Undo(  ); 
-        }
-
-        public bool CanUndo()
-        {
-            //TODO: Need API
-            return true;
-        }
-
-        public void Redo()
-        {
-            HistoryTracker.Redo();
-        }
-
-        public bool CanRedo()
-        {
-            //TODO: Need API
-            return true;
+            get
+            {
+                return this.Toolbox != null && ObjectTracker.RestorePointExists( this.Toolbox, "New" );
+            }
         }
     }
 }

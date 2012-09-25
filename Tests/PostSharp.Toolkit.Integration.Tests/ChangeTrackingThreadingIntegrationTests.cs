@@ -120,7 +120,7 @@ namespace PostSharp.Toolkit.Integration.Tests
 
     // ReSharper restore InconsistentNaming 
 
-    [TrackedObject]
+    [TrackedObject(true)]
     [ThreadUnsafeObject(ThreadUnsafePolicy.ThreadAffined, CheckFieldAccess = true)]
     public class ThreadUnsafeTrackedObject
     {
@@ -132,7 +132,7 @@ namespace PostSharp.Toolkit.Integration.Tests
         public NestedTrackedObject Nested { get; set; }
     }
 
-    [TrackedObject]
+    [TrackedObject(true)]
     [ThreadUnsafeObject(ThreadUnsafePolicy.ThreadAffined, CheckFieldAccess = true)]
     public class NestedTrackedObject
     {
@@ -141,7 +141,7 @@ namespace PostSharp.Toolkit.Integration.Tests
         public string S2 { get; set; }
     }
 
-    [TrackedObject]
+    [TrackedObject(true)]
     [ReaderWriterSynchronized]
     public class ReaderWriterSynchronizedTrackedObject
     {

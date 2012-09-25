@@ -96,7 +96,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         }
     }
 
-    [TrackedObject]
+    [TrackedObject(true)]
     public class SimpleTrackedObjectBase
     {
         public int P1 { get; set; }
@@ -116,7 +116,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         }
     }
 
-    [TrackedObject]
+    [TrackedObject(true)]
     public abstract class TrackedObjectWithVirtualBase
     {
         public int P1 { get; set; }

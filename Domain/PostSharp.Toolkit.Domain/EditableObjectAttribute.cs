@@ -31,7 +31,7 @@ namespace PostSharp.Toolkit.Domain
         public override object CreateInstance(AdviceArgs adviceArgs)
         {
             EditableObjectAttribute aspect = (EditableObjectAttribute)base.CreateInstance(adviceArgs);
-            aspect.privateTracker = new AggregateTracker( adviceArgs.Instance );
+            aspect.privateTracker = new AggregateTracker( adviceArgs.Instance, true );
             aspect.implicitOperationStack = new Stack<IDisposable>();
             return aspect;
         }

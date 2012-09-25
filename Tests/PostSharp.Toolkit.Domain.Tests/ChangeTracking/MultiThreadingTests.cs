@@ -51,7 +51,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         }
     }
 
-    [TrackedObject]
+    [TrackedObject(true)]
     public class SlowSimpleTrackedObject
     {
         private int p1;

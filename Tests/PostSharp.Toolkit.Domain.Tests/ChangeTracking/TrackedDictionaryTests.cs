@@ -19,6 +19,8 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         {
             TrackedDictionary<int, string> tc = new TrackedDictionary<int, string>();
 
+            tc.Tracker.Track();
+
             tc.Add(0, "0");
             tc.Add(1, "1");
             tc.Add(2, "2");

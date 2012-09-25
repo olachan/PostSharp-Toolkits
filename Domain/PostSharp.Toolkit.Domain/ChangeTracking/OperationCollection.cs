@@ -153,8 +153,12 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             while (operations.Count > 0 && (restorePoint == null || !predicate(restorePoint)))
             {
                 restorePoint = this.operations.Last.Value;
-                this.operations.RemoveLast();
-                restoreOperations.Add(restorePoint);
+
+                if (restorePoint == null || !predicate(restorePoint) || !restorePoint.IsRestorePoint())
+                {
+                    this.operations.RemoveLast();
+                    restoreOperations.Add(restorePoint);
+                }
             }
 
             this.OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));

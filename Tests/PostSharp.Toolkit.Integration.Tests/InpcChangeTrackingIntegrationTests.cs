@@ -87,7 +87,7 @@ namespace PostSharp.Toolkit.Integration.Tests
         }
     }
 
-    [TrackedObject]
+    [TrackedObject(true)]
     [NotifyPropertyChanged]
     public class InpcAndChangeTrackingNested : NotifyPropertyChangedBase
     {
@@ -104,7 +104,7 @@ namespace PostSharp.Toolkit.Integration.Tests
         }
     }
 
-    [TrackedObject]
+    [TrackedObject(true)]
     [NotifyPropertyChanged]
     public class InpcAndChangeTrackingEnabled : NotifyPropertyChangedBase
     {

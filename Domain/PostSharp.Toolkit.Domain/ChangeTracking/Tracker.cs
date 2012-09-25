@@ -20,12 +20,12 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         internal OperationCollection RedoOperationCollection;
 
-        protected Tracker()
+        protected Tracker(bool enableTracking = false)
         {
             this.UndoOperationCollection = new OperationCollection();
             this.RedoOperationCollection = new OperationCollection();
             this.IsTrackingInternal = true;
-            this.IsTracking = true;
+            this.IsTracking = enableTracking;
         }
 
         public Tracker ParentTracker { get; protected set; }

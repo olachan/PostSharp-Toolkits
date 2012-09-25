@@ -39,7 +39,7 @@ namespace PostSharp.Toolkit.Domain.Tests.Integration
         }
     }
 
-    [TrackedObject]
+    [TrackedObject(true)]
     [NotifyPropertyChanged]
     public class InpcAggregateTrackedObject
     {
@@ -107,7 +107,7 @@ namespace PostSharp.Toolkit.Domain.Tests.Integration
         }
     }
 
-    [TrackedObject]
+    [TrackedObject(true)]
     [NotifyPropertyChanged]
     public class InpcSimpleTrackedObject
     {

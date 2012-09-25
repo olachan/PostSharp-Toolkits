@@ -26,8 +26,7 @@ namespace PostSharp.Toolkit.Domain.TestApp
         public void CreateNewHammer()
         {
             var hammer = new Hammer() { Length = _random.Next(29), Weight = _random.Next(113) };
-            ObjectTracker.StopTracking( hammer );
-            ObjectTracker.Track( hammer ); //TODO: Those 2 lines should not be necessary
+            
             this.Hammer = hammer;
         }
     }

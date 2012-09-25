@@ -20,7 +20,7 @@ namespace PostSharp.Toolkit.Domain
 
         private void Initialize()
         {
-            this.AggregateTracker = new AggregateTracker(this);
+            this.AggregateTracker = new AggregateTracker(this, false);
         }
 
         public TrackedDictionary()
