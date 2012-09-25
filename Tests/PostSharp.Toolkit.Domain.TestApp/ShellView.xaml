@@ -1,28 +1,53 @@
 ﻿<UserControl x:Class="PostSharp.Toolkit.Domain.TestApp.ShellView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:Controls="clr-namespace:PostSharp.Toolkit.Domain.Controls;assembly=PostSharp.Toolkit.Domain.Controls"
-             xmlns:TestApp="clr-namespace:PostSharp.Toolkit.Domain.TestApp" 
-             mc:Ignorable="d"
+             xmlns:TestApp="clr-namespace:PostSharp.Toolkit.Domain.TestApp"
+             xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+             xmlns:cal="http://www.caliburnproject.org" mc:Ignorable="d"
              d:DesignHeight="300"
              d:DesignWidth="300"
              d:DataContext="{d:DesignInstance TestApp:ShellViewModel}">
-   
-        <ScrollViewer>
+
+    <UserControl.Resources>
+        <TestApp:IgnoreNewItemPlaceHolderConverter x:Key="ignoreNewItemPlaceHolderConverter" />
+    </UserControl.Resources>
+    
+    <i:Interaction.Triggers>
+        <TestApp:InputBindingTrigger>
+            <TestApp:InputBindingTrigger.InputBinding>
+                <KeyBinding Modifiers="Ctrl"
+                            Key="Z" />
+            </TestApp:InputBindingTrigger.InputBinding>
+            <cal:ActionMessage MethodName="Undo" />
+        </TestApp:InputBindingTrigger>
+
+        <TestApp:InputBindingTrigger>
+            <TestApp:InputBindingTrigger.InputBinding>
+                <KeyBinding Modifiers="Ctrl"
+                            Key="Y" />
+            </TestApp:InputBindingTrigger.InputBinding>
+            <cal:ActionMessage MethodName="Redo" />
+        </TestApp:InputBindingTrigger>
+    </i:Interaction.Triggers>
+
+    <ScrollViewer>
         <StackPanel Orientation="Vertical">
-           
+
             <ToolBar>
                 <ToolBarPanel Orientation="Horizontal">
                     <Controls:UndoButton HorizontalAlignment="Left"
-                                             HistoryTracker="{Binding HistoryTracker}" />
+                                         HistoryTracker="{Binding HistoryTracker}" />
                     <Controls:RedoButton HorizontalAlignment="Left"
                                          HistoryTracker="{Binding HistoryTracker}" />
                 </ToolBarPanel>
             </ToolBar>
-            <TextBox x:Name="Name" MinWidth="250" />
-            <Button x:Name="SayHello" Content="Hello?" />
+            <TextBox x:Name="Name"
+                     MinWidth="250" />
+            <Button x:Name="SayHello"
+                    Content="Hello?" />
             <GroupBox Header="Toolbox">
                 <StackPanel>
                     <Button x:Name="CreateToolbox">Bring the toolbox!</Button>
@@ -30,19 +55,33 @@
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <Label>Weight:</Label>
-                                <TextBox Text="{Binding Toolbox.Hammer.Weight}" MinWidth="100"/>
+                                <TextBox Text="{Binding Toolbox.Hammer.Weight}"
+                                         MinWidth="100" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <Label>Length:</Label>
-                                <TextBox Text="{Binding Toolbox.Hammer.Length}" MinWidth="100"/>
+                                <TextBox Text="{Binding Toolbox.Hammer.Length}"
+                                         MinWidth="100" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <Label>Efficiency:</Label>
-                                <TextBox Text="{Binding Toolbox.Hammer.Efficiency, Mode=OneWay}" IsReadOnly="True" MinWidth="100"/>
+                                <TextBox Text="{Binding Toolbox.Hammer.Efficiency, Mode=OneWay}"
+                                         IsReadOnly="True"
+                                         MinWidth="100" />
                             </StackPanel>
                         </StackPanel>
                     </GroupBox>
                     <Button x:Name="Revert">Revert</Button>
+                </StackPanel>
+            </GroupBox>
+            <GroupBox Header="Nails">
+                <StackPanel Orientation="Vertical">
+                    <DataGrid ItemsSource="{Binding Toolbox.Nails}"
+                              SelectedItem="{Binding SelectedNail, Converter={StaticResource ignoreNewItemPlaceHolderConverter}}"
+                              IsReadOnly="False"
+                              CanUserAddRows="True"
+                              CanUserDeleteRows="True" />
+                    <Button Name="Hit">Hit selected nail!</Button>
                 </StackPanel>
             </GroupBox>
         </StackPanel>

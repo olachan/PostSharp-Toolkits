@@ -20,26 +20,29 @@ namespace PostSharp.Toolkit.Domain
     {
         private readonly ObservableCollection<T> innerCollection;
 
-        private void Initialize()
+        private CollectionTrackingStrategy collectionTrackingStrategy;
+
+        private void Initialize(CollectionTrackingStrategy collectionTrackingStrategy)
         {
+            this.collectionTrackingStrategy = collectionTrackingStrategy;
             this.AggregateTracker = new AggregateTracker(this, false);
         }
 
-        public TrackedCollection()
+        public TrackedCollection(CollectionTrackingStrategy collectionTrackingStrategy)
         {
-            this.Initialize();
+            this.Initialize(collectionTrackingStrategy);
             this.innerCollection = new ObservableCollection<T>();
         }
 
-        public TrackedCollection(List<T> list)
+        public TrackedCollection(List<T> list, CollectionTrackingStrategy collectionTrackingStrategy)
         {
-            this.Initialize();
+            this.Initialize(collectionTrackingStrategy);
             this.innerCollection = new ObservableCollection<T>(list);
         }
 
-        public TrackedCollection(IEnumerable<T> collection)
+        public TrackedCollection(IEnumerable<T> collection, CollectionTrackingStrategy collectionTrackingStrategy)
         {
-            this.Initialize();
+            this.Initialize(collectionTrackingStrategy);
             this.innerCollection = new ObservableCollection<T>(collection);
         }
 
@@ -68,14 +71,20 @@ namespace PostSharp.Toolkit.Domain
         public void Add(T item)
         {
             this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => this.Remove(item), () => this.Add(item)));
+            this.AttachToAggregate( item );
+
             this.innerCollection.Add(item);
         }
 
         int IList.Add(object value)
         {
             this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).Remove(value), () => ((IList)this).Add(value)));
+            this.AttachToAggregate(value);
+
             return ((IList)this.innerCollection).Add(value);
         }
+
+       
 
         bool IList.Contains(object value)
         {
@@ -96,7 +105,12 @@ namespace PostSharp.Toolkit.Domain
                        this.Add(item);
                    }
                },
-               () => this.Clear()));
+               this.Clear));
+
+            foreach ( var item in copy )
+            {
+                this.DetachFromAggregate(item);
+            }
 
             this.innerCollection.Clear();
         }
@@ -109,12 +123,16 @@ namespace PostSharp.Toolkit.Domain
         void IList.Insert(int index, object value)
         {
             this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).RemoveAt(index), () => ((IList)this).Insert(index, value)));
+            this.AttachToAggregate(value);
+
             ((IList)this.innerCollection).Insert(index, value);
         }
 
         void IList.Remove(object value)
         {
             this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).Add(value), () => ((IList)this).Remove(value)));
+            this.DetachFromAggregate(value);
+
             ((IList)this.innerCollection).Remove(value);
         }
 
@@ -122,6 +140,8 @@ namespace PostSharp.Toolkit.Domain
         {
             object value = ((IList)this)[index];
             this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this).Insert(index, value), () => ((IList)this).RemoveAt(index)));
+            this.DetachFromAggregate(value);
+
             ((IList)this.innerCollection).RemoveAt(index);
         }
 
@@ -136,6 +156,9 @@ namespace PostSharp.Toolkit.Domain
                 object newValue = value;
                 object oldValue = ((IList)this.innerCollection)[index];
                 this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => ((IList)this)[index] = oldValue, () => ((IList)this)[index] = newValue));
+                this.DetachFromAggregate(oldValue);
+                this.AttachToAggregate(newValue);
+
                 ((IList)this.innerCollection)[index] = value;
             }
         }
@@ -177,6 +200,8 @@ namespace PostSharp.Toolkit.Domain
         public bool Remove(T item)
         {
             this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => this.Add(item), () => this.Remove(item)));
+            this.DetachFromAggregate(item);
+
             return this.innerCollection.Remove(item);
         }
 
@@ -217,6 +242,8 @@ namespace PostSharp.Toolkit.Domain
         public void Insert(int index, T item)
         {
             this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => this.RemoveAt(index), () => this.Insert(index, item)));
+            this.AttachToAggregate(item);
+
             this.innerCollection.Insert(index, item);
         }
 
@@ -231,7 +258,26 @@ namespace PostSharp.Toolkit.Domain
                 T newValue = value;
                 T oldValue = this.innerCollection[index];
                 this.AggregateTracker.AddToCurrentOperation(new DelegateOperation(() => this[index] = oldValue, () => this[index] = newValue));
+                this.DetachFromAggregate(oldValue);
+                this.AttachToAggregate(newValue);
+
                 this.innerCollection[index] = value;
+            }
+        }
+
+        private void AttachToAggregate(object item)
+        {
+            if (this.collectionTrackingStrategy == CollectionTrackingStrategy.TrackAllContent)
+            {
+                ((AggregateTracker)this.Tracker).AttachToAggregate(item);
+            }
+        }
+
+        private void DetachFromAggregate(object item)
+        {
+            if (this.collectionTrackingStrategy == CollectionTrackingStrategy.TrackAllContent)
+            {
+                ((AggregateTracker)this.Tracker).DetachFromAggregate(item, false);
             }
         }
 

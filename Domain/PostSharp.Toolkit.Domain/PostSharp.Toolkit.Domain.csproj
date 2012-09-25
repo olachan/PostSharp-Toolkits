@@ -95,6 +95,7 @@
     <Compile Include="ChangeTracking\OperationNameGenerationConfiguration.cs" />
     <Compile Include="ChangeTracking\RestorePoint.cs" />
     <Compile Include="ChangeTracking\ComplexOperation.cs" />
+    <Compile Include="CollectionTrackingStrategy.cs" />
     <Compile Include="EditableObjectAttribute.cs" />
     <Compile Include="ChangeTracking\OperationExtensions.cs" />
     <Compile Include="ChangeTracking\RestorePointToken.cs" />

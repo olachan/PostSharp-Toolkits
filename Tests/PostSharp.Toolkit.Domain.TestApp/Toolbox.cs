@@ -1,5 +1,4 @@
 ﻿using System;
-using PostSharp.Toolkit.Domain.ChangeTracking;
 
 namespace PostSharp.Toolkit.Domain.TestApp
 {
@@ -15,10 +14,10 @@ namespace PostSharp.Toolkit.Domain.TestApp
 
         public Toolbox()
         {
-            this.Nails = new TrackedCollection<Nail>();
+            this.Nails = new TrackedCollection<Nail>(CollectionTrackingStrategy.TrackAllContent);
             for (int i = 0; i < _random.Next(13); ++i )
             {
-                this.Nails.Add(new Nail(_random.Next(200)));
+                this.Nails.Add(new Nail());
             }
             this.CreateNewHammer();
         }

@@ -17,7 +17,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         [Test]
         public void SimpleTrackedDictionaryAddTest()
         {
-            TrackedDictionary<int, string> tc = new TrackedDictionary<int, string>();
+            TrackedDictionary<int, string> tc = new TrackedDictionary<int, string>(CollectionTrackingStrategy.TrackOnlyCollectionOperations);
 
             tc.Tracker.Track();
 

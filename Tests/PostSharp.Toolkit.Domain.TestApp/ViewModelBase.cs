@@ -7,7 +7,6 @@ namespace PostSharp.Toolkit.Domain.TestApp
     [NotifyPropertyChanged]
     public class ViewModelBase
     {
-        
     }
 
     [NotifyPropertyChanged]

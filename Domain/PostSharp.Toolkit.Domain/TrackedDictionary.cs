@@ -18,41 +18,44 @@ namespace PostSharp.Toolkit.Domain
     {
         private readonly Dictionary<TKey, TValue> innerCollection;
 
-        private void Initialize()
+        private CollectionTrackingStrategy collectionTrackingStrategy;
+
+        private void Initialize(CollectionTrackingStrategy collectionTrackingStrategy)
         {
+            this.collectionTrackingStrategy = collectionTrackingStrategy;
             this.AggregateTracker = new AggregateTracker(this, false);
         }
 
-        public TrackedDictionary()
-            : this(0, (IEqualityComparer<TKey>)null)
+        public TrackedDictionary(CollectionTrackingStrategy collectionTrackingStrategy)
+            : this(0, null, collectionTrackingStrategy)
         {
         }
 
-        public TrackedDictionary(int capacity)
-            : this(capacity, (IEqualityComparer<TKey>)null)
+        public TrackedDictionary(int capacity, CollectionTrackingStrategy collectionTrackingStrategy)
+            : this(capacity, null, collectionTrackingStrategy)
         {
         }
 
-        public TrackedDictionary(IEqualityComparer<TKey> comparer)
-            : this(0, comparer)
+        public TrackedDictionary(IEqualityComparer<TKey> comparer, CollectionTrackingStrategy collectionTrackingStrategy)
+            : this(0, comparer, collectionTrackingStrategy)
         {
         }
 
-        public TrackedDictionary(int capacity, IEqualityComparer<TKey> comparer)
+        public TrackedDictionary(int capacity, IEqualityComparer<TKey> comparer, CollectionTrackingStrategy collectionTrackingStrategy)
         {
-            this.Initialize();
+            this.Initialize(collectionTrackingStrategy);
             this.innerCollection = new Dictionary<TKey, TValue>(capacity, comparer);
         }
 
-        public TrackedDictionary(IDictionary<TKey, TValue> dictionary)
-            : this(dictionary, (IEqualityComparer<TKey>)null)
+        public TrackedDictionary(IDictionary<TKey, TValue> dictionary, CollectionTrackingStrategy collectionTrackingStrategy)
+            : this(dictionary, null, collectionTrackingStrategy)
         {
         }
 
-        public TrackedDictionary(IDictionary<TKey, TValue> dictionary, IEqualityComparer<TKey> comparer)
-            : this(dictionary != null ? dictionary.Count : 0, comparer)
+        public TrackedDictionary(IDictionary<TKey, TValue> dictionary, IEqualityComparer<TKey> comparer, CollectionTrackingStrategy collectionTrackingStrategy)
+            : this(dictionary != null ? dictionary.Count : 0, comparer, collectionTrackingStrategy)
         {
-            foreach (KeyValuePair<TKey, TValue> keyValuePair in (IEnumerable<KeyValuePair<TKey, TValue>>)dictionary)
+            foreach (KeyValuePair<TKey, TValue> keyValuePair in dictionary)
                 this.innerCollection.Add(keyValuePair.Key, keyValuePair.Value);
         }
 
@@ -68,6 +71,8 @@ namespace PostSharp.Toolkit.Domain
                 new DelegateOperation(
                 () => ((IDictionary)this).Add(key, oldValue),
                 () => ((IDictionary)this).Remove(key)));
+            
+            this.DetachFromAggregate( oldValue );
 
             ((IDictionary)this.innerCollection).Remove(key);
         }
@@ -98,6 +103,9 @@ namespace PostSharp.Toolkit.Domain
                     },
                     () => ((IDictionary)this)[key] = value));
 
+                this.AttachToAggregate(value);
+                this.DetachFromAggregate(oldValue);
+
                 ((IDictionary)this.innerCollection)[key] = value;
             }
         }
@@ -119,6 +127,8 @@ namespace PostSharp.Toolkit.Domain
                 () => ((IDictionary)this).Remove(key),
                 () => ((IDictionary)this).Add(key, value)));
 
+            this.AttachToAggregate(value);
+
             ((IDictionary)this.innerCollection).Add(key, value);
         }
 
@@ -128,6 +138,8 @@ namespace PostSharp.Toolkit.Domain
               new DelegateOperation(
               () => ((ICollection<KeyValuePair<TKey, TValue>>)this).Remove(item),
               () => ((ICollection<KeyValuePair<TKey, TValue>>)this).Add(item)));
+
+            this.AttachToAggregate(item);
 
             ((ICollection<KeyValuePair<TKey, TValue>>)this.innerCollection).Add(item);
         }
@@ -153,6 +165,11 @@ namespace PostSharp.Toolkit.Domain
                },
                () => this.Clear()));
 
+            foreach ( KeyValuePair<TKey, TValue> keyValuePair in copy )
+            {
+                this.DetachFromAggregate( keyValuePair.Value );
+            }
+
             this.innerCollection.Clear();
         }
 
@@ -177,6 +194,8 @@ namespace PostSharp.Toolkit.Domain
              new DelegateOperation(
              () => ((ICollection<KeyValuePair<TKey, TValue>>)this).Add(item),
              () => ((ICollection<KeyValuePair<TKey, TValue>>)this).Remove(item)));
+
+            this.DetachFromAggregate(item);
 
             return ((ICollection<KeyValuePair<TKey, TValue>>)this.innerCollection).Remove(item);
         }
@@ -254,6 +273,8 @@ namespace PostSharp.Toolkit.Domain
               () => this.Remove(key),
               () => this.Add(key, value)));
 
+            this.AttachToAggregate(value);
+
             this.innerCollection.Add(key, value);
         }
 
@@ -265,6 +286,8 @@ namespace PostSharp.Toolkit.Domain
                 new DelegateOperation(
                 () => this.Add(key, oldValue),
                 () => this.Remove(key)));
+
+            this.DetachFromAggregate(oldValue);
 
             return this.innerCollection.Remove(key);
         }
@@ -300,6 +323,9 @@ namespace PostSharp.Toolkit.Domain
                     },
                     () => this[key] = value));
 
+                this.AttachToAggregate(value);
+                this.DetachFromAggregate(oldValue);
+
                 this.innerCollection[key] = value;
             }
         }
@@ -325,6 +351,22 @@ namespace PostSharp.Toolkit.Domain
             get
             {
                 return this.innerCollection.Values;
+            }
+        }
+
+        private void AttachToAggregate(object item)
+        {
+            if (this.collectionTrackingStrategy == CollectionTrackingStrategy.TrackAllContent)
+            {
+                ((AggregateTracker)this.Tracker).AttachToAggregate(item);
+            }
+        }
+
+        private void DetachFromAggregate(object item)
+        {
+            if (this.collectionTrackingStrategy == CollectionTrackingStrategy.TrackAllContent)
+            {
+                ((AggregateTracker)this.Tracker).DetachFromAggregate(item, false);
             }
         }
 

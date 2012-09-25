@@ -12,6 +12,9 @@ namespace PostSharp.Toolkit.Domain.TestApp
 
         public Toolbox Toolbox { get; set; }
 
+        //[ChangeTrackingIgnoreField]
+        public Nail SelectedNail { get; set; }
+
         [OperationName("NameChanged")]
         public string Name { get; set; }
 
@@ -52,12 +55,44 @@ namespace PostSharp.Toolkit.Domain.TestApp
             }
         }
 
+        public void Undo()
+        {
+            if (this.HistoryTracker.CanUndo())
+            {
+                this.HistoryTracker.Undo();
+            }
+        }
+
+        public void Redo()
+        {
+            if (this.HistoryTracker.CanRedo())
+            {
+                this.HistoryTracker.Redo();
+            }
+        }
+
         [NotifyPropertyChangedSafe]
         public bool CanRevert
         {
             get
             {
                 return this.Toolbox != null && ObjectTracker.RestorePointExists( this.Toolbox, "New" );
+            }
+        }
+
+        public void Hit()
+        {
+            if (this.CanHit)
+            {
+                this.SelectedNail.Hit( this.Toolbox.Hammer.Efficiency );
+            }
+        }
+
+        public bool CanHit
+        {
+            get
+            {
+                return this.Toolbox != null && this.SelectedNail != null;
             }
         }
     }

@@ -12,10 +12,10 @@ namespace PostSharp.Toolkit.Domain.TestApp
 
         private static readonly Random _random = new Random();
 
-        public Nail( double length)
+        public Nail()
         {
-            this.Length = length;
-            this.StickingLength = length;
+            this.Length = _random.Next(200);
+            this.StickingLength = this.Length;
             this.Color = "Black";
         }
 

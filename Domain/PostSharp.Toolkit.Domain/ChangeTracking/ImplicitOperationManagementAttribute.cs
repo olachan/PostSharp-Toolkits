@@ -58,7 +58,7 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
         private static Dictionary<MemberInfoIdentity, MethodDescriptor> GetMethodsAttributes(Type type)
         {
             Dictionary<MemberInfoIdentity, MethodDescriptor> methodAttributes = new Dictionary<MemberInfoIdentity, MethodDescriptor>();
-            foreach (MethodInfo method in type.GetMethods(BindingFlagsSet.PublicInstance).Where(m => !m.IsEventAccessor()))
+            foreach (MethodInfo method in type.GetMethods(BindingFlagsSet.AllInstanceDeclared).Where(m => !m.IsEventAccessor() && (m.IsPublic || m.IsFinal)))
             {
                 MethodOperationStrategy operationStrategy = MethodOperationStrategy.Auto;
 
@@ -120,9 +120,8 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
 
         protected IEnumerable<MethodBase> SelectMethods(Type type)
         {
-            return type.GetMethods(BindingFlagsSet.PublicInstanceDeclared).Where(m => !m.IsEventAccessor());
+            return type.GetMethods(BindingFlagsSet.AllInstanceDeclared).Where(m => !m.IsEventAccessor() && (m.IsPublic || m.IsFinal));
         }
-
 
         public void Undo()
         {

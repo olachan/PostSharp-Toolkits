@@ -31,6 +31,7 @@ namespace PostSharp.Toolkit.Domain.Tests.NotifyPropertyChanged
         }
 
         [Test]
+        [Ignore] // TODO: implement this with compile time error based on depends on string
         [ExpectedException(typeof(NotInstrumentedClassInDependsOnException))]
         public void DependsOnWithNotInstrumentedDependency()
         {

@@ -8,6 +8,7 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -35,6 +36,8 @@ namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
         private readonly PropertyFieldBindingsMap propertyToFieldBindings;
 
         private readonly object instance;
+
+        private static ConcurrentDictionary<Type, bool> instrumentedTypes = new ConcurrentDictionary<Type, bool>(); 
 
         private ChildPropertyChangedProcessor( ChildPropertyChangedProcessor prototype, object instance )
         {
@@ -212,7 +215,8 @@ namespace PostSharp.Toolkit.Domain.PropertyChangeTracking
         private void HookNotifyChildPropertyChangedHandler( object instance, string locationName )
         {
             object currentValue = instance as INotifyPropertyChanged;
-            if ( currentValue != null )
+            if (currentValue != null &&
+                instrumentedTypes.GetOrAdd(currentValue.GetType(), type => type.IsDefined(typeof(NotifyPropertyChangedAttribute), true)))
             {
                 string locationNameClosure = locationName;
                 NotifyChildPropertyChangedEventHandlerDescriptor handlerDescriptor = new NotifyChildPropertyChangedEventHandlerDescriptor(

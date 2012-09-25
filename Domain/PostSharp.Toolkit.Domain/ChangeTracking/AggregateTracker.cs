@@ -249,6 +249,27 @@ namespace PostSharp.Toolkit.Domain.ChangeTracking
             }
         }
 
+        internal void AttachToAggregate(object newValue)
+        {
+            ITrackedObject trackedObject = (ITrackedObject)newValue;
+            if (trackedObject.Tracker == null || ((AggregateTracker)trackedObject.Tracker).OperationsCount != 0)
+            {
+                throw new ArgumentException("attaching modified object to aggregate is not supported");
+            }
+
+            trackedObject.SetTracker(this);
+        }
+
+        internal void DetachFromAggregate(object oldValue, bool enableTrackingOnTrackerCreation)
+        {
+            ITrackedObject trackedObject = (ITrackedObject)oldValue;
+            AggregateTracker newTracker = new AggregateTracker(trackedObject, enableTrackingOnTrackerCreation);
+            newTracker.AssociateWithParent(this.ParentTracker);
+
+            trackedObject.SetTracker(newTracker);
+        }
+
+
         public override void StopTracking()
         {
             base.StopTracking();

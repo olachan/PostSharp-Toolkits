@@ -64,7 +64,9 @@
       <Generator>MSBuild:Compile</Generator>
     </ApplicationDefinition>
     <Compile Include="Hammer.cs" />
+    <Compile Include="InputBindingTrigger.cs" />
     <Compile Include="Nail.cs" />
+    <Compile Include="IgnoreNewItemPlaceHolderConverter.cs" />
     <Compile Include="ShellView.xaml.cs">
       <DependentUpon>ShellView.xaml</DependentUpon>
     </Compile>

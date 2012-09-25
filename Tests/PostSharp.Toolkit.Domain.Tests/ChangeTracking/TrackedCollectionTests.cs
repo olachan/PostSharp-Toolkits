@@ -17,7 +17,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         [Test]
         public void Add_WhenCalledAndReverted_AddsAndReverts()
         {
-            TrackedCollection<int> tc = new TrackedCollection<int>();
+            TrackedCollection<int> tc = new TrackedCollection<int>(CollectionTrackingStrategy.TrackOnlyCollectionOperations);
 
             tc.Tracker.Track();
 
@@ -56,7 +56,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         [Test]
         public void Remove_WhenCalledAndReverted_RemovesAndReverts()
         {
-            TrackedCollection<int> tc = new TrackedCollection<int>();
+            TrackedCollection<int> tc = new TrackedCollection<int>(CollectionTrackingStrategy.TrackOnlyCollectionOperations);
 
             tc.Tracker.Track();
 
@@ -78,7 +78,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         [Test]
         public void RemoveAt_WhenCalledAndReverted_RemovesAndReverts()
         {
-            TrackedCollection<int> tc = new TrackedCollection<int>();
+            TrackedCollection<int> tc = new TrackedCollection<int>(CollectionTrackingStrategy.TrackOnlyCollectionOperations);
 
             tc.Tracker.Track();
 
@@ -100,7 +100,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         [Test]
         public void Undo_WhenCalledAfterClear_RevertsClear()
         {
-            TrackedCollection<int> tc = new TrackedCollection<int>();
+            TrackedCollection<int> tc = new TrackedCollection<int>(CollectionTrackingStrategy.TrackOnlyCollectionOperations);
 
             tc.Tracker.Track();
 
@@ -123,7 +123,7 @@ namespace PostSharp.Toolkit.Domain.Tests.ChangeTracking
         [Test]
         public void Insert_WhenCalledAndReverted_InsertsAndReverts()
         {
-            TrackedCollection<int> tc = new TrackedCollection<int>();
+            TrackedCollection<int> tc = new TrackedCollection<int>(CollectionTrackingStrategy.TrackOnlyCollectionOperations);
 
             tc.Tracker.Track();
 
